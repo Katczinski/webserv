@@ -1,7 +1,7 @@
-#include "BindingSocket.hpp"
+#include "WebServer.hpp"
 
 int main()
 {
-    ft::BindingSocket socket;
+    ft::WebServer server;
     return (0);
 }

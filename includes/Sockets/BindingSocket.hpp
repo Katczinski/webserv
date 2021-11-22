@@ -9,8 +9,7 @@ namespace ft
     class BindingSocket : public SimpleSocket
     {
         public:
-            BindingSocket(int domain = AF_INET, int service = SOCK_STREAM,
-                        int protocol = 0, int port = 8080, u_long interface = INADDR_ANY);
+            BindingSocket(int domain, int service, int protocol, int port, u_long interface);
 
             int         connect_to_network(int sock, struct sockaddr_in address);
     };

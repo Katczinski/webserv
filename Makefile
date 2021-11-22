@@ -1,19 +1,25 @@
 NAME 		= webserv
 
 SRCS		= main.cpp\
-			srcs/SimpleSocket.cpp\
-			srcs/BindingSocket.cpp\
-			srcs/ConnectingSocket.cpp
+			srcs/Sockets/SimpleSocket.cpp\
+			srcs/Sockets/BindingSocket.cpp\
+			srcs/Sockets/ConnectingSocket.cpp\
+			srcs/Sockets/ListeningSocket.cpp\
+			srcs/Servers/SimpleServer.cpp\
+			srcs/Servers/WebServer.cpp
 
 
 OBJS		= $(SRCS:.cpp=.o)
 
-HEADER		= includes/SimpleSocket.hpp\
-			includes/BindingSocket.hpp\
-			includes/ConnectingSocket.hpp
-
-
-INC			= -Iincludes
+HEADER		= includes/websockets.hpp\
+			includes/Sockets/SimpleSocket.hpp\
+			includes/Sockets/BindingSocket.hpp\
+			includes/Sockets/ConnectingSocket.hpp\
+			includes/Sockets/ListeningSocket.hpp\
+			includes/Servers/SimpleServer.hpp\
+			includes/Servers/WebServer.hpp
+			
+INC			= -Iincludes/Sockets -Iincludes/Servers -Iincludes
 
 CC			= clang++
 
