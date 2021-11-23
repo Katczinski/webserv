@@ -1,5 +1,5 @@
 #include "WebServer.hpp"
-
+#include <fcntl.h>
 ft::WebServer::WebServer() : SimpleServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 10)
 {
     launch();
@@ -8,6 +8,8 @@ ft::WebServer::WebServer() : SimpleServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_
 void    ft::WebServer::accepter()
 {
     int server = get_socket()->get_sock();
+    _max = server;
+    // loop looking for connections / data to handle
     for(;;) {
         FD_ZERO(&_fds);
         FD_SET(server, &_fds);
@@ -24,10 +26,12 @@ void    ft::WebServer::accepter()
             if (FD_ISSET(server, &_fds)) {
                 // it's the listener
                 _connected.push_back(accept(server, (struct sockaddr *)&addr, (socklen_t*)&addrlen));
-                std::cout << "HERE: " << server << std::endl;
+                std::cout << "HERE: " << *(_connected.end() - 1) << std::endl;
             }
             for (std::vector<int>::iterator it = _connected.begin(); it != _connected.end(); ++it) {
                 if (FD_ISSET(*it, &_fds)) {
+                    // handle data on this connection
+                    fcntl(*it, F_SETFD, O_NONBLOCK);
                     read(*it, _buffer, 30000);
                     handler();
                     _new_socket = *it;
