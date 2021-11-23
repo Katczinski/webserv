@@ -7,34 +7,57 @@ ft::WebServer::WebServer() : SimpleServer(AF_INET, SOCK_STREAM, 0, 8080, INADDR_
 
 void    ft::WebServer::accepter()
 {
-    struct sockaddr_in  address = get_socket()->get_address();
-    int addrlen = sizeof(address);
-    _new_socket = accept(get_socket()->get_sock(), (struct sockaddr*)&address, (socklen_t*)&addrlen);
-    read(_new_socket, _buffer, 30000);
+    int server = get_socket()->get_sock();
+    for(;;) {
+        FD_ZERO(&_fds);
+        FD_SET(server, &_fds);
+        if (server >= _max) _max = server + 1;
+
+        for (std::vector<int>::iterator it = _connected.begin(); it != _connected.end(); ++it) {
+            FD_SET(*it, &_fds);
+            if (*it >= _max) _max = *it + 1;
+        }
+        if (select(_max, &_fds, NULL, NULL, NULL) > 0) {
+            // something is readable
+            struct sockaddr_in  addr = get_socket()->get_address();
+            int addrlen = sizeof(addr);
+            if (FD_ISSET(server, &_fds)) {
+                // it's the listener
+                _connected.push_back(accept(server, (struct sockaddr *)&addr, (socklen_t*)&addrlen));
+                std::cout << "HERE: " << server << std::endl;
+            }
+            for (std::vector<int>::iterator it = _connected.begin(); it != _connected.end(); ++it) {
+                if (FD_ISSET(*it, &_fds)) {
+                    read(*it, _buffer, 30000);
+                    handler();
+                    _new_socket = *it;
+                    responder();
+                    FD_CLR(*it, &_fds);
+                }
+            }
+        }
+    }
 }
 
 void    ft::WebServer::handler()
 {
-    std::cout << "Here: ";
+    // read(get_socket()->get_sock(), _buffer, 30000);
     std::cout << _buffer << std::endl;
 }
 
 void    ft::WebServer::responder()
 {
-    char *hello = strdup("Hello from server");
+    char *hello = strdup("HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!");
     write(_new_socket, hello, strlen(hello));
-    close(_new_socket);
+    // close(_new_socket);
     free(hello);
 }
 
 void    ft::WebServer::launch()
 {
-    while (true)
-    {
-        std::cout << "===== WAITING =====\n";
+
         accepter();
-        handler();
-        responder();
-        std::cout << "====== DONE ======\n";
-    }
+        // handler();
+        // responder();
+
 }
