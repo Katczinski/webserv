@@ -4,6 +4,7 @@ int main(int argc, char* argv[])
 {
     if (argc > 2) {
         std::cerr << "Error: invalid number of arguments" << std::endl;
+        return 1;
     } else {
         // We check that the file at the specified path exists and parse it
         if (argc == 2) {
