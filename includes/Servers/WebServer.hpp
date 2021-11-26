@@ -2,6 +2,7 @@
 #define WEBSERVER_H__
 
 #include "SimpleServer.hpp"
+#include "Config.hpp"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>

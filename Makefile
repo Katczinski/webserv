@@ -6,7 +6,8 @@ SRCS		= main.cpp\
 			srcs/Sockets/ConnectingSocket.cpp\
 			srcs/Sockets/ListeningSocket.cpp\
 			srcs/Servers/SimpleServer.cpp\
-			srcs/Servers/WebServer.cpp
+			srcs/Servers/WebServer.cpp\
+			srcs/Config/parserConfig.cpp
 
 
 OBJS		= $(SRCS:.cpp=.o)
@@ -17,9 +18,10 @@ HEADER		= includes/websockets.hpp\
 			includes/Sockets/ConnectingSocket.hpp\
 			includes/Sockets/ListeningSocket.hpp\
 			includes/Servers/SimpleServer.hpp\
-			includes/Servers/WebServer.hpp
+			includes/Servers/WebServer.hpp\
+			includes/Config/Config.hpp
 			
-INC			= -Iincludes/Sockets -Iincludes/Servers -Iincludes
+INC			= -Iincludes/Sockets -Iincludes/Servers -Iincludes/Config -Iincludes
 
 CC			= clang++
 
