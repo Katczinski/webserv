@@ -1,4 +1,4 @@
-#include "WebServer.hpp"
+#include "Server.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -14,6 +14,10 @@ int main(int argc, char* argv[])
             ft::parserConfig(0);
         }
     }
-    ft::WebServer server;
+    std::vector<ft::Server>servers;
+    servers.push_back(ft::Server());
+    for (size_t i = 0; i < servers.size(); i++)
+        servers[i].run();
+
     return (0);
 }
