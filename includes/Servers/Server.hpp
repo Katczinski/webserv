@@ -6,6 +6,8 @@
 #include "Socket.hpp"
 #include "Client.hpp"
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/epoll.h>

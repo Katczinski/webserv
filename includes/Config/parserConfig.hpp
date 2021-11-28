@@ -1,7 +1,6 @@
 #ifndef PARSERCONFIG_HPP
 #define PARSERCONFIG_HPP
 
-#include <fstream>
 #include "Config.hpp"
 
 namespace ft
