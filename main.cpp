@@ -6,14 +6,18 @@ int main(int argc, char* argv[])
         std::cerr << "Error: invalid number of arguments" << std::endl;
         return 1;
     } else {
-        // We check that the file at the specified path exists and parse it
-        if (argc == 2) {
-            ft::parserConfig(argv[1]);
-        // Parse the default config
-        } else {
-            ft::parserConfig(0);
+        try {
+            // We check that the file at the specified path exists and parse it
+            if (argc == 2) {
+                ft::parserConfig(argv[1]);
+            // Parse the default config
+            } else {
+                ft::parserConfig(0);
+            }
+            ft::WebServer server;
+        } catch(const std::exception& e) {
+            std::cerr << e.what() << std::endl;
         }
     }
-    ft::WebServer server;
     return (0);
 }

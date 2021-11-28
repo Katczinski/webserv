@@ -7,6 +7,7 @@ SRCS		= main.cpp\
 			srcs/Sockets/ListeningSocket.cpp\
 			srcs/Servers/SimpleServer.cpp\
 			srcs/Servers/WebServer.cpp\
+			srcs/Config/Config.cpp\
 			srcs/Config/parserConfig.cpp
 
 
@@ -19,8 +20,9 @@ HEADER		= includes/websockets.hpp\
 			includes/Sockets/ListeningSocket.hpp\
 			includes/Servers/SimpleServer.hpp\
 			includes/Servers/WebServer.hpp\
-			includes/Config/Config.hpp
-			
+			includes/Config/Config.hpp\
+			includes/Config/parserConfig.hpp
+
 INC			= -Iincludes/Sockets -Iincludes/Servers -Iincludes/Config -Iincludes
 
 CC			= clang++
