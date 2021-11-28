@@ -1,11 +1,7 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#include "SimpleServer.hpp"
-#include "WebServer.hpp"
-#include "websockets.hpp"
-#include <fstream>
-#include <map>
+#include "Server.hpp"
 
 namespace ft
 {
