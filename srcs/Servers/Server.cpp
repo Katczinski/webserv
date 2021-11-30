@@ -24,13 +24,17 @@ void        ft::Server::closeConnection(int client_index)
 
 int        ft::Server::receive(int fd)
 {
+    ft::Response req;
     char buff[30000];
     int ret = recv(fd, buff, 30000, 0);
-    // if (ret == 0){
-    //     closeConnection(client_index);
-    //     return (0);
-    // }
-    std::cout << buff << std::endl;
+    if (ret <= 0)
+        return (0);
+    else
+    {
+        buff[ret] = '\0';
+        ft_http_req(req, buff, fd);
+    }
+    // std::cout << buff << std::endl;
     return (ret);
 }
 
@@ -103,11 +107,11 @@ void        ft::Server::run()
                             std::cout << strerror(errno) << std::endl;
                             exit(EXIT_FAILURE);
                         }
-                        it = pollfds.erase(it) - 1;
+                        pollfds.erase(it);
 
                     }
-                    else
-                        respond(it->fd);
+                    // else
+                    //     respond(it->fd);
                 }
             }
             else if (it->revents & POLLERR)
