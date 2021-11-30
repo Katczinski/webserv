@@ -16,7 +16,7 @@ void ft::parserConfig(char* path) {
     } else {
         filename = path;
     }
-	std::ifstream file(filename);
+	std::ifstream file(filename.c_str());
 	std::string line;
 	if (!file) {
 		throw ft::ParserException("Parser Error: could not open file");

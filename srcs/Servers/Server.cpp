@@ -1,5 +1,4 @@
 #include "Server.hpp"
-
 #define MAX_EVENTS 10
 
 ft::Server::Server()
@@ -24,13 +23,19 @@ void        ft::Server::closeConnection(int client_index)
 
 int        ft::Server::receive(int fd)
 {
+    ft::Response req;
     char buff[30000];
     int ret = recv(fd, buff, 30000, 0);
-    // if (ret == 0){
-    //     closeConnection(client_index);
-    //     return (0);
-    // }
-    std::cout << buff << std::endl;
+    if (ret <= 0){
+        // closeConnection(client_index);
+        return (0);
+    }
+    else
+    {
+        buff[ret] = '\0';
+        ft_http_req(req, buff, fd);
+    }
+    // std::cout << buff << std::endl;
     return (ret);
 }
 
@@ -62,6 +67,7 @@ int ft::Server::newConnection()
 
 void        ft::Server::run()
 {
+
     int                 efd;
     struct epoll_event  ev, ep_event[MAX_EVENTS];
     efd = epoll_create1(0);
@@ -88,13 +94,13 @@ void        ft::Server::run()
             }
             else
             {
-                if (!receive(ep_event[i].data.fd))
+                if (!receive(ep_event[i].data.fd)) // чтение
                 {
                     std::cout << ep_event[i].data.fd << " closed by client\n";
                     epoll_ctl(efd, EPOLL_CTL_DEL, ep_event[i].data.fd, &ev);
                     close(ep_event[i].data.fd);
                 }
-                respond(ep_event[i].data.fd);
+                // respond(ep_event[i].data.fd); // ответ
             }
         }
     }
