@@ -7,7 +7,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/epoll.h>
+#include <poll.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/select.h>
