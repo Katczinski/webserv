@@ -14,6 +14,6 @@ namespace ft
     };
 
 }
-bool ft_http_req(ft::Response& req, char* buf, int fd);
+bool ft_http_req(ft::Response& req, char* buf, int fd, bool flag);
 
 #endif

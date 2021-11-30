@@ -25,16 +25,23 @@ int        ft::Server::receive(int fd)
 {
     ft::Response req;
     char buff[30000];
-    int ret = recv(fd, buff, 30000, 0);
-    if (ret <= 0){
-        // closeConnection(client_index);
-        return (0);
-    }
-    else
+    int ret = 0;
+    bool flag = false;
+    while((ret = recv(fd, buff, 30000, 0)) > 0)
     {
         buff[ret] = '\0';
-        ft_http_req(req, buff, fd);
+        if(ret == 2 && !req.full_log["ZAPROS"].size())
+            break;
+        else
+        {
+            if(!ft_http_req(req, buff, fd, flag))
+                return 0;
+        }
+        if(req.full_log["Connection"] == "close")
+            return 0;
     }
+    if(ret <= 0)
+        return 0;
     // std::cout << buff << std::endl;
     return (ret);
 }
