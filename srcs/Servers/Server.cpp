@@ -42,7 +42,6 @@ int        ft::Server::receive(int fd)
     }
     if(ret <= 0)
         return 0;
-    // std::cout << buff << std::endl;
     return (ret);
 }
 

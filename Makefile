@@ -22,7 +22,7 @@ INC			= -Iincludes/Sockets -Iincludes/Servers -Iincludes/Config -Iincludes/Clien
 
 CC			= clang++
 
-FLAGS		= -std=c++98 
+FLAGS		= -std=c++98 -Wall -Wextra -Werror
 
 all:		$(NAME)
 

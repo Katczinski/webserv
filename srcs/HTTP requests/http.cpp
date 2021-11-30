@@ -58,18 +58,19 @@ bool request(ft::Response& req, int i, int fd)
     }
     else if(i == 405)
     {
+        body = "<h1>405 Try another method!</h1>\r\n";
         head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: 34\r\nAllow: "+methods+"\r\nConnection: "\
         +req.full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\n";
-        body = "<h1>405 Try another method!</h1>\r\n";
         head += body;
         send(fd, head.c_str(), head.size(), 0);
         // req.full_log["Connection"] = "close";
     }
     else if(i == 200)
     {
-        head = "HTTP/1.1 200 OK\r\nLocation: http://"+server_name+req.full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Lengh: 24\r\nConnection: close\r\n\n";
         body = "<h1>Hello world!</h1>\r\n\n";
+        head = "HTTP/1.1 200 OK\r\nLocation: http://"+server_name+req.full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Lengh: " + (ft::to_string(body.size()).c_str())+"\r\nConnection: close\r\n\n";
         head += body;
+        // std::cout << "SIZE " << body.size() << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         // req.full_log["Connection"] = "close";
     }
@@ -104,12 +105,10 @@ bool general_header_check(std::vector<std::string>& header, ft::Response& req, i
 }
 bool check_url(ft::Response& req) // добавить чек нескольких серверов
 {
-    std::cout << "Host   ===================  " << req.full_log["Host"] << std::endl;
     if(!((req.full_log["Host"]).length()))
         return true;
     std::string servers_name = server_name + pemennaya_ot_Dimbl;
     std::string server_name_compare = req.full_log["Host"] + (req.full_log["Dirrectory"]).c_str();
-    std::cout << "Compare : " << servers_name.compare(server_name_compare) << std::endl;
     if(servers_name.compare(server_name_compare))
         return true;
     return false;
@@ -169,7 +168,6 @@ bool ft_http_req(ft::Response& req, char* buf, int fd, bool flag)
             req.full_log["Body"]+= buffer;
         if(flag == true)
         {
-            std::cout << "Here " << std::endl;
             flag = false;
             if(!req.full_log["ZAPROS"].compare(0,4,"POST"))
             {
