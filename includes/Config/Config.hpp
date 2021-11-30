@@ -2,6 +2,7 @@
 #define CONFIG_HPP
 
 #include "Server.hpp"
+#include "parserConfig.hpp"
 #include <iostream>
 
 namespace ft
