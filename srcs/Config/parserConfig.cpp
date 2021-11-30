@@ -31,7 +31,7 @@ void ft::parserConfig(char* path) {
     } else {
         filename = path;
     }
-	std::ifstream file(filename);
+	std::ifstream file(filename.c_str());
 	std::string line;
 	std::vector<std::string> config;
 	if (!file) {
