@@ -1,4 +1,4 @@
-#include "parserConfig.hpp"
+#include "parser.hpp"
 
 ft::ParserException::ParserException(std::string message) throw() : _message(message) {}
 
@@ -24,7 +24,7 @@ std::string ft::lineJoin(std::string& line) {
 	return line;
 }
 
-void ft::parserConfig(char* path) {
+void ft::parser(char* path) {
 	std::string filename;
     if (!path) {
         filename = "srcs/Config/file/default.conf";
@@ -42,10 +42,6 @@ void ft::parserConfig(char* path) {
 		if (line != "") {
 			config.push_back(line);
 		}
-	}
-	std::vector<std::string>::iterator it;
-	for (it = config.begin(); it != config.end(); ++it) {
-		std::cout << *it;
 	}
 	file.close();
 }

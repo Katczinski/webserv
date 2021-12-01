@@ -2,7 +2,7 @@
 #define SERVER_H__
 
 #include "Config.hpp"
-#include "parserConfig.hpp"
+#include "parser.hpp"
 #include "Socket.hpp"
 #include "Client.hpp"
 #include <iostream>

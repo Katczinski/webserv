@@ -1,12 +1,12 @@
-#ifndef PARSERCONFIG_HPP
-#define PARSERCONFIG_HPP
+#ifndef PARSER_HPP
+#define PARSER_HPP
 
 #include "Config.hpp"
 #include <iostream>
 
 namespace ft
 {
-	void parserConfig(char* path);
+	void parser(char* path);
 	std::string lineJoin(std::string& line);
 	class ParserException : public std::exception {
     private:

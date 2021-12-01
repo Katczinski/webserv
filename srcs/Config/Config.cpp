@@ -1,21 +1,26 @@
 #include "Config.hpp"
 
 // Default Constructor
-ft::Config::Config() : _id(0), _listen(0), _server_name(0), _defaultServer(false) {}
+ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages(), _locations() {}
 
 // Copy Constructor
 ft::Config::Config(const Config& other) {
 	*this = other;
 }
 
+// Destructor
 ft::Config::~Config() {}
 
+// Assign
 ft::Config& ft::Config::operator=(const Config& other) {
 	if (this != &other) {
-		_id = other._id;
-		_listen = other._listen;
+		_host = other._host;
+		_port = other._port;
 		_server_name = other._server_name;
-		_defaultServer = other._defaultServer;
+		_root = other._root;
+		_error_pages = other._error_pages;
+		_locations = other._locations;
+
 	}
 	return *this;
 }
