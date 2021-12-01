@@ -4,7 +4,7 @@
 ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(), _cgi_path() {}
 
 // Copy Constructor
-ft::Location::Location(const Location& other) {
+ft::Location::Location(const ft::Location& other) {
 	*this = other;
 }
 
@@ -12,7 +12,7 @@ ft::Location::Location(const Location& other) {
 ft::Location::~Location() {}
 
 // Assign
-ft::Location& ft::Location::operator=(const Location& other) {
+ft::Location& ft::Location::operator=(const ft::Location& other) {
 	if (this != &other) {
 		_root = other._root;
 		_index = other._index;

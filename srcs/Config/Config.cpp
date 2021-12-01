@@ -4,7 +4,7 @@
 ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages(), _locations() {}
 
 // Copy Constructor
-ft::Config::Config(const Config& other) {
+ft::Config::Config(const ft::Config& other) {
 	*this = other;
 }
 
@@ -12,7 +12,7 @@ ft::Config::Config(const Config& other) {
 ft::Config::~Config() {}
 
 // Assign
-ft::Config& ft::Config::operator=(const Config& other) {
+ft::Config& ft::Config::operator=(const ft::Config& other) {
 	if (this != &other) {
 		_host = other._host;
 		_port = other._port;

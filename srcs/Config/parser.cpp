@@ -24,7 +24,7 @@ std::string ft::lineJoin(std::string& line) {
 	return line;
 }
 
-void ft::parser(char* path) {
+void ft::parser(char* path, std::vector<ft::Config>& configs) {
 	std::string filename;
     if (!path) {
         filename = "srcs/Config/file/default.conf";
