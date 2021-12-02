@@ -7,7 +7,7 @@ ft::Server::Server()
 {
     try
     {
-        _socket.listenSocket();
+        _socket.listenSocket(ip, port);
         _server = _socket.getSock();
     }
     catch(const std::exception& e)
@@ -45,17 +45,17 @@ int        ft::Server::receive(int fd)
     return (ret);
 }
 
-void        ft::Server::respond(int fd)
-{
-    char *hello = strdup("HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!");
-    write(fd, hello, strlen(hello));
-    free(hello);
-}
+// void        ft::Server::respond(int fd)
+// {
+//     char *hello = strdup("HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!");
+//     write(fd, hello, strlen(hello));
+//     free(hello);
+// }
 
-const std::vector<ft::Client> &ft::Server::getClient() const
-{
-    return (_client);
-}
+// const std::vector<ft::Client> &ft::Server::getClient() const
+// {
+//     return (_client);
+// }
 
 int ft::Server::newConnection()
 {
@@ -64,7 +64,6 @@ int ft::Server::newConnection()
 	try {
 	    int sock =_socket.acceptSocket(&addr, &size);
         // fcntl(sock, F_SETFL, O_NONBLOCK);
-
         // _client.push_back(Client(sock));
         return (sock);
 	}catch (std::exception &e){
@@ -73,72 +72,81 @@ int ft::Server::newConnection()
     return (-1);
 }
 
-void        ft::Server::run()
+// void        ft::Server::run()
+// {
+//     std::vector<struct pollfd>  pollfds;
+//     struct pollfd               listener;
+//     listener.fd = _server;
+//     listener.events = POLLIN;
+//     pollfds.push_back(listener);
+//     for (;;)
+//     {
+//         if (poll((pollfd *)&pollfds[0], pollfds.size(), -1) <= 0)
+//         {
+//             perror("Poll error");
+//             exit(EXIT_FAILURE);
+//         }
+//         std::vector<pollfd>::iterator it = pollfds.begin();
+//         std::vector<pollfd>::iterator end = pollfds.end();
+//         for (; it != end; it++)
+//         {
+//             if (it->fd <= 0)
+//                 continue;
+//             else if (it->revents & POLLIN)
+//             {
+//                 if (it->fd == _server)
+//                 {
+//                     int new_fd = newConnection();
+//                     struct pollfd new_client;
+//                     new_client.fd = new_fd;
+//                     new_client.events = POLLIN;
+//                     new_client.revents = 0;
+//                     pollfds.push_back(new_client);
+//                     std::cout << "New connection on FD " << new_fd << std::endl;
+//                 }
+//                 else
+//                 {
+//                     if (!receive(it->fd))
+//                     {
+//                         std::cout << it->fd << " closed connection\n";
+//                         if ((close(it->fd)) == -1)
+//                         {
+//                             std::cout << strerror(errno) << std::endl;
+//                             exit(EXIT_FAILURE);
+//                         }
+//                         pollfds.erase(it);
+
+//                     }
+//                     // else
+//                     //     respond(it->fd);
+//                 }
+//             }
+//             else if (it->revents & POLLERR)
+//             {
+//                 if (it->fd == _server)
+//                 {
+//                     perror("Listening socket error");
+//                     exit(EXIT_FAILURE);
+//                 }
+//                 else
+//                 {
+//                     it = pollfds.erase(it);
+//                     close(it->fd);
+//                 }
+
+//             }
+//         }
+//     }
+// }
+
+const int            ft::Server::getServer() const
 {
-    std::vector<struct pollfd>  pollfds;
-    struct pollfd               listener;
-    listener.fd = _server;
-    listener.events = POLLIN;
-    pollfds.push_back(listener);
+    return (_server);
+}
 
-    for (;;)
-    {
-        if (poll((pollfd *)&pollfds[0], pollfds.size(), -1) <= 0)
-        {
-            perror("Poll error");
-            exit(EXIT_FAILURE);
-        }
-        std::vector<pollfd>::iterator it = pollfds.begin();
-        std::vector<pollfd>::iterator end = pollfds.end();
-        for (; it != end; it++)
-        {
-            if (it->fd <= 0)
-                continue;
-            else if (it->revents & POLLIN)
-            {
-                if (it->fd == _server)
-                {
-                    int new_fd = newConnection();
-                    struct pollfd new_client;
-                    new_client.fd = new_fd;
-                    new_client.events = POLLIN;
-                    new_client.revents = 0;
-                    pollfds.push_back(new_client);
-                    std::cout << "New connection on FD " << new_fd << std::endl;
-                }
-                else
-                {
-                    if (!receive(it->fd))
-                    {
-                        std::cout << it->fd << " closed connection\n";
-                        if ((close(it->fd)) == -1)
-                        {
-                            std::cout << strerror(errno) << std::endl;
-                            exit(EXIT_FAILURE);
-                        }
-                        pollfds.erase(it);
-
-                    }
-                    // else
-                    //     respond(it->fd);
-                }
-            }
-            else if (it->revents & POLLERR)
-            {
-                if (it->fd == _server)
-                {
-                    perror("Listening socket error");
-                    exit(EXIT_FAILURE);
-                }
-                else
-                {
-                    it = pollfds.erase(it);
-                    close(it->fd);
-                }
-
-            }
-        }
-    }
+ft::Socket      ft::Server::getSocket()
+{
+    return (_socket);
 }
 // void        ft::Server::run()
 // {
