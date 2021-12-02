@@ -2,8 +2,7 @@
 
 #define NUM_FDS 10
 
-int ret = 0;
-ft::Server::Server()
+ft::Server::Server(std::string ip, std::string port)
 {
     try
     {
@@ -16,34 +15,12 @@ ft::Server::Server()
 		exit(1);
     }
 }
-void        ft::Server::closeConnection(int client_index)
-{
-    close(_client[client_index].getFd());
-    std::cout << "erasing index " << client_index << std::endl;
-    _client.erase(_client.begin() + client_index);
-}
-
-int        ft::Server::receive(int fd)
-{
-    ft::Response req;
-    char buff[30000];
-    bool flag = false;
-    // fcntl(fd, F_SETFL, O_NONBLOCK);
-    while((ret = recv(fd, buff, 30000, 0)) > 0)
-    {
-        buff[ret] = '\0';
-        if(ret == 2 && !req.full_log["ZAPROS"].size())
-            break;
-        else
-            ft_http_req(req, buff, fd, flag);
-        if(req.full_log["Connection"] == "close" && req.full_log["ZAPROS"] == "")
-            return 0;
-    }
-    std::cout << "RET " << ret << std::endl;
-    if(ret <= 0)
-        return 0;
-    return (ret);
-}
+// void        ft::Server::closeConnection(int client_index)
+// {
+//     close(_client[client_index].getFd());
+//     std::cout << "erasing index " << client_index << std::endl;
+//     _client.erase(_client.begin() + client_index);
+// }
 
 // void        ft::Server::respond(int fd)
 // {
