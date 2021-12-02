@@ -1,5 +1,6 @@
 #include "Server.hpp"
-#define MAX_EVENTS 10
+
+#define NUM_FDS 10
 
 int ret = 0;
 ft::Server::Server()
@@ -70,41 +71,108 @@ int ft::Server::newConnection()
 
 void        ft::Server::run()
 {
-
-    int                 efd;
-    struct epoll_event  ev, ep_event[MAX_EVENTS];
-    efd = epoll_create1(0);
-    ev.events = EPOLLIN | EPOLLOUT;
-    ev.data.fd = _server;
-    
-    epoll_ctl(efd, EPOLL_CTL_ADD, _server, &ev);
-
-    int nfds = 0;
+    std::vector<struct pollfd>  pollfds;
+    struct pollfd               listener;
+    listener.fd = _server;
+    listener.events = POLLIN;
+    pollfds.push_back(listener);
 
     for (;;)
     {
-        nfds = epoll_wait(efd, ep_event, MAX_EVENTS, -1);
-        for (int i = 0; i < nfds; i++)
+        if (poll((pollfd *)&pollfds[0], pollfds.size(), -1) <= 0)
         {
-            if (ep_event[i].data.fd == _server)
+            perror("Poll error");
+            exit(EXIT_FAILURE);
+        }
+        std::vector<pollfd>::iterator it = pollfds.begin();
+        std::vector<pollfd>::iterator end = pollfds.end();
+        for (; it != end; it++)
+        {
+            if (it->fd <= 0)
+                continue;
+            else if (it->revents & POLLIN)
             {
-                int fd_new = newConnection();
-                std::cout << "New connection on fd " << fd_new << std::endl;
-                ev.events = EPOLLIN;
-                ev.data.fd = fd_new;
-                epoll_ctl(efd, EPOLL_CTL_ADD, fd_new, &ev);
-
-            }
-            else
-            {
-                if (!receive(ep_event[i].data.fd)) // чтение
+                if (it->fd == _server)
                 {
-                    std::cout << ep_event[i].data.fd << " closed by client\n";
-                    epoll_ctl(efd, EPOLL_CTL_DEL, ep_event[i].data.fd, &ev);
-                    close(ep_event[i].data.fd);
+                    int new_fd = newConnection();
+                    struct pollfd new_client;
+                    new_client.fd = new_fd;
+                    new_client.events = POLLIN;
+                    new_client.revents = 0;
+                    pollfds.push_back(new_client);
+                    std::cout << "New connection on FD " << new_fd << std::endl;
                 }
-                // respond(ep_event[i].data.fd); // ответ
+                else
+                {
+                    if (!receive(it->fd))
+                    {
+                        std::cout << it->fd << " closed connection\n";
+                        if ((close(it->fd)) == -1)
+                        {
+                            std::cout << strerror(errno) << std::endl;
+                            exit(EXIT_FAILURE);
+                        }
+                        pollfds.erase(it);
+
+                    }
+                    // else
+                    //     respond(it->fd);
+                }
+            }
+            else if (it->revents & POLLERR)
+            {
+                if (it->fd == _server)
+                {
+                    perror("Listening socket error");
+                    exit(EXIT_FAILURE);
+                }
+                else
+                {
+                    it = pollfds.erase(it);
+                    close(it->fd);
+                }
+
             }
         }
     }
 }
+// void        ft::Server::run()
+// {
+
+//     int                 efd;
+//     struct epoll_event  ev, ep_event[MAX_EVENTS];
+//     efd = epoll_create1(0);
+//     ev.events = EPOLLIN | EPOLLOUT;
+//     ev.data.fd = _server;
+    
+//     epoll_ctl(efd, EPOLL_CTL_ADD, _server, &ev);
+
+//     int nfds = 0;
+
+//     for (;;)
+//     {
+//         nfds = epoll_wait(efd, ep_event, MAX_EVENTS, -1);
+//         for (int i = 0; i < nfds; i++)
+//         {
+//             if (ep_event[i].data.fd == _server)
+//             {
+//                 int fd_new = newConnection();
+//                 std::cout << "New connection on fd " << fd_new << std::endl;
+//                 ev.events = EPOLLIN;
+//                 ev.data.fd = fd_new;
+//                 epoll_ctl(efd, EPOLL_CTL_ADD, fd_new, &ev);
+
+//             }
+//             else
+//             {
+//                 if (!receive(ep_event[i].data.fd)) // чтение
+//                 {
+//                     std::cout << ep_event[i].data.fd << " closed by client\n";
+//                     epoll_ctl(efd, EPOLL_CTL_DEL, ep_event[i].data.fd, &ev);
+//                     close(ep_event[i].data.fd);
+//                 }
+//                 // respond(ep_event[i].data.fd); // ответ
+//             }
+//         }
+//     }
+// }

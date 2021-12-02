@@ -4,7 +4,9 @@ SRCS		= main.cpp\
 			srcs/Sockets/Socket.cpp\
 			srcs/Servers/Server.cpp\
 			srcs/Client/Client.cpp\
-			srcs/Config/parserConfig.cpp\
+			srcs/Config/Config.cpp\
+			srcs/Config/Location.cpp\
+			srcs/Config/parser.cpp\
 			srcs/HTTP\ requests/Response.cpp\
 			srcs/HTTP\ requests/http.cpp
 
@@ -15,14 +17,15 @@ HEADER		= includes/Sockets/Socket.hpp\
 			includes/Servers/Server.hpp\
 			includes/Client/Client.hpp\
 			includes/Config/Config.hpp\
-			includes/Config/parserConfig.hpp\
+			includes/Config/Location.hpp\
+			includes/Config/parser.hpp\
 			includes/HTTP\ requests/Response.hpp
 
 INC			= -Iincludes/Sockets -Iincludes/Servers -Iincludes/Config -Iincludes/Client -Iincludes -Iincludes/HTTP\ requests
 
 CC			= clang++
 
-FLAGS		= -std=c++98 -Wall -Wextra -Werror
+FLAGS		= -std=c++98 
 
 all:		$(NAME)
 

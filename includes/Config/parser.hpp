@@ -1,11 +1,15 @@
-#ifndef PARSERCONFIG_HPP
-#define PARSERCONFIG_HPP
+#ifndef PARSER_HPP
+#define PARSER_HPP
 
 #include "Config.hpp"
-
+#include "Server.hpp"
+#include <iostream>
+#include <vector>
 namespace ft
 {
-	void parserConfig(char* path);
+    class Config;
+	void parser(char* path, std::vector<ft::Config>& configs);
+	std::string lineJoin(std::string& line);
 	class ParserException : public std::exception {
     private:
         std::string _message;

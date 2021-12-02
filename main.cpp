@@ -8,11 +8,12 @@ int main(int argc, char* argv[])
     } else {
         try {
             // We check that the file at the specified path exists and parse it
+            std::vector<ft::Config>configs;
             if (argc == 2) {
-                ft::parserConfig(argv[1]);
+                ft::parser(argv[1], configs);
             // Parse the default config
             } else {
-                ft::parserConfig(0);
+                ft::parser(0, configs);
             }
             std::vector<ft::Server>servers;
             servers.push_back(ft::Server());
