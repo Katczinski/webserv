@@ -39,42 +39,49 @@ bool request(ft::Response& req, int i, int fd)
     std::string body;
     if(i == 404)
     {
-        head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: 151\r\nConnection: close\r\n\n";
         body = "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>Ne horosho</center>\r\n</body>\r\n</html>\r\n";
-        std::cout << head << body << std::endl;
+        head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.size()))+"\r\nConnection: "+req.full_log["Connection"]+"\r\n\r\n";
         head += body;
+        std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
-        req.full_log["Connection"] = "close";
+        // req.full_log["Connection"] = "close";
 
     }
     else if(i == 400)
     {
-        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lnght: 124\r\nConnection: keep-alive\r\n\n";
         body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
-        std::cout << head << body << std::endl;
+        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lnght: "+(ft::to_string(body.size()))+"\r\nConnection: "+req.full_log["Connection"]+"\r\n\r\n";
         head += body;
+        std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
-        // req.full_log["Connection"] = "close";
+        req.full_log["Connection"] = "close";
     }
     else if(i == 405)
     {
         body = "<h1>405 Try another method!</h1>\r\n";
-        head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: 34\r\nAllow: "+methods+"\r\nConnection: "\
-        +req.full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\n";
+        head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.size()))+"\r\nAllow: "+methods+"\r\nConnection: "\
+        +req.full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
         head += body;
         send(fd, head.c_str(), head.size(), 0);
         // req.full_log["Connection"] = "close";
     }
     else if(i == 200)
     {
-        body = "<h1>Hello world!</h1>\r\n\n";
-        head = "HTTP/1.1 200 OK\r\nLocation: http://"+server_name+req.full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Lengh: " + (ft::to_string(body.size()).c_str())+"\r\nConnection: close\r\n\n";
+        // req.full_log["Connection"] = "close";
+        body = "<h1>Hello world!</h1>\r\n\r\n";
+        head = "HTTP/1.1 200 OK\r\nLocation: http://"+req.full_log["Host"]+req.full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Lengh: " + (ft::to_string(body.size()))+"\r\nConnection: "+req.full_log["Connection"]+"\r\n\r\n";
         head += body;
+        std::cout << head << std::endl;
         // std::cout << "SIZE " << body.size() << std::endl;
         send(fd, head.c_str(), head.size(), 0);
-        // req.full_log["Connection"] = "close";
     }
-    req.clear();
+    if(req.full_log["Connection"] == "close")
+    {
+        req.clear();
+        req.full_log["Connection"] = "close";
+    }
+    else
+        req.clear();
     if(i == 200)
         return true;
     return false;
@@ -141,7 +148,11 @@ bool ft_http_req(ft::Response& req, char* buf, int fd, bool flag)
                 req.full_log["Date"] = buffer.substr((buffer[5] == ' ') ?  6 : 5);
         }
         else if(!buffer.compare(0, 11, "Connection:"))
+        {
             req.full_log["Connection"] = buffer.substr((buffer[11] == ' ') ?  12 : 11);
+            if(req.full_log["Connection"].compare(0, 10, "Keep-Alive") && req.full_log["Connection"].compare(0, 5, "close"))
+                req.full_log["Connection"] = "Keep-Alive";
+        }
         else if(!buffer.compare(0, 13, "Content-Type:"))
         {
             if(req.full_log["Content-Type"] == "")

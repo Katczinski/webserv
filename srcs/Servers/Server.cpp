@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #define MAX_EVENTS 10
 
+int ret = 0;
 ft::Server::Server()
 {
     try
@@ -25,19 +26,15 @@ int        ft::Server::receive(int fd)
 {
     ft::Response req;
     char buff[30000];
-    int ret = 0;
     bool flag = false;
-    while((ret = recv(fd, buff, 30000, 0)) > 0)
+    while((ret = recv(fd, buff, 30000, 0)) >= 0)
     {
         buff[ret] = '\0';
         if(ret == 2 && !req.full_log["ZAPROS"].size())
             break;
         else
-        {
-            if(!ft_http_req(req, buff, fd, flag))
-                return 0;
-        }
-        if(req.full_log["Connection"] == "close")
+            ft_http_req(req, buff, fd, flag);
+        if(req.full_log["Connection"] == "close" && req.full_log["ZAPROS"] == "")
             return 0;
     }
     if(ret <= 0)
