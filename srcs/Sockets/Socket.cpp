@@ -5,12 +5,14 @@ ft::Socket::Socket()
   _addrlen = sizeof(sockaddr_in);
 }
 
-void                ft::Socket::listenSocket()
+void                ft::Socket::listenSocket(std::string ip, std::string port)
 {
 	int optval = 1;
 	_address.sin_family = AF_INET;
-	_address.sin_port = htons(8080);
-	_address.sin_addr.s_addr = htonl(INADDR_ANY);
+	_address.sin_port = static_cast<unsigned short>((atoi(port.c_str()) << 8) | (atoi(port.c_str()) >> 8));
+	// _address.sin_addr.s_addr = htonl(INADDR_ANY);
+	if ((_address.sin_addr.s_addr = inet_addr(ip.c_str())) == INADDR_NONE && ip != "255.255.255.255")
+		throw Socket::BadAddress();
 	if ((_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw Socket::SocketError();
 	if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int))) == -1)
@@ -19,6 +21,8 @@ void                ft::Socket::listenSocket()
 		throw Socket::SocketError();
 	if ((listen(_sock, SOMAXCONN)) == -1)
 		throw Socket::SocketError();
+	fcntl(_sock, F_SETFL, O_NONBLOCK);
+
 }
 
 int                 ft::Socket::acceptSocket(sockaddr_in *addr, socklen_t *size) {
