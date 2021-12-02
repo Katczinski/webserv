@@ -28,7 +28,8 @@ int        ft::Server::receive(int fd)
     ft::Response req;
     char buff[30000];
     bool flag = false;
-    while((ret = recv(fd, buff, 30000, 0)) >= 0)
+    // fcntl(fd, F_SETFL, O_NONBLOCK);
+    while((ret = recv(fd, buff, 30000, 0)) > 0)
     {
         buff[ret] = '\0';
         if(ret == 2 && !req.full_log["ZAPROS"].size())
@@ -38,6 +39,7 @@ int        ft::Server::receive(int fd)
         if(req.full_log["Connection"] == "close" && req.full_log["ZAPROS"] == "")
             return 0;
     }
+    std::cout << "RET " << ret << std::endl;
     if(ret <= 0)
         return 0;
     return (ret);
@@ -61,6 +63,8 @@ int ft::Server::newConnection()
 	socklen_t size = sizeof(sockaddr_in);
 	try {
 	    int sock =_socket.acceptSocket(&addr, &size);
+        // fcntl(sock, F_SETFL, O_NONBLOCK);
+
         // _client.push_back(Client(sock));
         return (sock);
 	}catch (std::exception &e){

@@ -43,8 +43,9 @@ bool request(ft::Response& req, int i, int fd)
         head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.size()))+"\r\nConnection: "+req.full_log["Connection"]+"\r\n\r\n";
         head += body;
         std::cout << head << std::endl;
-        send(fd, head.c_str(), head.size(), 0);
-        // req.full_log["Connection"] = "close";
+        if(send(fd, head.c_str(), head.size(), 0) == -1)
+
+        req.full_log["Connection"] = "close";
 
     }
     else if(i == 400)
@@ -103,8 +104,6 @@ bool general_header_check(std::vector<std::string>& header, ft::Response& req, i
         return(request(req,400, fd));
     if(header[1][0] != '/')
         return(request(req,400,fd));
-    // else if(!header[1].compare(0, 8, "http:://"))
-        // req.full_log["Host"] = header[1]; // Добавить проверку на существование хоста/ половину серверов почемуу то не подерживает
     if(header[2].compare(0, 7, "HTTP/1.") && !(header[2].size() == 8 && (header[2][7] == '0' || header[2][7] == '1' )))
         return(request(req,400,fd));
     req.full_log["Dirrectory"] = header[1];
