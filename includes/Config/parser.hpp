@@ -4,6 +4,7 @@
 #include "Config.hpp"
 #include "Server.hpp"
 #include <iostream>
+#include <vector>
 
 namespace ft
 {

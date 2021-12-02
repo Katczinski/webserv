@@ -56,6 +56,8 @@ int ft::Server::newConnection()
 	socklen_t size = sizeof(sockaddr_in);
 	try {
 	    int sock =_socket.acceptSocket(&addr, &size);
+        fcntl(sock, F_SETFL, O_NONBLOCK);
+
         // _client.push_back(Client(sock));
         return (sock);
 	}catch (std::exception &e){
