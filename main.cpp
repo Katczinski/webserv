@@ -10,11 +10,24 @@ int main(int argc, char* argv[])
             // We check that the file at the specified path exists and parse it
             std::vector<ft::Config>configs;
             if (argc == 2) {
-                ft::parser(argv[1], configs);
+                configs = ft::parser(argv[1]);
             // Parse the default config
             } else {
-                ft::parser(0, configs);
+                configs = ft::parser(0);
             }
+
+            /*
+            ** Временно! Для теста парсера
+            */
+            // std::cout << "Host: " << configs.front().getHost() << std::endl;
+            // std::cout << "Port: " << configs.front().getPort() << std::endl;
+            // std::cout << "server_name:" << configs.front().getServName() << std::endl;
+            // std::cout << "root: " << configs.front().getRoot() << std::endl;
+            // std::map<std::string, std::string>::const_iterator it;;
+            // for (it = configs.front().getErrPages().begin(); it != configs.front().getErrPages().end(); ++it) {
+            //     std::cout << "Error: " << it->first << " = " << it->second << std::endl;
+            // }
+
             std::vector<ft::Server>servers;
             servers.push_back(ft::Server());
             for (size_t i = 0; i < servers.size(); i++)
