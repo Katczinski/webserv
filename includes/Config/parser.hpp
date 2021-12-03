@@ -5,7 +5,7 @@
 #include "Server.hpp"
 #include <iostream>
 #include <algorithm>
-
+#include <vector>
 namespace ft
 {
     class Config;

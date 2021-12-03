@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "Cluster.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -27,11 +27,10 @@ int main(int argc, char* argv[])
             // for (it = configs.front().getErrPages().begin(); it != configs.front().getErrPages().end(); ++it) {
             //     std::cout << "Error: " << it->first << " = " << it->second << std::endl;
             // }
-
-            std::vector<ft::Server>servers;
-            servers.push_back(ft::Server());
-            for (size_t i = 0; i < servers.size(); i++)
-                servers[i].run();
+            ft::Cluster cluster;
+            cluster.push_back(ft::Server("127.0.0.1", "8080"));
+            cluster.push_back(ft::Server("127.0.0.1", "8000"));
+            cluster.run();
         } catch(const std::exception& e) {
             std::cerr << e.what() << std::endl;
         }

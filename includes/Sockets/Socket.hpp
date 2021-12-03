@@ -4,11 +4,13 @@
 
 #include <iostream>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <cstring>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 namespace ft
 {
@@ -23,6 +25,10 @@ namespace ft
             {
                 virtual const char*         what() const throw() { return ("Socket error"); }
             };
+            class BadAddress : public std::exception
+            {
+                virtual const char*         what() const throw() { return ("Bad address"); }
+            };
         public:
             Socket();
             struct sockaddr_in  getAddress();
@@ -31,7 +37,7 @@ namespace ft
             socklen_t*          getAddrlen();
             int                 acceptSocket(sockaddr_in *addr, socklen_t *size);
             void                setConnection(int domain);
-            void                listenSocket();
+            void                listenSocket(std::string ip, std::string port);
     };
 }
 
