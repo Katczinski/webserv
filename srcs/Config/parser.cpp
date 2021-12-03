@@ -1,5 +1,8 @@
 #include "parser.hpp"
 
+typedef  std::vector<std::string>::iterator iter_str;
+typedef  std::map<std::string, ft::Location>::iterator const_iter_str_loc;
+
 ft::ParserException::ParserException(std::string message) throw() : _message(message) {}
 
 const char* ft::ParserException::what(void) const throw() {
@@ -42,6 +45,7 @@ void ft::lineJoin(std::string& line) {
 			line.replace(it, it + 1, " ");
 		} else if (*it == '\t') {
 			line.replace(it, it + 1, " ");
+		//add whitespace before ';'
 		} else if (*it == ';') {
 			line.insert(it, ' ');
 			++it;
@@ -110,8 +114,8 @@ void ft::parseListen(std::string& value, ft::Config& config) {
 
 std::vector<ft::Config> ft::parseServer(std::vector<std::string>& content) {
 	std::vector<ft::Config> configs;
-	std::vector<std::string>::iterator it = content.begin();
-	std::vector<std::string>::iterator serv_it;
+	iter_str it = content.begin();
+	iter_str serv_it;
 	for (it = content.begin(); it != content.end(); ++it) {
 		if (*it == "server") {
 			ft::Config newConfig;
@@ -119,31 +123,85 @@ std::vector<ft::Config> ft::parseServer(std::vector<std::string>& content) {
 			if (*it != "{") {
 				throw ft::ParserException("Parser Error: expected '{'");
 			}
-			++it;
 			for (serv_it = it; serv_it != content.end(); ++serv_it) {
 				if (*serv_it == "listen") {
-					parseListen(*(serv_it + 1), newConfig);
-					if (*(serv_it + 2) != ";") {
+					++serv_it;
+					parseListen(*(serv_it), newConfig);
+					++serv_it;
+					if (*(serv_it) != ";") {
 						throw ft::ParserException("Parser Error: expected ';'");
 					}
-				} else if (*serv_it == "server_name") {
-					newConfig.setServName(*(serv_it + 1));
-					if (*(serv_it + 2) != ";") {
+				}
+				if (*serv_it == "server_name") {
+					++serv_it;
+					newConfig.setServName(*(serv_it));
+					++serv_it;
+					if (*(serv_it) != ";") {
 						throw ft::ParserException("Parser Error: expected ';'");
 					}
-				} else if (*serv_it == "root") {
-					newConfig.setRoot(*(serv_it + 1));
-					if (*(serv_it + 2) != ";") {
-					throw ft::ParserException("Parser Error: expected ';'");
+				}
+				if (*serv_it == "root") {
+					++serv_it;
+					newConfig.setRoot(*(serv_it));
+					++serv_it;
+					if (*(serv_it) != ";") {
+						throw ft::ParserException("Parser Error: expected ';'");
 					}
-				} else if (*serv_it == "error_page") {
-					newConfig.setErrPages(std::atoi((*(serv_it + 1)).c_str()), *(serv_it + 2));
-					if (*(serv_it + 3) != ";") {
+				}
+				if (*serv_it == "error_page") {
+					++serv_it;
+					newConfig.setErrPages(std::atoi((*(serv_it)).c_str()), *(serv_it + 1));
+					serv_it += 2;
+					if (*(serv_it) != ";") {
 						throw ft::ParserException("Parser Error: expected ';'");
 					}
 				}
 				if (*serv_it == "location") {
-					break;
+					++serv_it;
+					std::string key_loc = *serv_it;
+					++serv_it;
+					if (*(serv_it) != "{") {
+						throw ft::ParserException("Parser Error: expected '{'");
+					}
+					ft::Location location;
+					newConfig.setLocation(key_loc, location);
+					++serv_it;
+					while (serv_it != content.end() && *serv_it != "}") {
+						if (*serv_it == "root") {
+							newConfig.getLocation(key_loc)->second.setRoot(*(serv_it + 1));
+							if (*(serv_it + 2) != ";") {
+								throw ft::ParserException("Parser Error: expected ';'");
+							}
+						} else if (*serv_it == "index") {
+							++serv_it;
+							while (serv_it != content.end() && *serv_it != ";") {
+								newConfig.getLocation(key_loc)->second.setIndex(*serv_it);
+								++serv_it;
+							}
+						} else if (*serv_it == "allow_method") {
+							++serv_it;
+							while (serv_it != content.end() && *serv_it != ";") {
+								newConfig.getLocation(key_loc)->second.setMethods(*serv_it);
+								++serv_it;
+							}
+						} else if (*serv_it == "client_max_body_size") {
+							newConfig.getLocation(key_loc)->second.setMaxBody(*(serv_it + 1));
+							if (*(serv_it + 2) != ";") {
+								throw ft::ParserException("Parser Error: expected ';'");
+							}
+						} else if (*serv_it == "cgi_extension") {
+							newConfig.getLocation(key_loc)->second.setCgiExtension(*(serv_it + 1));
+							if (*(serv_it + 2) != ";") {
+								throw ft::ParserException("Parser Error: expected ';'");
+							}
+						} else if (*serv_it == "cgi_path") {
+							newConfig.getLocation(key_loc)->second.setCgiPath(*(serv_it + 1));
+							if (*(serv_it + 2) != ";") {
+								throw ft::ParserException("Parser Error: expected ';'");
+							}
+						}
+						++serv_it;
+					}
 				}
 			}
 			configs.push_back(newConfig);

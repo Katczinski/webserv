@@ -30,11 +30,14 @@ namespace ft
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
         std::string const getErrPages(int key) const;
+        std::map<std::string, ft::Location> const getLocation(void) const;
+        std::map<std::string, ft::Location>::iterator getLocation(std::string key);
         void setHost(const std::string& host);
         void setPort(const std::string& port);
         void setServName(const std::string& servName);
         void setRoot(const std::string& root);
         void setErrPages(int key, const std::string& value);
+        void setLocation(const std::string key, const ft::Location& value);
     };
 }
 

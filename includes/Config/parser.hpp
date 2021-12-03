@@ -6,9 +6,11 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+
 namespace ft
 {
     class Config;
+    typedef  std::vector<std::string>::iterator iter;
 
 	std::vector<ft::Config> parser(char* path);
     std::vector<ft::Config> parseServer(std::vector<std::string>& content);

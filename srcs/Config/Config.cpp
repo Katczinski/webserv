@@ -49,6 +49,14 @@ std::string const ft::Config::getErrPages(int key) const {
 	return (*it).second;
 }
 
+std::map<std::string, ft::Location> const ft::Config::getLocation(void) const {
+	return this->_locations;
+}
+
+std::map<std::string, ft::Location>::iterator ft::Config::getLocation(std::string key) {
+	return this->_locations.find(key);
+}
+
 void ft::Config::setHost(const std::string& host) {
 	this->_host = host;
 }
@@ -69,4 +77,6 @@ void ft::Config::setErrPages(int key, const std::string& value) {
 	this->_error_pages.insert(std::make_pair(key, value));
 }
 
-
+void ft::Config::setLocation(const std::string key, const ft::Location& value) {
+	this->_locations.insert(std::make_pair(key, value));
+}
