@@ -19,6 +19,7 @@ namespace ft
 		std::vector<std::string>			_allowed_methods;
 		std::string							_cgi_extension;
 		std::string							_cgi_path;
+		std::string							_max_body;
 	public:
 		Location(void);
 		Location(const Location& other);

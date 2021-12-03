@@ -33,7 +33,7 @@ INC			= -Iincludes/Sockets\
 			 
 CC			= clang++
 
-FLAGS		= -std=c++98 
+FLAGS		= -std=c++98
 
 all:		$(NAME)
 
@@ -42,6 +42,9 @@ $(NAME):	$(SRCS) $(HEADER)
 
 %.o:		%.cpp
 			$(CC) -g $(FLAGS) $(INC) -c $< -o $@
+
+debug: FLAGS += -fsanitize=address -g
+debug: all
 
 clean:
 			rm -rf $(OBJS)

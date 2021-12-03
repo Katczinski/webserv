@@ -20,9 +20,53 @@ ft::Config& ft::Config::operator=(const ft::Config& other) {
 		_root = other._root;
 		_error_pages = other._error_pages;
 		_locations = other._locations;
-
 	}
 	return *this;
+}
+
+std::string const ft::Config::getHost(void) const {
+	return this->_host;
+}
+
+std::string const ft::Config::getPort(void) const {
+	return this->_port;
+}
+
+std::string const ft::Config::getServName(void) const {
+	return this->_server_name;
+}
+
+std::string const ft::Config::getRoot(void) const {
+	return this->_root;
+}
+
+std::string const ft::Config::getErrPages(int key) const {
+	std::map<int, std::string>::const_iterator it;
+	it = _error_pages.find(key);
+	if (it == _error_pages.end()) {
+		return "";
+	}
+	return (*it).second;
+}
+
+void ft::Config::setHost(const std::string& host) {
+	this->_host = host;
+}
+
+void ft::Config::setPort(const std::string& port) {
+	this->_port = port;
+}
+
+void ft::Config::setServName(const std::string& servName) {
+	this->_server_name = servName;
+}
+
+void ft::Config::setRoot(const std::string& root) {
+	this->_root = root;
+}
+
+void ft::Config::setErrPages(int key, const std::string& value) {
+	this->_error_pages.insert(std::make_pair(key, value));
 }
 
 

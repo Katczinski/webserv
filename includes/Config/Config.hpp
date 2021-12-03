@@ -24,6 +24,17 @@ namespace ft
         Config(const Config& other);
         ~Config();
         Config& operator=(const Config& other);
+
+        std::string const getHost(void) const;
+        std::string const getPort(void) const;
+        std::string const getServName(void) const;
+        std::string const getRoot(void) const;
+        std::string const getErrPages(int key) const;
+        void setHost(const std::string& host);
+        void setPort(const std::string& port);
+        void setServName(const std::string& servName);
+        void setRoot(const std::string& root);
+        void setErrPages(int key, const std::string& value);
     };
 }
 
