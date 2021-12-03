@@ -126,26 +126,25 @@ std::vector<ft::Config> ft::parseServer(std::vector<std::string>& content) {
 					if (*(serv_it + 2) != ";") {
 						throw ft::ParserException("Parser Error: expected ';'");
 					}
-				}
-				if (*serv_it == "server_name") {
+				} else if (*serv_it == "server_name") {
 					newConfig.setServName(*(serv_it + 1));
 					if (*(serv_it + 2) != ";") {
 						throw ft::ParserException("Parser Error: expected ';'");
 					}
-				}
-				if (*serv_it == "root") {
+				} else if (*serv_it == "root") {
 					newConfig.setRoot(*(serv_it + 1));
 					if (*(serv_it + 2) != ";") {
 					throw ft::ParserException("Parser Error: expected ';'");
 					}
-				}
-				if (*serv_it == "error_page") {
-					newConfig.setErrPages(*(serv_it + 1), *(serv_it + 2));
+				} else if (*serv_it == "error_page") {
+					newConfig.setErrPages(std::atoi((*(serv_it + 1)).c_str()), *(serv_it + 2));
 					if (*(serv_it + 3) != ";") {
 						throw ft::ParserException("Parser Error: expected ';'");
 					}
 				}
-				// } else if (*it == "location") {
+				if (*serv_it == "location") {
+					break;
+				}
 			}
 			configs.push_back(newConfig);
 		}

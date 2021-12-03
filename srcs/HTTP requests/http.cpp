@@ -7,7 +7,6 @@
 #include "Server.hpp"
 #include <ctime>
 #include <sstream>
-#include <fcntl.h>
 
 //GET, POST, DELETE
 
@@ -44,7 +43,6 @@ bool request(ft::Response& req, int i, int fd)
         head += body;
         std::cout << head << std::endl;
         if(send(fd, head.c_str(), head.size(), 0) == -1)
-
         req.full_log["Connection"] = "close";
 
     }
@@ -64,25 +62,15 @@ bool request(ft::Response& req, int i, int fd)
         +req.full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
         head += body;
         send(fd, head.c_str(), head.size(), 0);
-        // req.full_log["Connection"] = "close";
     }
     else if(i == 200)
     {
-        // req.full_log["Connection"] = "close";
         body = "<h1>Hello world!</h1>\r\n\r\n";
         head = "HTTP/1.1 200 OK\r\nLocation: http://"+req.full_log["Host"]+req.full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Lengh: " + (ft::to_string(body.size()))+"\r\nConnection: "+req.full_log["Connection"]+"\r\n\r\n";
         head += body;
         std::cout << head << std::endl;
-        // std::cout << "SIZE " << body.size() << std::endl;
-        send(fd, head.c_str(), head.size(), 0);
+        send(fd, head.c_str(), head.size(), MSG_DONTWAIT);
     }
-    if(req.full_log["Connection"] == "close")
-    {
-        req.clear();
-        req.full_log["Connection"] = "close";
-    }
-    else
-        req.clear();
     if(i == 200)
         return true;
     return false;
@@ -90,10 +78,6 @@ bool request(ft::Response& req, int i, int fd)
 
 bool general_header_check(std::vector<std::string>& header, ft::Response& req, int fd)
 {
-    // for (std::vector<std::string>::iterator it = header.begin(); it != header.end(); it++)
-    // {
-    //     std::cout << "Header " << *it << std::endl;
-    // }
     if(!header[0].compare(0, 3, "GET"))
         req.full_log["ZAPROS"] = header[0];
     else if(!header[0].compare(0,4,"POST"))
@@ -120,11 +104,10 @@ bool check_url(ft::Response& req) // добавить чек нескольки�
     return false;
 }
 
-bool ft_http_req(ft::Response& req, char* buf, int fd, bool flag)
+bool ft_http_req(ft::Response& req, std::string buf1, int fd, bool flag)
 {
     std::string buffer;
     std::vector<std::string> splited_words;
-    std::string buf1 = buf;
     std::istringstream is(buf1);
     if(!req.full_log["ZAPROS"].size())
     {
@@ -149,7 +132,7 @@ bool ft_http_req(ft::Response& req, char* buf, int fd, bool flag)
         else if(!buffer.compare(0, 11, "Connection:"))
         {
             req.full_log["Connection"] = buffer.substr((buffer[11] == ' ') ?  12 : 11);
-            if(req.full_log["Connection"].compare(0, 10, "Keep-Alive") && req.full_log["Connection"].compare(0, 5, "close"))
+            if(req.full_log["Connection"].compare(0, 11, "Keep-Alive\r") && req.full_log["Connection"].compare(0, 6, "close\r"))
                 req.full_log["Connection"] = "Keep-Alive";
         }
         else if(!buffer.compare(0, 13, "Content-Type:"))
