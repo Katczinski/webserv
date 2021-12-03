@@ -9,6 +9,7 @@ namespace ft
     class Response
     {
     public:
+        std::map<size_t,  std::string> full_buffer;
         std::map<std::string, std::string> full_log;
         Response();
         ~Response(){};
@@ -22,6 +23,6 @@ namespace ft
     	return oss.str();
     }
 }
-bool ft_http_req(ft::Response& req, char* buf, int fd, bool flag);
+bool ft_http_req(ft::Response& req, std::string buf1, int fd, bool flag);
 
 #endif

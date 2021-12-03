@@ -2,26 +2,33 @@
 
 ft::Cluster::Cluster() : _connected(NULL), _size(0) {}
 
-int        ft::Cluster::receive(int fd)
+int        ft::Cluster::receive(int fd, ft::Response& req)
 {
-    ft::Response req;
-    char buff[30000];
+    char buff[30000] = {0};
     bool flag = false;
-    int ret;
-    // fcntl(fd, F_SETFL, O_NONBLOCK);
-    while((ret = recv(fd, buff, 30000, 0)) > 0)
-    {
-        buff[ret] = '\0';
-        if(ret == 2 && !req.full_log["ZAPROS"].size())
-            break;
-        else
-            ft_http_req(req, buff, fd, flag);
-        if(req.full_log["Connection"] == "close" && req.full_log["ZAPROS"] == "")
-            return 0;
-    }
-    std::cout << "RET " << ret << std::endl;
+    int ret = recv(fd, buff, 30000, 0);
+    buff[ret] = '\0';
+    // проверка на \r\n\r\n
     if(ret <= 0)
         return 0;
+    if(!req.full_buffer[fd].size() && strcmp(buff, "\r\n"))
+    {
+        std::cout << "IMN HERE =========================" << std::endl;
+        req.full_buffer[fd]+=buff;
+    }
+    else if(req.full_buffer[fd].size())
+        req.full_buffer[fd]+=buff;
+    if(req.full_buffer[fd].find("\r\n\r\n") != std::string::npos)
+    {
+        ft_http_req(req, req.full_buffer[fd], fd, flag);
+        req.full_buffer.erase(fd);
+        if(!req.full_log["Connection"].compare(0, 5, "close"))
+        {
+            req.clear();
+            return 0;
+        }
+        req.clear();
+    }
     return (ret);
 }
 
@@ -77,9 +84,10 @@ void        ft::Cluster::push_back(const ft::Server& server)
 
 void        ft::Cluster::run()
 {
+    ft::Response req;
     for (;;)
     {
-        if ((poll(_connected, _size, -1)) <= 0)
+        if ((poll(_connected, _size, 2)) <= 0)
             continue ;
         //loop through all the connections
         for (int i = 0; i < _size; i++)
@@ -97,7 +105,7 @@ void        ft::Cluster::run()
                 }
                 else
                 {
-                    if (!receive(_connected[i].fd))
+                    if (!receive(_connected[i].fd, req))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         close(_connected[i].fd);
