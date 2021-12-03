@@ -70,6 +70,7 @@ bool request(ft::Response& req, int i, int fd)
         head += body;
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), MSG_DONTWAIT);
+        req.full_log["Connection"] = "close";
     }
     if(i == 200)
         return true;
@@ -166,6 +167,7 @@ bool ft_http_req(ft::Response& req, std::string buf1, int fd, bool flag)
             {
                 if(methods.find("POST") == std::string::npos) // заменить переменню Allowed из парсера Димы
                     return(request(req, 405,fd));
+                
             }
             if(!req.full_log["Host"].size())
                 return(request(req, 400, fd));
