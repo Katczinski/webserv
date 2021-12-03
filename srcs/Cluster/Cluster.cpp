@@ -6,15 +6,22 @@ int        ft::Cluster::receive(int fd)
 {
     ft::Response req;
     char buff[30000];
-    int ret = recv(fd, buff, 30000, 0);
-    if (ret <= 0)
-        return (0);
-    else
+    bool flag = false;
+    int ret;
+    // fcntl(fd, F_SETFL, O_NONBLOCK);
+    while((ret = recv(fd, buff, 30000, 0)) > 0)
     {
         buff[ret] = '\0';
-        ft_http_req(req, buff, fd);
+        if(ret == 2 && !req.full_log["ZAPROS"].size())
+            break;
+        else
+            ft_http_req(req, buff, fd, flag);
+        if(req.full_log["Connection"] == "close" && req.full_log["ZAPROS"] == "")
+            return 0;
     }
-    // std::cout << buff << std::endl;
+    std::cout << "RET " << ret << std::endl;
+    if(ret <= 0)
+        return 0;
     return (ret);
 }
 
