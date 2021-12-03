@@ -40,8 +40,13 @@ std::string const ft::Config::getRoot(void) const {
 	return this->_root;
 }
 
-std::map<std::string, std::string> const ft::Config::getErrPages(void) const {
-	return _error_pages;
+std::string const ft::Config::getErrPages(int key) const {
+	std::map<int, std::string>::const_iterator it;
+	it = _error_pages.find(key);
+	if (it == _error_pages.end()) {
+		return "";
+	}
+	return (*it).second;
 }
 
 void ft::Config::setHost(const std::string& host) {
@@ -60,8 +65,8 @@ void ft::Config::setRoot(const std::string& root) {
 	this->_root = root;
 }
 
-void ft::Config::setErrPages(const std::string& key, const std::string& value) {
-	this->_error_pages[key] = value;
+void ft::Config::setErrPages(int key, const std::string& value) {
+	this->_error_pages.insert(std::make_pair(key, value));
 }
 
 
