@@ -57,7 +57,7 @@ void        ft::Cluster::push_poll(int fd)
 
 void        ft::Cluster::erase_poll(int index)
 {
-    while (index < _size)
+    while (index < _size + 1)
     {
         _connected[index].fd = _connected[index + 1].fd;
         _connected[index].events = _connected[index + 1].events;
