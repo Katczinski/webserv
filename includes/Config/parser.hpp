@@ -11,6 +11,7 @@ namespace ft
 {
     class Config;
     typedef  std::vector<std::string>::iterator iter;
+    typedef std::vector<std::string>::const_iterator const_iter;
 
 	std::vector<ft::Config> parser(char* path);
     std::vector<ft::Config> parseServer(std::vector<std::string>& content);
@@ -22,7 +23,7 @@ namespace ft
     private:
         std::string _message;
     public:
-        ParserException(std::string message) throw();
+        ParserException(std::string message) throw() ;
         const char* what(void) const throw();
         virtual ~ParserException() throw();
     };

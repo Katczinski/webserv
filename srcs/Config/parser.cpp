@@ -34,21 +34,26 @@ void ft::split(std::vector<std::string>& content, const std::string& line, char 
 }
 
 void ft::lineJoin(std::string& line) {
-	// find comments and erase
 	int pos = line.find('#');
 	if (pos != -1) {
 		line.erase(pos);
 	}
-	//replace all \n and tabs with spaces
 	for (std::string::iterator it = line.begin(); it != line.end(); ++it) {
 		if (*it == '\n') {
 			line.replace(it, it + 1, " ");
 		} else if (*it == '\t') {
 			line.replace(it, it + 1, " ");
+		} else if (*it == '\r') {
+			line.replace(it, it + 1, " ");
 		//add whitespace before ';'
 		} else if (*it == ';') {
 			line.insert(it, ' ');
 			++it;
+		}
+	}
+	if (!line.empty() && line.find('}') == std::string::npos && line.find('{') == std::string::npos) {
+		if (line.find(';') == std::string::npos) {
+			throw ft::ParserException("Parser Error: expected ';'");
 		}
 	}
 }
@@ -77,7 +82,6 @@ int ft::readFile(std::vector<std::string>& content, char* path) {
 }
 
 void ft::checkContent(const std::vector<std::string>& content) {
-	typedef std::vector<std::string>::const_iterator const_iter;
 	if (std::count(content.begin(), content.end(), "}") - std::count(content.begin(), content.end(), "{")) {
 		throw ft::ParserException("Parser Error: invalid number of brackets");
 	}
@@ -103,11 +107,13 @@ std::vector<ft::Config> ft::parser(char* path) {
 		throw ft::ParserException("Parser Error: could not open file");
 	}
 	ft::checkContent(content);
-
+	str_iter it = content.begin();
 	for (str_iter it = content.begin(); it != content.end(); ++it) {
 		if (*it == "server") {
-			ft::Config newConfig(it, content);
-			configs.push_back(newConfig);
+			if (*(it + 1) != "{") {
+				throw ft::ParserException("Parser Error: expected '{'");
+			}
+			configs.push_back(ft::Config(it, content));
 		}
 	}
 	return configs;

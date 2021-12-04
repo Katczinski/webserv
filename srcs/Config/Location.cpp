@@ -3,17 +3,29 @@
 typedef std::vector<std::string>::iterator str_iter;
 
 // Default Constructor
-ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(), _cgi_path(), _max_body() {}
+ft::Location::Location() {}
 
-ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(),
-															_cgi_extension(), _cgi_path(), _max_body() {
-
-	setRoot(begin, content);
-	setIndex(begin, content);
-	setMethods(begin, content);
-	setCgiExtension(begin, content);
-	setCgiPath(begin, content);
-	setMaxBody(begin ,content);
+ft::Location::Location(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end() && *it != "}"; ++it) {
+		if (*it == "root") {
+			setRoot(it, content);
+		}
+		if (*it == "index") {
+			setIndex(it, content);
+		}
+		if (*it == "allow_method") {
+			setMethods(it, content);
+		}
+		if (*it == "cgi_extension") {
+			setCgiExtension(it, content);
+		}
+		if (*it == "cgi_path") {
+			setCgiPath(it, content);
+		}
+		if (*it == "client_max_body_size") {
+			setMaxBody(it ,content);
+		}
+	}
 }
 
 // Copy Constructor
@@ -61,73 +73,45 @@ std::string const ft::Location::getMaxBody(void) const {
 }
 
 void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "root") {
-			std::string value = *(it + 1);
-			_root = value;
-			while (*it != ";") {
-				++it;
-			}
-		}
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
 	}
+	_root= *(begin + 1);
 }
 
 void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "index") {
-			++it;
-			while (*it != ";") {
-				_index.push_back(*it);
-				++it;
-			}
-		}
+	str_iter it = begin + 1;
+	while (*it != ";") {
+		_index.push_back(*it);
+		++it;
 	}
 }
 
 void ft::Location::setMethods(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "allow_method") {
-			++it;
-			while (*it != ";") {
-				_allowed_methods.push_back(*it);
-				++it;
-			}
-		}
+	str_iter it = begin + 1;
+	while (*it != ";") {
+		_allowed_methods.push_back(*it);
+		++it;
 	}
 }
 
 void ft::Location::setCgiExtension(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "cgi_extension") {
-			std::string value = *(it + 1);
-			_cgi_extension = value;
-			while (*it != ";") {
-				++it;
-			}
-		}
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
 	}
+	_cgi_extension = *(begin + 1);
 }
 
 void ft::Location::setCgiPath(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "cgi_path") {
-			std::string value = *(it + 1);
-			_cgi_path = value;
-			while (*it != ";") {
-				++it;
-			}
-		}
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
 	}
+	_cgi_path = *(begin + 1);
 }
 
 void ft::Location::setMaxBody(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "client_max_body_size") {
-			std::string value = *(it + 1);
-			_max_body = value;
-			while (*it != ";") {
-				++it;
-			}
-		}
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
 	}
+	_max_body = *(begin + 1);
 }

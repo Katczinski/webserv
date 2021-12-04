@@ -9,6 +9,8 @@
 #include <map>
 
 typedef std::vector<std::string>::iterator str_iter;
+typedef  std::map<int, std::string>::iterator iter_int_str;
+
 namespace ft
 {
     class Location;
