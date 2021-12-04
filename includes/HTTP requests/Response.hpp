@@ -27,7 +27,7 @@ namespace ft
         ~Response(){};
         void clear();
         bool answer(int i, int fd);
-        bool general_header_check(std::vector<std::string>& header, int fd);
+        bool general_header_check(int fd);
         // size_t get_length(int fd);
 
     };

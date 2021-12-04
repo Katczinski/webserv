@@ -77,34 +77,64 @@ bool ft::Response::answer(int i, int fd)
     }
     else if(i == 200)
     {
-        body = "<h1>Hello world!</h1>";
+        body = "<h1>Hello world!</h1>\r\n";
         head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         head += body;
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         // this->full_log["Connection"] = "close";
     }
+    else if(i == 505)
+    {
+        body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
+        head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
+        head += body;
+        std::cout << head << std::endl;
+        send(fd, head.c_str(), head.size(), 0);
+    }
     if(i == 200)
         return true;
     return false;
 }
 
-bool ft::Response::general_header_check(std::vector<std::string>& header, int fd)
+bool ft::Response::general_header_check(int fd)
 {
-    if(!header[0].compare(0, 3, "GET"))
-        this->full_log["ZAPROS"] = header[0];
-    else if(!header[0].compare(0,4,"POST"))
-        this->full_log["ZAPROS"] = header[0];
-    else if(!header[0].compare(0,6,"DELETE"))
-        this->full_log["ZAPROS"] = header[0];
-    else
-        return(this->answer(400, fd));
-    if(header[1][0] != '/')
-        return(this->answer(400,fd));
-    if(header[2].compare(0, 7, "HTTP/1.") && !(header[2].size() == 8 && (header[2][7] == '0' || header[2][7] == '1' )))
-        return(this->answer(400,fd));
-    this->full_log["Dirrectory"] = header[1];
+    std::vector<std::string> header;
+    size_t i = 0;
+    if(!this->full_log["ZAPROS"].size())
+    {
+        ft_split(this->full_buffer, ' ', header);
+        if(header.size() < 3)
+        {
+            answer(i, fd);
+            this->full_buffer.clear();
+            this->full_log.clear();
+            return false;
+        }
+        if(!header[0].compare(0, 3, "GET"))
+            this->full_log["ZAPROS"] = header[0];
+        else if(!header[0].compare(0,4,"POST"))
+            this->full_log["ZAPROS"] = header[0];
+        else if(!header[0].compare(0,6,"DELETE"))
+            this->full_log["ZAPROS"] = header[0];
+        else
+            i = 400;
+        if(header[1][0] != '/')
+            i = 400;
+        if(header[2].compare(0, 8, "HTTP/1.0") && header[2].compare(0, 8, "HTTP/1.1"))
+            i = 505;
+        this->full_log["Dirrectory"] = header[1];
+    }
+    if(i > 0)
+    {
+        answer(i, fd);
+        this->full_buffer.clear();
+        this->full_log.clear();
+        return(false);
+    }
     return true;
+
 }
 
 

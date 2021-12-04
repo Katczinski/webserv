@@ -23,15 +23,7 @@ bool check_url(ft::Response& req) // добавить чек нескольки�
 bool http_header(ft::Response& req, std::string buf1, int fd)
 {
     std::string buffer;
-    std::vector<std::string> splited_words;
     std::istringstream is(buf1);
-    if(!req.full_log["ZAPROS"].size())
-    {
-        std::getline(is, buffer);
-        ft_split(buffer, ' ', splited_words);
-        if(!req.general_header_check(splited_words, fd))
-            return false;
-    }
     while(std::getline(is, buffer, '\n'))
     {
         if(!buffer.compare(0, 5, "Host:"))

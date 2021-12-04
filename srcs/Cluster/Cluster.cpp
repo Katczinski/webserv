@@ -1,5 +1,5 @@
 #include "Cluster.hpp"
-
+#include "Response.hpp"
 ft::Cluster::Cluster() : _connected(NULL), _size(0) {}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection)
@@ -9,14 +9,17 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     buff[ret] = '\0';
     if(ret <= 0)
         return 0;
-    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length || all_connection[fd].is_chunked) 
+    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length || all_connection[fd].is_chunked) // поменять на нижний иф запись при чанкеде и размере
     {
         all_connection[fd].full_buffer+=buff;
+        if(!all_connection[fd].general_header_check(fd))
+            return (1);
     }
     else if(all_connection[fd].full_buffer.size())
         all_connection[fd].full_buffer+=buff;
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
+        std::cout << "Here=========================================\n " << all_connection[fd].full_buffer << std::endl;
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd))
         {
             all_connection[fd].clear();
@@ -37,7 +40,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         if(all_connection[fd].full_buffer.size() == all_connection[fd].body_length)
         {
-            //вот тут функция на body;
+            //вот тут функция на body; body лежит в tmp
             all_connection[fd].is_content_length = false;
             all_connection[fd].answer(200,fd);
             all_connection[fd].clear();
@@ -61,7 +64,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             all_connection[fd].full_buffer.clear();
         }
     }
-    if(all_connection[fd].full_log["ZAPROS"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
+    if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {   
         all_connection[fd].answer(200, fd);
         all_connection[fd].full_log.clear();
