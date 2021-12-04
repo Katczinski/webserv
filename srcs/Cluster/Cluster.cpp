@@ -2,34 +2,62 @@
 
 ft::Cluster::Cluster() : _connected(NULL), _size(0) {}
 
-int        ft::Cluster::receive(int fd, ft::Response& req)
+int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection)
 {
     char buff[30000] = {0};
-    bool flag = false;
-    int ret = recv(fd, buff, 30000, 0);
+    int ret = recv(fd, buff,  30000, 0);
     buff[ret] = '\0';
-    // проверка на \r\n\r\n
     if(ret <= 0)
         return 0;
-    if(!req.full_buffer[fd].size() && strcmp(buff, "\r\n"))
+    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length)
     {
-        std::cout << "IMN HERE =========================" << std::endl;
-        req.full_buffer[fd]+=buff;
+        all_connection[fd].full_buffer+=buff;
     }
-    else if(req.full_buffer[fd].size())
-        req.full_buffer[fd]+=buff;
-    if(req.full_buffer[fd].find("\r\n\r\n") != std::string::npos)
+    else if(all_connection[fd].full_buffer.size())
+        all_connection[fd].full_buffer+=buff;
+    if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length)
     {
-        ft_http_req(req, req.full_buffer[fd], fd, flag);
-        req.full_buffer.erase(fd);
-        if(!req.full_log["Connection"].compare(0, 5, "close"))
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd))
         {
-            req.clear();
-            return 0;
+            all_connection[fd].clear();
+            all_connection[fd].full_buffer.clear();
+            return ret;
         }
-        req.clear();
+        all_connection[fd].full_buffer.clear();
     }
-    return (ret);
+    else if(all_connection[fd].is_content_length)
+    {
+        all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer;
+        std::string tmp;
+        if(all_connection[fd].full_buffer.size() > all_connection[fd].body_length)
+        {
+            tmp = all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
+            all_connection[fd].full_buffer = all_connection[fd].full_buffer.substr(all_connection[fd].body_length, all_connection[fd].full_buffer.size()) += "\r\n\r\n";
+            std::cout << "Here buff_size " << all_connection[fd].full_buffer.size() << " cont_length" << all_connection[fd].body_length << std::endl;
+        }
+        if(all_connection[fd].full_buffer.size() == all_connection[fd].body_length)
+        {
+            //вот тут функция на body;
+            all_connection[fd].is_content_length = false;
+            all_connection[fd].answer(200,fd);
+            all_connection[fd].clear();
+            if(all_connection[fd].full_buffer.compare(all_connection[fd].full_log["Body"]))
+                all_connection[fd].full_buffer.clear();
+            return(1);
+        }
+        if(tmp.size() == all_connection[fd].body_length)
+            all_connection[fd].is_content_length = false;
+    }
+    if(all_connection[fd].full_log["ZAPROS"].size() &&  !all_connection[fd].is_content_length)
+    {   
+        all_connection[fd].answer(200, fd);
+        all_connection[fd].full_log.clear();
+        if(all_connection[fd].full_buffer.size())
+            http_header(all_connection[fd], all_connection[fd].full_buffer, fd);
+        all_connection[fd].full_buffer.clear();
+        return (1);
+    }
+    return(ret);
 }
 
 int         ft::Cluster::is_listening(int fd)
@@ -84,7 +112,7 @@ void        ft::Cluster::push_back(const ft::Server& server)
 
 void        ft::Cluster::run()
 {
-    ft::Response req;
+    std::map<size_t, ft::Response> all_connection;
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -105,7 +133,7 @@ void        ft::Cluster::run()
                 }
                 else
                 {
-                    if (!receive(_connected[i].fd, req))
+                    if (!receive(_connected[i].fd, all_connection))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         close(_connected[i].fd);

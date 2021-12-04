@@ -1,0 +1,96 @@
+#include "Response.hpp"
+
+//GET, POST, DELETE
+// application/x-www-form-urlencoded multipart/form-data
+
+std::string server_name = "localhost:8080";
+std::string pemennaya_ot_Dimbl = "/";
+std::string methods = "GET, DELETE, POST";
+// 413 -- размере requeeset Больше лимита, приходит из конфига сервера
+// 505 HTTP version not suported
+
+bool check_url(ft::Response& req) // добавить чек нескольких серверов
+{
+    if(!((req.full_log["Host"]).length()))
+        return true;
+    std::string servers_name = server_name + pemennaya_ot_Dimbl;
+    std::string server_name_compare = req.full_log["Host"] + (req.full_log["Dirrectory"]).c_str();
+    if(servers_name.compare(server_name_compare))
+        return true;
+    return false;
+}
+
+bool http_header(ft::Response& req, std::string buf1, int fd)
+{
+    std::string buffer;
+    std::vector<std::string> splited_words;
+    std::istringstream is(buf1);
+    if(!req.full_log["ZAPROS"].size())
+    {
+        std::getline(is, buffer);
+        ft_split(buffer, ' ', splited_words);
+        if(!req.general_header_check(splited_words, fd))
+            return false;
+    }
+    while(std::getline(is, buffer, '\n'))
+    {
+        if(!buffer.compare(0, 5, "Host:"))
+        {
+            if(req.full_log["Host"] == "")
+                req.full_log["Host"]= buffer.substr((buffer[5] == ' ') ? 6 : 5);
+            req.full_log["Host"].erase(req.full_log["Host"].begin() + (req.full_log["Host"].find('\r')));
+        }
+        else if(!buffer.compare(0, 5, "Date:"))
+        {
+            if(req.full_log["Date"] == "")
+                req.full_log["Date"] = buffer.substr((buffer[5] == ' ') ?  6 : 5);
+        }
+        else if(!buffer.compare(0, 11, "Connection:"))
+        {
+            req.full_log["Connection"] = buffer.substr((buffer[11] == ' ') ?  12 : 11);
+            if(req.full_log["Connection"].compare(0, 11, "Keep-Alive\r") && req.full_log["Connection"].compare(0, 6, "close\r"))
+                req.full_log["Connection"] = "Keep-Alive";
+        }
+        else if(!buffer.compare(0, 13, "Content-Type:") || !buffer.compare(0, 13, "Content-type:"))
+        {
+            if(req.full_log["Content-Type"] == "")
+                req.full_log["Content-Type"] = buffer.substr((buffer[13] == ' ') ?  14 : 13);
+        }
+        else if(!buffer.compare(0, 15, "Content-length:") || !buffer.compare(0, 15, "Content-Length:"))
+        {
+            req.is_content_length = true;
+            if(req.full_log["Content-Length"] == "")
+                req.full_log["Content-Length"] = buffer.substr((buffer[15] == ' ') ?  16 : 15);
+        }
+        else if(!buffer.compare(0, 7, "Server:"))
+        {
+            if(req.full_log["Server"] == "")
+                req.full_log["Server"] = buffer.substr((buffer[7] == ' ') ?  8 : 7);
+        }
+        else if(!buffer.compare(0, 11, "User-Agent:"))
+        {
+            if(req.full_log["User-Agent"] == "")
+                req.full_log["User-Agent"] = buffer.substr((buffer[11] == ' ') ? 12 : 11);
+        }
+    }
+    if(!req.full_log["Host"].size())
+        return(req.answer(400, fd));
+    else if(check_url(req))
+        return(req.answer(04,fd));
+    if(!req.full_log["ZAPROS"].compare(0, 3, "GET"))
+        req.is_content_length = false;
+    if(!req.full_log["ZAPROS"].compare(0,4,"POST"))
+    {
+
+        if(methods.find("POST") == std::string::npos) // заменить переменню Allowed из парсера Димы
+            return(req.answer(405,fd));
+        if(!req.full_log["Content-Type"].size() || !req.full_log["Content-Length"].size())
+            return(req.answer(400,fd));
+        std::stringstream ss;
+        ss << req.full_log["Content-Length"];  // посмотреть что возвращается
+        ss >> req.body_length;
+        if(!req.body_length)
+            req.is_content_length = false;
+    }
+    return true;
+}

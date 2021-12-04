@@ -9,7 +9,7 @@ SRCS		= main.cpp\
 			srcs/Config/Location.cpp\
 			srcs/Config/parser.cpp\
 			srcs/HTTP\ requests/Response.cpp\
-			srcs/HTTP\ requests/http.cpp
+			srcs/HTTP\ requests/http_header.cpp
 
 
 OBJS		= $(SRCS:.cpp=.o)
