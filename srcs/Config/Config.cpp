@@ -1,17 +1,29 @@
 #include "Config.hpp"
 
-typedef std::vector<std::string>::iterator str_iter;
-
 // Default Constructor
-ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages(), _locations() {}
+ft::Config::Config() {}
 
-ft::Config::Config(str_iter begin, std::vector<std::string>& content) :	_host(), _port(), _server_name(),
-														_root(), _error_pages(), _locations() {
-	setHostPort(begin, content);
-	setServName(begin, content);
-	setRoot(begin, content);
-	setErrPages(begin, content);
-	setLocation(begin, content);
+ft::Config::Config(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "listen" && _host.empty() && _port.empty()) {
+			setHostPort(it, content);
+		}
+		if (*it == "server_name" && _server_name.empty()) {
+			setServName(it, content);
+		}
+		if ((*it == "root") && _root.empty()) {
+			setRoot(it, content);
+		}
+		if (*it == "error_page") {
+			setErrPages(it, content);
+		}
+		if (*it == "location") {
+			if (*(it + 2) != "{") {
+				throw ft::ParserException("Parser Error: expected '{'");
+			}
+			setLocation(it, content);
+		}
+	}
 }
 
 // Copy Constructor
@@ -55,7 +67,7 @@ std::string const ft::Config::getErrPages(int key) const {
 	std::map<int, std::string>::const_iterator it;
 	it = _error_pages.find(key);
 	if (it == _error_pages.end()) {
-		return "";
+		throw ft::ParserException("Error: bad config file(error_page)");
 	}
 	return (*it).second;
 }
@@ -65,74 +77,59 @@ std::map<std::string, ft::Location> const ft::Config::getLocation(void) const {
 }
 
 std::map<std::string, ft::Location>::iterator ft::Config::findKeyLocation(std::string key) {
-	return this->_locations.find(key);
+	std::map<std::string, ft::Location>::iterator it = _locations.find(key);
+	if (it == _locations.end()) {
+		throw ft::ParserException("Error: path to location not found");
+	}
+	return it;
 }
 
 void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "listen") {
-			std::string value = *(it + 1);
-			int delim = value.find(':');
-			if (delim != -1) {
-				this->_host = value.substr(0, delim);
-				this->_port = value.substr(delim + 1, value.size());
-			} else {
-				delim = value.find('.');
-				if (delim != -1) {
-					this->_host = value;
-					this->_port = "8080";
-				} else {
-					this->_host = "localhost";
-					this->_port = value;
-				}
-			}
-			while (*it != ";") {
-				++it;
-			}
+	std::string value = *(begin + 1);
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
+	}
+	int delim = value.find(':');
+	if (delim != -1) {
+		this->_host = value.substr(0, delim);
+		this->_port = value.substr(delim + 1, value.size());
+	} else {
+		delim = value.find('.');
+		if (delim != -1) {
+			this->_host = value;
+			this->_port = "8080";
+		} else {
+			this->_host = "localhost";
+			this->_port = value;
 		}
 	}
 }
 
 void ft::Config::setServName(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "server_name") {
-			// start = it;
-			std::string value = *(it + 1);
-			_server_name = value;
-			while (*it != ";") {
-				++it;
-			}
-		}
+	_server_name = *(begin + 1);
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
 	}
 }
 
 void ft::Config::setRoot(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "root") {
-			// start = it;
-			std::string value = *(it + 1);
-			_root = value;
-			while (*it != ";") {
-				++it;
-			}
-			break;
-		}
+	_root = *(begin + 1);
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
 	}
 }
 
 void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "error_page") {
-			_error_pages[std::atoi((*(it + 1)).c_str())] =  *(it + 2);
-		}
+	iter_int_str it = _error_pages.find(atoi((*(begin + 1)).c_str()));
+	if (*(begin + 3) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
+	}
+	if (it == _error_pages.end()) {
+		_error_pages[std::atoi((*(begin + 1)).c_str())] =  *(begin + 2);
 	}
 }
 
 void ft::Config::setLocation(str_iter begin, std::vector<std::string>& content) {
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "location") {
-			ft:Location newLocation(begin, content);
-			_locations[*(it + 1)] = newLocation;
-		}
-	}
+	ft:Location newLocation(begin, content);
+	_locations.insert(std::make_pair(*(begin + 1), newLocation));
 }
