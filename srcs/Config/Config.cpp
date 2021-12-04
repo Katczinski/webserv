@@ -1,7 +1,18 @@
 #include "Config.hpp"
 
+typedef std::vector<std::string>::iterator str_iter;
+
 // Default Constructor
 ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages(), _locations() {}
+
+ft::Config::Config(str_iter begin, std::vector<std::string>& content) :	_host(), _port(), _server_name(),
+														_root(), _error_pages(), _locations() {
+	setHostPort(begin, content);
+	setServName(begin, content);
+	setRoot(begin, content);
+	setErrPages(begin, content);
+	setLocation(begin, content);
+}
 
 // Copy Constructor
 ft::Config::Config(const ft::Config& other) {
@@ -49,24 +60,79 @@ std::string const ft::Config::getErrPages(int key) const {
 	return (*it).second;
 }
 
-void ft::Config::setHost(const std::string& host) {
-	this->_host = host;
+std::map<std::string, ft::Location> const ft::Config::getLocation(void) const {
+	return this->_locations;
 }
 
-void ft::Config::setPort(const std::string& port) {
-	this->_port = port;
+std::map<std::string, ft::Location>::iterator ft::Config::findKeyLocation(std::string key) {
+	return this->_locations.find(key);
 }
 
-void ft::Config::setServName(const std::string& servName) {
-	this->_server_name = servName;
+void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "listen") {
+			std::string value = *(it + 1);
+			int delim = value.find(':');
+			if (delim != -1) {
+				this->_host = value.substr(0, delim);
+				this->_port = value.substr(delim + 1, value.size());
+			} else {
+				delim = value.find('.');
+				if (delim != -1) {
+					this->_host = value;
+					this->_port = "8080";
+				} else {
+					this->_host = "localhost";
+					this->_port = value;
+				}
+			}
+			while (*it != ";") {
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Config::setRoot(const std::string& root) {
-	this->_root = root;
+void ft::Config::setServName(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "server_name") {
+			// start = it;
+			std::string value = *(it + 1);
+			_server_name = value;
+			while (*it != ";") {
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Config::setErrPages(int key, const std::string& value) {
-	this->_error_pages.insert(std::make_pair(key, value));
+void ft::Config::setRoot(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "root") {
+			// start = it;
+			std::string value = *(it + 1);
+			_root = value;
+			while (*it != ";") {
+				++it;
+			}
+			break;
+		}
+	}
 }
 
+void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "error_page") {
+			_error_pages[std::atoi((*(it + 1)).c_str())] =  *(it + 2);
+		}
+	}
+}
 
+void ft::Config::setLocation(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "location") {
+			ft:Location newLocation(begin, content);
+			_locations[*(it + 1)] = newLocation;
+		}
+	}
+}
