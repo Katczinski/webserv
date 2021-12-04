@@ -1,7 +1,20 @@
 #include "Location.hpp"
 
+typedef std::vector<std::string>::iterator str_iter;
+
 // Default Constructor
 ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(), _cgi_path(), _max_body() {}
+
+ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(),
+															_cgi_extension(), _cgi_path(), _max_body() {
+
+	setRoot(begin, content);
+	setIndex(begin, content);
+	setMethods(begin, content);
+	setCgiExtension(begin, content);
+	setCgiPath(begin, content);
+	setMaxBody(begin ,content);
+}
 
 // Copy Constructor
 ft::Location::Location(const ft::Location& other) {
@@ -47,27 +60,74 @@ std::string const ft::Location::getMaxBody(void) const {
 	return this->_max_body;
 }
 
-void ft::Location::setRoot(const std::string& root) {
-	this->_root = root;
+void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "root") {
+			std::string value = *(it + 1);
+			_root = value;
+			while (*it != ";") {
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Location::setIndex(const std::string& index) {
-	this->_index.push_back(index);
+void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "index") {
+			++it;
+			while (*it != ";") {
+				_index.push_back(*it);
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Location::setMethods(const std::string& method) {
-	this->_allowed_methods.push_back(method);
+void ft::Location::setMethods(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "allow_method") {
+			++it;
+			while (*it != ";") {
+				_allowed_methods.push_back(*it);
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Location::setCgiExtension(const std::string& CgiExtension) {
-	this->_cgi_extension = CgiExtension;
-
+void ft::Location::setCgiExtension(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "cgi_extension") {
+			std::string value = *(it + 1);
+			_cgi_extension = value;
+			while (*it != ";") {
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Location::setCgiPath(const std::string& CgiPath) {
-	this->_cgi_path = CgiPath;
+void ft::Location::setCgiPath(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "cgi_path") {
+			std::string value = *(it + 1);
+			_cgi_path = value;
+			while (*it != ";") {
+				++it;
+			}
+		}
+	}
 }
 
-void ft::Location::setMaxBody(const std::string& MaxBody) {
-	this->_max_body = MaxBody;
+void ft::Location::setMaxBody(str_iter begin, std::vector<std::string>& content) {
+	for (str_iter it = begin; it != content.end(); ++it) {
+		if (*it == "client_max_body_size") {
+			std::string value = *(it + 1);
+			_max_body = value;
+			while (*it != ";") {
+				++it;
+			}
+		}
+	}
 }

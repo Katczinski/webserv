@@ -10,6 +10,8 @@
 #include <memory>
 #include <functional>
 
+typedef std::vector<std::string>::iterator str_iter;
+
 namespace ft
 {
 	class Location {
@@ -22,6 +24,7 @@ namespace ft
 		std::string							_max_body;
 	public:
 		Location(void);
+		Location(str_iter begin, std::vector<std::string>& content);
 		Location(const Location& other);
 		~Location(void);
 		Location& operator=(const Location& other);
@@ -33,12 +36,12 @@ namespace ft
 		std::string const getCgiPath(void) const;
 		std::string const getMaxBody(void) const;
 
-		void setRoot(const std::string& root);
-        void setIndex(const std::string& index);
-		void setMethods(const std::string& method);
-		void setCgiExtension(const std::string& CgiExtension);
-		void setCgiPath(const std::string& CgiPath);
-		void setMaxBody(const std::string& MaxBody);
+		void setRoot(str_iter iter, std::vector<std::string>& content);
+        void setIndex(str_iter iter, std::vector<std::string>& content);
+		void setMethods(str_iter iter, std::vector<std::string>& content);
+		void setCgiExtension(str_iter iter, std::vector<std::string>& content);
+		void setCgiPath(str_iter iter, std::vector<std::string>& content);
+		void setMaxBody(str_iter iter, std::vector<std::string>& content);
 
 	};
 }
