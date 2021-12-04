@@ -21,6 +21,7 @@ namespace ft
         std::string full_buffer;
         std::map<std::string, std::string> full_log;
         bool is_content_length;
+        bool is_chunked;
         size_t body_length;
         Response();
         ~Response(){};

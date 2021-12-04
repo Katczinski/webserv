@@ -9,13 +9,13 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     buff[ret] = '\0';
     if(ret <= 0)
         return 0;
-    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length)
+    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length || all_connection[fd].is_chunked) 
     {
         all_connection[fd].full_buffer+=buff;
     }
     else if(all_connection[fd].full_buffer.size())
         all_connection[fd].full_buffer+=buff;
-    if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length)
+    if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd))
         {
@@ -48,7 +48,20 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         if(tmp.size() == all_connection[fd].body_length)
             all_connection[fd].is_content_length = false;
     }
-    if(all_connection[fd].full_log["ZAPROS"].size() &&  !all_connection[fd].is_content_length)
+    else if(all_connection[fd].is_chunked)
+    {
+        //исполняется пока не будет chunked == 0\r\n
+        all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer;
+        // исполнение?????
+        std::cout << "Here " << all_connection[fd].full_log["Body"] << std::endl;
+        if(all_connection[fd].full_log["Body"].find("0\r\n\r\n") != std::string::npos)
+        {
+            std::cout << "Heree " << std::endl;
+            all_connection[fd].is_chunked = false;
+            all_connection[fd].full_buffer.clear();
+        }
+    }
+    if(all_connection[fd].full_log["ZAPROS"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {   
         all_connection[fd].answer(200, fd);
         all_connection[fd].full_log.clear();

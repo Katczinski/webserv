@@ -51,6 +51,13 @@ bool http_header(ft::Response& req, std::string buf1, int fd)
             if(req.full_log["Connection"].compare(0, 11, "Keep-Alive\r") && req.full_log["Connection"].compare(0, 6, "close\r"))
                 req.full_log["Connection"] = "Keep-Alive";
         }
+        else if(!buffer.compare(0, 18, "Transfer-Encoding:"))
+        {
+            if(req.full_log["Transfer-Encoding:"] == "")
+                req.full_log["Transfer-Encoding:"] = buffer.substr((buffer[18] == ' ') ?  19 : 18);
+            if(req.full_log["Transfer-Encoding"].compare(0, 7,"chunked"))
+                req.is_chunked = true;
+        }
         else if(!buffer.compare(0, 13, "Content-Type:") || !buffer.compare(0, 13, "Content-type:"))
         {
             if(req.full_log["Content-Type"] == "")
@@ -87,9 +94,11 @@ bool http_header(ft::Response& req, std::string buf1, int fd)
         if(!req.full_log["Content-Type"].size() || !req.full_log["Content-Length"].size())
             return(req.answer(400,fd));
         std::stringstream ss;
-        ss << req.full_log["Content-Length"];  // посмотреть что возвращается
+        ss << req.full_log["Content-Length"];
         ss >> req.body_length;
         if(!req.body_length)
+            req.is_content_length = false;
+        if(req.is_chunked)
             req.is_content_length = false;
     }
     return true;

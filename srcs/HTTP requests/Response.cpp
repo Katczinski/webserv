@@ -12,11 +12,13 @@ ft::Response::Response()
     this->full_log["Content-Length"] = "";
     this->full_log["Server"] = "";
     this->full_log["User-Agent"] = "";
+    this->full_log["Transfer-Encoding"] = "";
     this->full_log["200"] = "OK";
     this->full_log["404"] = "Not found";
     this->full_log["400"] = "Bad Request";
     this->full_log["405"] = "Method Not Allowed";
     this->is_content_length = false;
+    this->is_chunked = false;
 }
 
 void ft::Response::clear()
@@ -30,11 +32,13 @@ void ft::Response::clear()
     this->full_log["Content-Length"] = "";
     this->full_log["Server"] = "";
     this->full_log["User-Agent"] = "";
+    this->full_log["Transfer-Encoding"] = "";
     this->full_log["200"] = "OK";
     this->full_log["404"] = "Not found";
     this->full_log["400"] = "Bad Request";
     this->full_log["405"] = "Method Not Allowed";
-    is_content_length = false;
+    this->is_content_length = false;
+    this->is_chunked = false;
 }
 
 bool ft::Response::answer(int i, int fd)
