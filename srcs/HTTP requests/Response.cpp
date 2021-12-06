@@ -54,7 +54,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // body = "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>Ne horosho</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         head += body.str();
-        std::cout << head << std::endl;
+        // std::cout << head << std::endl;
         if(send(fd, head.c_str(), head.size(), 0) == -1)
         this->full_log["Connection"] = "close";
 
@@ -64,9 +64,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
         // body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lnght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         head += body.str();
-        std::cout << head << std::endl;
+        // std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         this->full_log["Connection"] = "close";
     }
@@ -86,10 +86,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
         // 
         body << input.rdbuf(); 
-        body.str() = "<h1>Hello world!</h1>\r\n";
         head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         head += body.str();
-        std::cout << head << std::endl;
+        // std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         // this->full_log["Connection"] = "close";
     }
@@ -101,7 +100,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
         head += body.str();
-        std::cout << head << std::endl;
+        // std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
     }
     if(i == 200)
@@ -118,7 +117,7 @@ bool ft::Response::general_header_check(int fd, ft::Config& conf)
         ft_split(this->full_buffer, ' ', header);
         if(header.size() < 3)
         {
-            answer(i, fd, conf);
+            answer(400, fd, conf);
             this->full_buffer.clear();
             this->full_log.clear();
             return false;
@@ -148,6 +147,34 @@ bool ft::Response::general_header_check(int fd, ft::Config& conf)
 
 }
 
+int ft::Response::req_methods_settings(std::vector<std::string> str)
+{
+    std::vector<std::string>::iterator it = str.begin();
+    std::string methods;
+    while (it != str.end())
+    {
+        methods += *it;
+        it++;
+    }
+    if(!this->full_log["ZAPROS"].compare(0, 3, "GET"))
+        this->is_content_length = false;
+    if(!this->full_log["ZAPROS"].compare(0,4,"POST"))
+    {
+        // std::map<std::string, ft::Location> it =  conf.getLocation(); в строке пути, в локейшене все его описание
+        if(methods.find("POST") == std::string::npos) // заменить переменню Allowed из парсера Димы
+            return(405);
+        if(!this->full_log["Content-Type"].size() || !this->full_log["Content-Length"].size())
+            return(400);
+        std::stringstream ss;
+        ss << this->full_log["Content-Length"];
+        ss >> this->body_length;
+        if(!this->body_length)
+            this->is_content_length = false;
+        if(this->is_chunked)
+            this->is_content_length = false;
+    }
+    return 0;
+}
 
 void ft_split(std::string const &str, const char delim,
             std::vector<std::string> &out)

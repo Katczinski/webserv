@@ -1,6 +1,6 @@
 #include "Cluster.hpp"
 #include "Response.hpp"
-ft::Cluster::Cluster() : _connected(NULL), _size(0) {}
+ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
@@ -38,13 +38,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         if(all_connection[fd].full_buffer.size() == all_connection[fd].body_length)
         {
+            int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
             //вот тут функция на body; body лежит в tmp
             all_connection[fd].is_content_length = false;
             all_connection[fd].answer(200,fd, config);
             all_connection[fd].clear();
             if(all_connection[fd].full_buffer.compare(all_connection[fd].full_log["Body"]))
                 all_connection[fd].full_buffer.clear();
-            return(1);
+            return(i);
         }
         if(tmp.size() == all_connection[fd].body_length)
             all_connection[fd].is_content_length = false;
@@ -63,13 +64,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
     }
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
-    {   
+    {
+        int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
         all_connection[fd].answer(200, fd, config);
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
             http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
         all_connection[fd].full_buffer.clear();
-        return (1);
+        return (i);
     }
     return(ret);
 }
@@ -91,16 +93,18 @@ void        ft::Cluster::push_poll(int fd)
         _connected = (struct pollfd*)malloc(sizeof(struct pollfd));
         _connected[_size].events = POLLIN;
         _connected[_size].fd = fd;
-        _connected[_size++].revents = 0;
-        
+        _connected[_size].revents = 0;
+        _capacity = _size = 1;
     }
     else
     {
-        _connected = (struct pollfd*)realloc(_connected, (_size + 1) * sizeof(struct pollfd));
+        if (_size >= _capacity)
+            _connected = (struct pollfd*)realloc(_connected, (_capacity + 1) * sizeof(struct pollfd));
         _connected[_size].events = POLLIN;
         _connected[_size].fd = fd;
         _connected[_size].revents = 0;
         _size++;
+        _capacity++;
     }
 }
 
@@ -140,7 +144,8 @@ void        ft::Cluster::setup()
 
 void        ft::Cluster::run()
 {
-    std::map<size_t, ft::Response> all_connection;
+    std::map<size_t, ft::Response>  all_connection;
+    std::map<int, ft::Config>       config_map;
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -157,15 +162,18 @@ void        ft::Cluster::run()
                 {
                     int new_fd = _servers[l].newConnection();
                     push_poll(new_fd);
+                    config_map[new_fd] = _configs[l];
                     std::cout << "New connection on FD " << new_fd << std::endl;
                 }
                 else
                 {
-                    if (!receive(_connected[i].fd, all_connection, _configs[i]))
+                    //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
+                    if (!receive(_connected[i].fd, all_connection, config_map[_connected[i].fd]))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         close(_connected[i].fd);
                         erase_poll(i);
+                        config_map.erase(_connected[i].fd);
                     }
                 }
             }
