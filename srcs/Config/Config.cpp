@@ -1,9 +1,10 @@
 #include "Config.hpp"
 
 // Default Constructor
-ft::Config::Config() {}
+ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages(), _locations() {}
 
-ft::Config::Config(str_iter begin, std::vector<std::string>& content) {
+ft::Config::Config(str_iter begin, std::vector<std::string>& content) : _host(), _port(), _server_name(),
+																		_root(), _error_pages(), _locations() {
 	for (str_iter it = begin; it != content.end(); ++it) {
 		if (*it == "listen" && _host.empty() && _port.empty()) {
 			setHostPort(it, content);
@@ -84,8 +85,40 @@ std::map<std::string, ft::Location>::iterator ft::Config::findKeyLocation(std::s
 	return it;
 }
 
+void ft::Config::checkHostPort(void) {
+	size_t count = 0;
+	if (_host != "localhost") {
+		if (*_host.begin() == '.' || *(_host.end() - 1) == '.')  {
+			throw ft::ParserException("Parser Error: host in config file is incorrect");
+		}
+		for (std::string::iterator it = _host.begin(); it != _host.end(); ++it) {
+			if (*it == '.') {
+				++count;
+				if (!std::isdigit(*(it - 1))) {
+					throw ft::ParserException("Parser Error: host in config file is incorrect");
+				}
+			}
+			if (!std::isdigit(*it) && *it != '.') {
+				throw ft::ParserException("Parser Error: host in config file is incorrect");
+			}
+		}
+	}
+	if (count != 3) {
+		throw ft::ParserException("Parser Error: host in config file is incorrect");
+	}
+	for (std::string::iterator it = _port.begin(); it != _port.end(); ++it) {
+		if (!std::isdigit(*it)) {
+			throw ft::ParserException("Parser Error: port in config file is incorrect");
+		}
+	}
+
+}
+
 void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) {
 	std::string value = *(begin + 1);
+	if (value == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
@@ -103,10 +136,14 @@ void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) 
 			this->_port = value;
 		}
 	}
+	ft::Config::checkHostPort();
 }
 
 void ft::Config::setServName(str_iter begin, std::vector<std::string>& content) {
 	_server_name = *(begin + 1);
+	if (_server_name == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
@@ -114,12 +151,18 @@ void ft::Config::setServName(str_iter begin, std::vector<std::string>& content) 
 
 void ft::Config::setRoot(str_iter begin, std::vector<std::string>& content) {
 	_root = *(begin + 1);
+	if (_root == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
 }
 
 void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) {
+	if (*(begin + 1) == ";" || *(begin + 2) == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	iter_int_str it = _error_pages.find(atoi((*(begin + 1)).c_str()));
 	if (*(begin + 3) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");

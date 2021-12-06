@@ -3,9 +3,10 @@
 typedef std::vector<std::string>::iterator str_iter;
 
 // Default Constructor
-ft::Location::Location() {}
+ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(), _cgi_path(), _max_body() {}
 
-ft::Location::Location(str_iter begin, std::vector<std::string>& content) {
+ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(),
+																			_cgi_extension(), _cgi_path(), _max_body() {
 	for (str_iter it = begin; it != content.end() && *it != "}"; ++it) {
 		if (*it == "root") {
 			setRoot(it, content);
@@ -73,6 +74,9 @@ std::string const ft::Location::getMaxBody(void) const {
 }
 
 void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
+	if (*(begin + 1) == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
@@ -81,6 +85,9 @@ void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
 
 void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
 	str_iter it = begin + 1;
+	if (*it == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	while (*it != ";") {
 		_index.push_back(*it);
 		++it;
@@ -89,6 +96,9 @@ void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
 
 void ft::Location::setMethods(str_iter begin, std::vector<std::string>& content) {
 	str_iter it = begin + 1;
+	if (*it == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	while (*it != ";") {
 		_allowed_methods.push_back(*it);
 		++it;
@@ -96,6 +106,9 @@ void ft::Location::setMethods(str_iter begin, std::vector<std::string>& content)
 }
 
 void ft::Location::setCgiExtension(str_iter begin, std::vector<std::string>& content) {
+	if (*(begin + 1) == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
@@ -103,6 +116,9 @@ void ft::Location::setCgiExtension(str_iter begin, std::vector<std::string>& con
 }
 
 void ft::Location::setCgiPath(str_iter begin, std::vector<std::string>& content) {
+	if (*(begin + 1) == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
@@ -110,6 +126,9 @@ void ft::Location::setCgiPath(str_iter begin, std::vector<std::string>& content)
 }
 
 void ft::Location::setMaxBody(str_iter begin, std::vector<std::string>& content) {
+	if (*(begin + 1) == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}

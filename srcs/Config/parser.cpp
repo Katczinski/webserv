@@ -45,10 +45,11 @@ void ft::lineJoin(std::string& line) {
 			line.replace(it, it + 1, " ");
 		} else if (*it == '\r') {
 			line.replace(it, it + 1, " ");
-		} else if (*it == ';') {
-			line.insert(it, ' ');
-			++it;
 		}
+	}
+	pos = line.find(';');
+	if (pos != -1) {
+		line.insert(pos, 1, ' ');
 	}
 	if (!line.empty() && line.find('}') == std::string::npos && line.find('{') == std::string::npos) {
 		if (line.find(';') == std::string::npos) {
@@ -71,7 +72,7 @@ int ft::readFile(std::vector<std::string>& content, char* path) {
 	}
 	while(std::getline(file, line)) {
 		ft::lineJoin(line);
-		if (line != "") {
+		if (!line.empty()) {
 			ft::split(content, line, ' ');
 		}
 	}
