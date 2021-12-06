@@ -2,7 +2,7 @@
 #include "Response.hpp"
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
-int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection)
+int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
     char buff[30000] = {0};
     int ret = recv(fd, buff,  30000, 0);
@@ -12,15 +12,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length || all_connection[fd].is_chunked) // поменять на нижний иф запись при чанкеде и размере
     {
         all_connection[fd].full_buffer+=buff;
-        if(!all_connection[fd].general_header_check(fd))
+        if(!all_connection[fd].general_header_check(fd, config))
             return (1);
     }
     else if(all_connection[fd].full_buffer.size())
         all_connection[fd].full_buffer+=buff;
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        std::cout << "Here=========================================\n " << all_connection[fd].full_buffer << std::endl;
-        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd))
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config))
         {
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();
@@ -36,13 +35,12 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             tmp = all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
             all_connection[fd].full_buffer = all_connection[fd].full_buffer.substr(all_connection[fd].body_length, all_connection[fd].full_buffer.size()) += "\r\n\r\n";
-            std::cout << "Here buff_size " << all_connection[fd].full_buffer.size() << " cont_length" << all_connection[fd].body_length << std::endl;
         }
         if(all_connection[fd].full_buffer.size() == all_connection[fd].body_length)
         {
             //вот тут функция на body; body лежит в tmp
             all_connection[fd].is_content_length = false;
-            all_connection[fd].answer(200,fd);
+            all_connection[fd].answer(200,fd, config);
             all_connection[fd].clear();
             if(all_connection[fd].full_buffer.compare(all_connection[fd].full_log["Body"]))
                 all_connection[fd].full_buffer.clear();
@@ -66,10 +64,10 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     }
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {   
-        all_connection[fd].answer(200, fd);
+        all_connection[fd].answer(200, fd, config);
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
-            http_header(all_connection[fd], all_connection[fd].full_buffer, fd);
+            http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
         all_connection[fd].full_buffer.clear();
         return (1);
     }
@@ -167,8 +165,8 @@ void        ft::Cluster::run()
                 }
                 else
                 {
-                    //config_map[_connected[i].fd].getHost() - бери вот это, Лех
-                    if (!receive(_connected[i].fd, all_connection))
+                    //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
+                    if (!receive(_connected[i].fd, all_connection, config_map[_connected[i].fd]))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         close(_connected[i].fd);

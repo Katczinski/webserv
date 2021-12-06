@@ -72,7 +72,7 @@ std::string const ft::Config::getErrPages(int key) const {
 	return (*it).second;
 }
 
-std::map<std::string, ft::Location> const ft::Config::getLocation(void) const {
+std::map<std::string, ft::Location> ft::Config::getLocation(void) const {
 	return this->_locations;
 }
 

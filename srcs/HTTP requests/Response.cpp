@@ -41,18 +41,19 @@ void ft::Response::clear()
     this->is_chunked = false;
 }
 
-bool ft::Response::answer(int i, int fd)
+bool ft::Response::answer(int i, int fd, ft::Config& conf)
 {
     time_t now = time(0);
     std::string time = ctime(&now);
     std::string head;
-    std::string body;
-
+    std::ostringstream body; 
     if(i == 404)
     {
-        body = "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>Ne horosho</center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        head += body;
+        std::ifstream input (conf.getErrPages(404).c_str());
+        body << input.rdbuf(); 
+        // body = "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>Ne horosho</center>\r\n</body>\r\n</html>\r\n";
+        head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+        head += body.str();
         std::cout << head << std::endl;
         if(send(fd, head.c_str(), head.size(), 0) == -1)
         this->full_log["Connection"] = "close";
@@ -60,36 +61,46 @@ bool ft::Response::answer(int i, int fd)
     }
     else if(i == 400)
     {
-        body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lnght: "+(ft::to_string(body.size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        head += body;
+        // std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
+        // body << input.rdbuf(); 
+        // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
+        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lnght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+        head += body.str();
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         this->full_log["Connection"] = "close";
     }
     else if(i == 405)
     {
-        body = "<h1>405 Try another method!</h1>\r\n";
-        head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        std::ifstream input (conf.getErrPages(405).c_str());
+        body << input.rdbuf(); 
+        // body = "<h1>405 Try another method!</h1>\r\n";
+        head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
-        head += body;
+        head += body.str();
         send(fd, head.c_str(), head.size(), 0);
     }
     else if(i == 200)
     {
-        body = "<h1>Hello world!</h1>\r\n";
-        head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        head += body;
+        // std::cout << "PATH " << conf.getErrPages(505).c_str() << std::endl;
+        std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
+        // 
+        body << input.rdbuf(); 
+        body.str() = "<h1>Hello world!</h1>\r\n";
+        head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+        head += body.str();
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         // this->full_log["Connection"] = "close";
     }
     else if(i == 505)
     {
-        body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        std::ifstream input (conf.getErrPages(505).c_str());
+        body << input.rdbuf(); 
+        // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
+        head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
-        head += body;
+        head += body.str();
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
     }
@@ -98,7 +109,7 @@ bool ft::Response::answer(int i, int fd)
     return false;
 }
 
-bool ft::Response::general_header_check(int fd)
+bool ft::Response::general_header_check(int fd, ft::Config& conf)
 {
     std::vector<std::string> header;
     size_t i = 0;
@@ -107,7 +118,7 @@ bool ft::Response::general_header_check(int fd)
         ft_split(this->full_buffer, ' ', header);
         if(header.size() < 3)
         {
-            answer(i, fd);
+            answer(i, fd, conf);
             this->full_buffer.clear();
             this->full_log.clear();
             return false;
@@ -128,7 +139,7 @@ bool ft::Response::general_header_check(int fd)
     }
     if(i > 0)
     {
-        answer(i, fd);
+        answer(i, fd, conf);
         this->full_buffer.clear();
         this->full_log.clear();
         return(false);

@@ -34,7 +34,7 @@ namespace ft
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
         std::string const getErrPages(int key) const;
-        std::map<std::string, ft::Location> const getLocation(void) const;
+        std::map<std::string, ft::Location> getLocation(void) const;
         std::map<std::string, ft::Location>::iterator findKeyLocation(std::string key);
 
         void setHostPort(str_iter begin, std::vector<std::string>& content);
