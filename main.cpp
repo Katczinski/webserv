@@ -8,15 +8,14 @@ int main(int argc, char* argv[])
     } else {
         try {
             // We check that the file at the specified path exists and parse it
-            std::vector<ft::Config>configs;
             ft::Cluster cluster;
             if (argc == 2) {
-                configs = ft::parser(argv[1]);
+                cluster.setConfig(ft::parser(argv[1]));
             // Parse the default config
             } else {
-                configs = ft::parser(0);
+                cluster.setConfig(ft::parser(0));
             }
-            cluster.setup(configs);
+            cluster.setup();
             // cluster.push_back(ft::Server("127.0.0.1", "8080"));
             // cluster.push_back(ft::Server("127.0.0.1", "8000"));
             cluster.run();
