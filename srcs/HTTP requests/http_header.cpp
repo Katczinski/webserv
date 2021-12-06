@@ -9,7 +9,7 @@ std::string methods = "GET, DELETE, POST";
 // 413 -- размере requeeset Больше лимита, приходит из конфига сервера
 // 505 HTTP version not suported
 
-bool check_url(ft::Response& req,  ft::Config& conf) // добавить чек нескольких серверов
+bool check_url(ft::Response& req, ft::Config& conf) // добавить чек нескольких серверов
 {
     std::string server_name_compare = req.full_log["Host"] + (req.full_log["Dirrectory"]).c_str();
 
