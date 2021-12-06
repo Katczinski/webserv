@@ -19,7 +19,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         all_connection[fd].full_buffer+=buff;
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        std::cout << "Here=========================================\n " << all_connection[fd].full_buffer << std::endl;
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd))
         {
             all_connection[fd].clear();
@@ -36,7 +35,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             tmp = all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
             all_connection[fd].full_buffer = all_connection[fd].full_buffer.substr(all_connection[fd].body_length, all_connection[fd].full_buffer.size()) += "\r\n\r\n";
-            std::cout << "Here buff_size " << all_connection[fd].full_buffer.size() << " cont_length" << all_connection[fd].body_length << std::endl;
         }
         if(all_connection[fd].full_buffer.size() == all_connection[fd].body_length)
         {
