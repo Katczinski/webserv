@@ -124,9 +124,14 @@ void        ft::Cluster::push_back(const ft::Server& server)
     _servers.push_back(server);
 }
 
-void        ft::Cluster::setup(std::vector<ft::Config> configs)
+void        ft::Cluster::setConfig(std::vector<ft::Config> configs)
 {
-    for (std::vector<ft::Config>::iterator it = configs.begin(); it != configs.end(); it++)
+    this->_configs = configs;
+}
+
+void        ft::Cluster::setup()
+{
+    for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
     {
         push_back(ft::Server(it->getHost(), it->getPort()));
         std::cout << it->getHost() << ":" << it->getPort() << " is ready\n";
