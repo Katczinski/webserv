@@ -18,7 +18,7 @@ namespace ft
             void                        erase_poll(int index);
             void                        push_poll(int fd);
             void                        run();
-            int                         receive(int fd, ft::Response& req);
+            int                         receive(int fd, std::map<size_t, ft::Response>& all_connection);
             int                         is_listening(int fd);
     };
 }

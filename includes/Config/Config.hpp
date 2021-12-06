@@ -8,6 +8,9 @@
 #include <vector>
 #include <map>
 
+typedef std::vector<std::string>::iterator str_iter;
+typedef  std::map<int, std::string>::iterator iter_int_str;
+
 namespace ft
 {
     class Location;
@@ -21,6 +24,7 @@ namespace ft
         std::map<std::string, Location>     _locations;
     public:
         Config();
+        Config(str_iter begin, std::vector<std::string>& content);
         Config(const Config& other);
         ~Config();
         Config& operator=(const Config& other);
@@ -30,11 +34,15 @@ namespace ft
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
         std::string const getErrPages(int key) const;
-        void setHost(const std::string& host);
-        void setPort(const std::string& port);
-        void setServName(const std::string& servName);
-        void setRoot(const std::string& root);
-        void setErrPages(int key, const std::string& value);
+        std::map<std::string, ft::Location> const getLocation(void) const;
+        std::map<std::string, ft::Location>::iterator findKeyLocation(std::string key);
+
+        void setHostPort(str_iter begin, std::vector<std::string>& content);
+        void setServName(str_iter begin, std::vector<std::string>& content);
+        void setRoot(str_iter begin, std::vector<std::string>& content);
+        void setErrPages(str_iter ibegin, std::vector<std::string>& content);
+        void setLocation(str_iter begin, std::vector<std::string>& content);
+        // std::map<std::string, ft::Location> createLocation(str_iter iter, std::vector<std::string>& content);
     };
 }
 
