@@ -84,12 +84,14 @@ void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
 }
 
 void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
+	char dir[1024];
+	getcwd(dir, 1024);
 	str_iter it = begin + 1;
 	if (*it == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
 	while (*it != ";") {
-		_index.push_back(*it);
+		_index.push_back(dir + ("/srcs/Pages/" + *it));
 		++it;
 	}
 }

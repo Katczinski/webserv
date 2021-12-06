@@ -87,20 +87,18 @@ std::map<std::string, ft::Location>::iterator ft::Config::findKeyLocation(std::s
 
 void ft::Config::checkHostPort(void) {
 	size_t count = 0;
-	if (_host != "localhost") {
-		if (*_host.begin() == '.' || *(_host.end() - 1) == '.')  {
-			throw ft::ParserException("Parser Error: host in config file is incorrect");
-		}
-		for (std::string::iterator it = _host.begin(); it != _host.end(); ++it) {
-			if (*it == '.') {
-				++count;
-				if (!std::isdigit(*(it - 1))) {
-					throw ft::ParserException("Parser Error: host in config file is incorrect");
-				}
-			}
-			if (!std::isdigit(*it) && *it != '.') {
+	if (*_host.begin() == '.' || *(_host.end() - 1) == '.')  {
+		throw ft::ParserException("Parser Error: host in config file is incorrect");
+	}
+	for (std::string::iterator it = _host.begin(); it != _host.end(); ++it) {
+		if (*it == '.') {
+			++count;
+			if (!std::isdigit(*(it - 1))) {
 				throw ft::ParserException("Parser Error: host in config file is incorrect");
 			}
+		}
+		if (!std::isdigit(*it) && *it != '.') {
+			throw ft::ParserException("Parser Error: host in config file is incorrect");
 		}
 	}
 	if (count != 3) {
@@ -136,7 +134,9 @@ void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) 
 			this->_port = value;
 		}
 	}
-	ft::Config::checkHostPort();
+	if (_host != "localhost") {
+		ft::Config::checkHostPort();
+	}
 }
 
 void ft::Config::setServName(str_iter begin, std::vector<std::string>& content) {
@@ -160,6 +160,9 @@ void ft::Config::setRoot(str_iter begin, std::vector<std::string>& content) {
 }
 
 void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) {
+	char dir[1024];
+	getcwd(dir, 1024);
+
 	if (*(begin + 1) == ";" || *(begin + 2) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
@@ -168,7 +171,7 @@ void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) 
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
 	if (it == _error_pages.end()) {
-		_error_pages[std::atoi((*(begin + 1)).c_str())] =  *(begin + 2);
+		_error_pages[std::atoi((*(begin + 1)).c_str())] =  dir + *(begin + 2);
 	}
 }
 
