@@ -11,7 +11,8 @@ void                ft::Socket::listenSocket(std::string ip, std::string port)
 	_address.sin_family = AF_INET;
 	_address.sin_port = static_cast<unsigned short>((atoi(port.c_str()) << 8) | (atoi(port.c_str()) >> 8));
 	// _address.sin_addr.s_addr = htonl(INADDR_ANY);
-	if ((_address.sin_addr.s_addr = inet_addr(ip.c_str())) == INADDR_NONE && ip != "255.255.255.255")
+	_address.sin_addr.s_addr = (ip == "localhost") ? htonl(INADDR_ANY) : inet_addr(ip.c_str());
+	if (( _address.sin_addr.s_addr == INADDR_NONE && ip != "255.255.255.255"))
 		throw Socket::BadAddress();
 	if ((_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw Socket::SocketError();

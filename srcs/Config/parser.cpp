@@ -45,7 +45,6 @@ void ft::lineJoin(std::string& line) {
 			line.replace(it, it + 1, " ");
 		} else if (*it == '\r') {
 			line.replace(it, it + 1, " ");
-		//add whitespace before ';'
 		} else if (*it == ';') {
 			line.insert(it, ' ');
 			++it;

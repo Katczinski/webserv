@@ -106,7 +106,7 @@ void        ft::Cluster::push_poll(int fd)
 
 void        ft::Cluster::erase_poll(int index)
 {
-    while (index < _size)
+    while (index < _size + 1)
     {
         _connected[index].fd = _connected[index + 1].fd;
         _connected[index].events = _connected[index + 1].events;
@@ -122,6 +122,15 @@ void        ft::Cluster::push_back(const ft::Server& server)
 {
     push_poll(server.getServer());
     _servers.push_back(server);
+}
+
+void        ft::Cluster::setup(std::vector<ft::Config> configs)
+{
+    for (std::vector<ft::Config>::iterator it = configs.begin(); it != configs.end(); it++)
+    {
+        push_back(ft::Server(it->getHost(), it->getPort()));
+        std::cout << it->getHost() << ":" << it->getPort() << " is ready\n";
+    }
 }
 
 void        ft::Cluster::run()
