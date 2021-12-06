@@ -9,15 +9,16 @@ int main(int argc, char* argv[])
         try {
             // We check that the file at the specified path exists and parse it
             std::vector<ft::Config>configs;
+            ft::Cluster cluster;
             if (argc == 2) {
                 configs = ft::parser(argv[1]);
             // Parse the default config
             } else {
                 configs = ft::parser(0);
             }
-            ft::Cluster cluster;
-            cluster.push_back(ft::Server("127.0.0.1", "8080"));
-            cluster.push_back(ft::Server("127.0.0.1", "8000"));
+            cluster.setup(configs);
+            // cluster.push_back(ft::Server("127.0.0.1", "8080"));
+            // cluster.push_back(ft::Server("127.0.0.1", "8000"));
             cluster.run();
         } catch(const std::exception& e) {
             std::cerr << e.what() << std::endl;

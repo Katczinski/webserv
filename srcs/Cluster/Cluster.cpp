@@ -126,6 +126,12 @@ void        ft::Cluster::push_back(const ft::Server& server)
     _servers.push_back(server);
 }
 
+void        ft::Cluster::setup(std::vector<ft::Config> configs)
+{
+    for (std::vector<ft::Config>::iterator it = configs.begin(); it != configs.end(); it++)
+        push_back(ft::Server(it->getHost(), it->getPort()));
+}
+
 void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response> all_connection;

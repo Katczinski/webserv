@@ -17,6 +17,7 @@ namespace ft
             void                        push_back(const ft::Server& server);
             void                        erase_poll(int index);
             void                        push_poll(int fd);
+            void                        setup(std::vector<ft::Config> configs);
             void                        run();
             int                         receive(int fd, std::map<size_t, ft::Response>& all_connection);
             int                         is_listening(int fd);
