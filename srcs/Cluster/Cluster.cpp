@@ -136,6 +136,7 @@ void        ft::Cluster::setup(std::vector<ft::Config> configs)
 void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response> all_connection;
+    //пути до страничек, сервер(а) с портом, методы 
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
