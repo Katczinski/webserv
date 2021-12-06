@@ -13,6 +13,7 @@ namespace ft
             std::vector<ft::Config>     _configs;
             struct pollfd               *_connected;
             int                         _size;
+            int                         _capacity;
         public:
             Cluster();
             void                        push_back(const ft::Server& server);
