@@ -38,13 +38,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         if(all_connection[fd].full_buffer.size() == all_connection[fd].body_length)
         {
+            int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
             //вот тут функция на body; body лежит в tmp
             all_connection[fd].is_content_length = false;
             all_connection[fd].answer(200,fd, config);
             all_connection[fd].clear();
             if(all_connection[fd].full_buffer.compare(all_connection[fd].full_log["Body"]))
                 all_connection[fd].full_buffer.clear();
-            return(1);
+            return(i);
         }
         if(tmp.size() == all_connection[fd].body_length)
             all_connection[fd].is_content_length = false;
@@ -63,13 +64,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
     }
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
-    {   
+    {
+        int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
         all_connection[fd].answer(200, fd, config);
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
             http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
         all_connection[fd].full_buffer.clear();
-        return (1);
+        return (i);
     }
     return(ret);
 }

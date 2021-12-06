@@ -31,7 +31,7 @@ namespace ft
 
 		std::string const getRoot(void) const;
 		std::vector<std::string> const getIndex(void) const;
-		std::vector<std::string> const getMethods(void) const;
+		std::vector<std::string> getMethods(void) const;
 		std::string const getCgiExtension(void) const;
 		std::string const getCgiPath(void) const;
 		std::string const getMaxBody(void) const;

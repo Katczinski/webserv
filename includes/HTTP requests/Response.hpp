@@ -31,6 +31,7 @@ namespace ft
         void clear();
         bool answer(int i, int fd,  ft::Config& conf);
         bool general_header_check(int fd, ft::Config& conf);
+        int req_methods_settings(std::vector<std::string> str);
         // size_t get_length(int fd);
 
     };

@@ -57,7 +57,7 @@ std::vector<std::string> const ft::Location::getIndex(void) const {
 	return this->_index;
 }
 
-std::vector<std::string> const ft::Location::getMethods(void) const {
+std::vector<std::string> ft::Location::getMethods(void) const {
 	return this->_allowed_methods;
 }
 
