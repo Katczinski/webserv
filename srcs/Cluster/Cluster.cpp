@@ -2,7 +2,7 @@
 #include "Response.hpp"
 ft::Cluster::Cluster() : _connected(NULL), _size(0) {}
 
-int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection)
+int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
     char buff[30000] = {0};
     int ret = recv(fd, buff,  30000, 0);
@@ -12,14 +12,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) || all_connection[fd].is_content_length || all_connection[fd].is_chunked) // поменять на нижний иф запись при чанкеде и размере
     {
         all_connection[fd].full_buffer+=buff;
-        if(!all_connection[fd].general_header_check(fd))
+        if(!all_connection[fd].general_header_check(fd, config))
             return (1);
     }
     else if(all_connection[fd].full_buffer.size())
         all_connection[fd].full_buffer+=buff;
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd))
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config))
         {
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();
@@ -40,7 +40,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             //вот тут функция на body; body лежит в tmp
             all_connection[fd].is_content_length = false;
-            all_connection[fd].answer(200,fd);
+            all_connection[fd].answer(200,fd, config);
             all_connection[fd].clear();
             if(all_connection[fd].full_buffer.compare(all_connection[fd].full_log["Body"]))
                 all_connection[fd].full_buffer.clear();
@@ -64,10 +64,10 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     }
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {   
-        all_connection[fd].answer(200, fd);
+        all_connection[fd].answer(200, fd, config);
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
-            http_header(all_connection[fd], all_connection[fd].full_buffer, fd);
+            http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
         all_connection[fd].full_buffer.clear();
         return (1);
     }
@@ -141,7 +141,6 @@ void        ft::Cluster::setup()
 void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response> all_connection;
-    //пути до страничек, сервер(а) с портом, методы 
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -162,7 +161,7 @@ void        ft::Cluster::run()
                 }
                 else
                 {
-                    if (!receive(_connected[i].fd, all_connection))
+                    if (!receive(_connected[i].fd, all_connection, _configs[i]))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         close(_connected[i].fd);

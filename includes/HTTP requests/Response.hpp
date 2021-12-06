@@ -10,8 +10,11 @@
 #include "Server.hpp"
 #include <ctime>
 #include <sstream>
+#include "Config.hpp"
+
 namespace ft
 {
+    class Config;
     class Response
     {
     // private:
@@ -26,8 +29,8 @@ namespace ft
         Response();
         ~Response(){};
         void clear();
-        bool answer(int i, int fd);
-        bool general_header_check(int fd);
+        bool answer(int i, int fd,  ft::Config& conf);
+        bool general_header_check(int fd, ft::Config& conf);
         // size_t get_length(int fd);
 
     };
@@ -39,7 +42,7 @@ namespace ft
     	return oss.str();
     }
 }
-bool http_header(ft::Response& req, std::string buf1, int fd);
+bool http_header(ft::Response& req, std::string buf1, int fd,  ft::Config& conf);
 void ft_split(std::string const &str, const char delim, std::vector<std::string> &out);
 
 #endif
