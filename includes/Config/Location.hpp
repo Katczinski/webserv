@@ -22,6 +22,7 @@ namespace ft
 		std::string							_cgi_extension;
 		std::string							_cgi_path;
 		std::string							_max_body;
+		bool								_autoindex;
 	public:
 		Location(void);
 		Location(str_iter begin, std::vector<std::string>& content);
@@ -35,6 +36,7 @@ namespace ft
 		std::string const getCgiExtension(void) const;
 		std::string const getCgiPath(void) const;
 		std::string const getMaxBody(void) const;
+		bool const getAutoindex(void) const;
 
 		void setRoot(str_iter iter, std::vector<std::string>& content);
         void setIndex(str_iter iter, std::vector<std::string>& content);
@@ -42,6 +44,7 @@ namespace ft
 		void setCgiExtension(str_iter iter, std::vector<std::string>& content);
 		void setCgiPath(str_iter iter, std::vector<std::string>& content);
 		void setMaxBody(str_iter iter, std::vector<std::string>& content);
+		void setAutoindex(str_iter iter, std::vector<std::string>& content);
 
 	};
 }

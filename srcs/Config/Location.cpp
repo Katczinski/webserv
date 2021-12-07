@@ -3,10 +3,11 @@
 typedef std::vector<std::string>::iterator str_iter;
 
 // Default Constructor
-ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(), _cgi_path(), _max_body() {}
+ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(),
+							_cgi_path(), _max_body(), _autoindex(false) {}
 
-ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(),
-																			_cgi_extension(), _cgi_path(), _max_body() {
+ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(), _cgi_path(),
+																			_cgi_extension(), _max_body(), _autoindex(false) {
 	for (str_iter it = begin; it != content.end() && *it != "}"; ++it) {
 		if (*it == "root") {
 			setRoot(it, content);
@@ -23,7 +24,10 @@ ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _roo
 		if (*it == "cgi_path") {
 			setCgiPath(it, content);
 		}
-		if (*it == "client_max_body_size") {
+		if (*it == "autoindex") {
+			setAutoindex(it, content);
+		}
+		if (*it == "max_body_size") {
 			setMaxBody(it ,content);
 		}
 	}
@@ -71,6 +75,10 @@ std::string const ft::Location::getCgiPath(void) const {
 
 std::string const ft::Location::getMaxBody(void) const {
 	return this->_max_body;
+}
+
+bool const ft::Location::getAutoindex(void) const {
+	return this->_autoindex;
 }
 
 void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
@@ -135,4 +143,17 @@ void ft::Location::setMaxBody(str_iter begin, std::vector<std::string>& content)
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
 	_max_body = *(begin + 1);
+}
+
+void ft::Location::setAutoindex(str_iter begin, std::vector<std::string>& content) {
+	std::string value = *(begin + 1);
+	if (value == ";" || (value != "on" && value != "off")) {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
+	if (*(begin + 2) != ";") {
+		throw ft::ParserException("Parser Error: expected ';'");
+	}
+	if (value == "on") {
+		_autoindex = true;
+	}
 }

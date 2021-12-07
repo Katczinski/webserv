@@ -6,8 +6,11 @@ ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages()
 ft::Config::Config(str_iter begin, std::vector<std::string>& content) : _host(), _port(), _server_name(),
 																		_root(), _error_pages(), _locations() {
 	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "listen" && _host.empty() && _port.empty()) {
-			setHostPort(it, content);
+		if (*it == "listen" && _host.empty()) {
+			setHost(it, content);
+		}
+		if (*it == "port" && _port.empty()) {
+			setPort(it, content);
 		}
 		if (*it == "server_name" && _server_name.empty()) {
 			setServName(it, content);
@@ -52,7 +55,7 @@ std::string const ft::Config::getHost(void) const {
 	return this->_host;
 }
 
-std::string const ft::Config::getPort(void) const {
+std::vector<std::string> const ft::Config::getPort(void) const {
 	return this->_port;
 }
 
@@ -85,34 +88,7 @@ std::map<std::string, ft::Location>::iterator ft::Config::findKeyLocation(std::s
 	return it;
 }
 
-void ft::Config::checkHostPort(void) {
-	size_t count = 0;
-	if (*_host.begin() == '.' || *(_host.end() - 1) == '.')  {
-		throw ft::ParserException("Parser Error: host in config file is incorrect");
-	}
-	for (std::string::iterator it = _host.begin(); it != _host.end(); ++it) {
-		if (*it == '.') {
-			++count;
-			if (!std::isdigit(*(it - 1))) {
-				throw ft::ParserException("Parser Error: host in config file is incorrect");
-			}
-		}
-		if (!std::isdigit(*it) && *it != '.') {
-			throw ft::ParserException("Parser Error: host in config file is incorrect");
-		}
-	}
-	if (count != 3) {
-		throw ft::ParserException("Parser Error: host in config file is incorrect");
-	}
-	for (std::string::iterator it = _port.begin(); it != _port.end(); ++it) {
-		if (!std::isdigit(*it)) {
-			throw ft::ParserException("Parser Error: port in config file is incorrect");
-		}
-	}
-
-}
-
-void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) {
+void ft::Config::setHost(str_iter begin, std::vector<std::string>& content) {
 	std::string value = *(begin + 1);
 	if (value == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
@@ -120,22 +96,55 @@ void ft::Config::setHostPort(str_iter begin, std::vector<std::string>& content) 
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
-	int delim = value.find(':');
-	if (delim != -1) {
-		this->_host = value.substr(0, delim);
-		this->_port = value.substr(delim + 1, value.size());
-	} else {
-		delim = value.find('.');
-		if (delim != -1) {
-			this->_host = value;
-			this->_port = "8080";
-		} else {
-			this->_host = "localhost";
-			this->_port = value;
+	_host = value;
+	if (_host != "localhost") {
+		size_t count = 0;
+		// example .0.0.1  ||  127.0.0.
+		if (*_host.begin() == '.' || *(_host.end() - 1) == '.')  {
+			throw ft::ParserException("Parser Error: host in config file is incorrect");
+		}
+		for (std::string::iterator it = _host.begin(); it != _host.end(); ++it) {
+			if (*it == '.') {
+				++count;
+				if (!std::isdigit(*(it - 1))) {
+					throw ft::ParserException("Parser Error: host in config file is incorrect");
+				}
+			}
+			if (!std::isdigit(*it) && *it != '.') {
+				throw ft::ParserException("Parser Error: host in config file is incorrect");
+			}
+		}
+		if (count != 3) {
+			throw ft::ParserException("Parser Error: host in config file is incorrect");
 		}
 	}
-	if (_host != "localhost") {
-		ft::Config::checkHostPort();
+}
+void ft::Config::setPort(str_iter begin, std::vector<std::string>& content) {
+	str_iter it = begin + 1;
+	if (*it == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
+	while (*it != ";") {
+		_port.push_back(*it);
+		++it;
+	}
+	for (std::vector<std::string>::iterator it = _port.begin(); it != _port.end(); ++it) {
+		// example 8080, 8090;
+		if (_port.size() > 1) {
+			// if there is no ',' at the end of the port
+			if ((*it).back() != ',' && it != _port.end() - 1) {
+				throw ft::ParserException("Parser Error: port in config file is incorrect");
+			}
+			// all ports, except last
+			if (it != _port.end() - 1) {
+				*it = (*it).substr(0, (*it).size() - 1);
+			}
+		}
+		for (std::string::iterator iter = (*it).begin(); iter != (*it).end(); ++iter) {
+			if (!std::isdigit(*iter)) {
+				throw ft::ParserException("Parser Error: port in config file is incorrect");
+			}
+		}
 	}
 }
 

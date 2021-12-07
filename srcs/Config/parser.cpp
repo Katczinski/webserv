@@ -116,5 +116,6 @@ std::vector<ft::Config> ft::parser(char* path) {
 			configs.push_back(ft::Config(it, content));
 		}
 	}
+	// std::cout << "port " << configs.front().getPort().front() << std::cout;
 	return configs;
 }
