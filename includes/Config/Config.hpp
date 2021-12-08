@@ -16,13 +16,14 @@ namespace ft
     class Location;
     class Config {
     private:
-        std::string                         _host;
-        std::vector<std::string>            _port;
-        std::string                         _server_name;
-        std::string                         _root;
-        std::vector<std::string>            _index;
-        std::map<int, std::string>          _error_pages;
-        std::map<std::string, Location>     _locations;
+        std::string                                 _host;
+        std::vector<std::string>                    _port;
+        std::string                                 _server_name;
+        std::string                                 _root;
+        std::vector<std::string>                    _index;
+        std::map<int, std::string>                  _error_pages;
+        std::map<std::string, Location>             _locations;
+        typedef std::vector<std::string>::iterator  portIterator;
     public:
         Config();
         Config(str_iter begin, std::vector<std::string>& content);
@@ -31,7 +32,9 @@ namespace ft
         Config& operator=(const Config& other);
 
         std::string const getHost(void) const;
-        std::vector<std::string> getPort(void) const;
+        std::vector<std::string> const getPort(void) const;
+        portIterator 	               portBegin(void);
+        portIterator 	               portEnd(void);
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
         std::vector<std::string> const getIndex(void) const;

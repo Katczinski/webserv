@@ -24,10 +24,9 @@ namespace ft
         private:
             ft::Socket                              _socket;
             int                                     _server;
-            typedef std::vector<pollfd>::iterator   iterator;
-
+            const ft::Config*                             _config;
         public:
-            Server(std::string ip, std::string port);
+            Server(std::string ip, std::string port, const ft::Config& config);
             // void                            run();
             // int                             receive(int fd);
             // void                            respond(int fd);
@@ -37,6 +36,7 @@ namespace ft
             const int                       getServer() const;
             std::vector<pollfd>             getPollFds();
             ft::Socket                      getSocket();
+            const ft::Config                getConfig() const;
 
     };
 }

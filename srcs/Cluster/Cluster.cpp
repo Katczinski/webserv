@@ -1,5 +1,6 @@
 #include "Cluster.hpp"
 #include "Response.hpp"
+
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
@@ -138,9 +139,11 @@ void        ft::Cluster::setup()
 {
     for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
     {
-        // Поставил для тестов жестко 1 порт, надо исправить!!!!!
-        push_back(ft::Server(it->getHost(), it->getPort().front()));
-        std::cout << it->getHost() << ":" << it->getPort().front() << " is ready\n";
+        for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
+            push_back(ft::Server(it->getHost(), *port, *it));
+            std::cout << it->getHost() << ":" << *port << " is ready\n";
+        }
+        
     }
 }
 
@@ -154,7 +157,7 @@ void        ft::Cluster::run()
             continue ;
         //loop through all the connections
         for (int i = 0; i < _size; i++)
-        {
+        {  
             //check if event is registered
             if (_connected[i].revents & POLLIN)
             {
@@ -164,7 +167,7 @@ void        ft::Cluster::run()
                 {
                     int new_fd = _servers[l].newConnection();
                     push_poll(new_fd);
-                    config_map[new_fd] = _configs[l];
+                    config_map[new_fd] = _servers[l].getConfig();
                     std::cout << "New connection on FD " << new_fd << std::endl;
                 }
                 else
