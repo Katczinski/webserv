@@ -31,7 +31,7 @@ namespace ft
         Config& operator=(const Config& other);
 
         std::string const getHost(void) const;
-        std::vector<std::string> const getPort(void) const;
+        std::vector<std::string> getPort(void) const;
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
         std::vector<std::string> const getIndex(void) const;

@@ -24,13 +24,13 @@ ft::Config::Config(str_iter begin, std::vector<std::string>& content) : _host(),
 			}
 			setServName(it, content);
 		}
-		if ((*it == "index")) {
+		if ((*it == "index" && _index.empty())) {
 			// if (!_index.empty()) {
 			// 	throw ft::ParserException("Parser Error: index is duplicated");
 			// }
 			setIndex(it, content);
 		}
-		if ((*it == "root"))  {
+		if ((*it == "root" && _root.empty()))  {
 			// if (!_root.empty()) {
 			// 	throw ft::ParserException("Parser Error: root is duplicated");
 			// }
@@ -74,7 +74,7 @@ std::string const ft::Config::getHost(void) const {
 	return this->_host;
 }
 
-std::vector<std::string> const ft::Config::getPort(void) const {
+std::vector<std::string> ft::Config::getPort(void) const {
 	return this->_port;
 }
 
@@ -155,19 +155,19 @@ void ft::Config::setPort(str_iter begin, std::vector<std::string>& content) {
 		// example 8080, 8090;
 		// if (_port.size() > 1) {
 			// if there is no ',' at the end of the port
-			// if ((*it).back() != ',' && it != _port.end() - 1) {
-				// throw ft::ParserException("Parser Error: port in config file is incorrect");
+			// if ((*it)[(*it).length() - 1] != ',' && it != _port.end() - 1) {
+			// 	throw ft::ParserException("Parser Error: port in config file is incorrect");
 			// }
 			// all ports, except last
 			// if (it != _port.end() - 1) {
 				// *it = (*it).substr(0, (*it).size() - 1);
 			// }
 		// }
-		for (std::string::iterator iter = (*it).begin(); iter != (*it).end(); ++iter) {
-			if (!std::isdigit(*iter)) {
-				throw ft::ParserException("Parser Error: port in config file is incorrect");
-			}
-		}
+		// for (std::string::iterator iter = (*it).begin(); iter != (*it).end(); ++iter) {
+		// 	if (!std::isdigit(*iter)) {
+		// 		throw ft::ParserException("Parser Error: port in config file is incorrect");
+		// 	}
+		// }
 	}
 }
 

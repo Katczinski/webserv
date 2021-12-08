@@ -40,21 +40,37 @@ void ft::Response::clear()
     this->is_content_length = false;
     this->is_chunked = false;
 }
-std::string ft::Response::AutoIndexPage(void)
+std::string ft::Response::AutoIndexPage(ft::Config& conf)
 {
-    std::cout <<"============DIR=======\n" << this->full_log["Dirrectory"] << std::endl;
-    std::string dir_name = "/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs" + this->full_log["Dirrectory"];
+    std::string dir_name = conf.getRoot();
+    dir_name.erase(dir_name.end() -1);
+    dir_name += this->full_log["Dirrectory"];
+    std::cout <<"============DIR=======\n" << dir_name << std::endl;
+
     std::string req = "";
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
+    if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
+    {
+        // this->full_log["Codes"]  = "206 Partial Content";
+        req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta name=\"viewport\" content=\"width=device-width\">\r\n</head>\r\n<body>\r\n<video controls=\"\" autoplay=\"\" name=\"media\">\r\n<source src=\"http://localhost:8080/I_mSoLuckyLucky.mp4\" type=\"video/mp4\"></video>\r\n</body>\r\n</html>";
+        // this->full_log["Content-Type"] = "video/mp4";
+        return req;
+    }
     if(!dir)
     {
         std::cout << "Cant open dirr" << std::endl;
         return req;
     }
+
+    // else if
+        // return req;
     req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
     while ((ent=readdir(dir)) != NULL) {
-        req +="<body>\r\n<p><a href=\"http://localhost:8080/";
+        req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
+        req += ":";
+        req += "8080";
+        req += "/";
         req += ent->d_name;
         req += "\">";
         req += ent->d_name;
@@ -108,22 +124,25 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     else if(i == 200)
     {
+        this->full_log["Codes"] = "200 OK";
+        this->full_log["Content-Type"] = "text/html";
         // std::cout << "PATH " << conf.getErrPages(505).c_str() << std::endl;
         std::string body_1;
-        std::cout << "DIMA DIR====================\n" << conf.getErrPages(200) << std::endl;
+        // std::cout << "DIMA DIR====================\n" << conf.getRoot() << std::endl; Это рут дирректория для autoindex
+        conf.getIndex()[0];// 
         if(!indexxx.compare("on"))
         {
             //  body_1 = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>Тут имя папки</title>\r\n</head>\r\n<body>\
             //  \r\n<p><a href=\"http://localhost:8080/\">Поисковая система Яндекс</a></p>\r\n</body>";    
-            body_1 =  this->AutoIndexPage();
+            body_1 =  this->AutoIndexPage(conf);
         }
         else
         {
             std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
             body << input.rdbuf(); 
         }
-        head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body_1.length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\nSet-Cookie: name=echiles" +"\r\n\r\n";
+        head = "HTTP/1.1 " + this->full_log["Codes"] +"\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body_1.length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         std::cout << head << std::endl;
         
         head += body_1;
@@ -136,7 +155,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
         head += body.str();
         // std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
