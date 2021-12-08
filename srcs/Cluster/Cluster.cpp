@@ -138,8 +138,9 @@ void        ft::Cluster::setup()
 {
     for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
     {
-        push_back(ft::Server(it->getHost(), it->getPort()));
-        std::cout << it->getHost() << ":" << it->getPort() << " is ready\n";
+        // Поставил для тестов жестко 1 порт, надо исправить!!!!!
+        push_back(ft::Server(it->getHost(), it->getPort().front()));
+        std::cout << it->getHost() << ":" << it->getPort().front() << " is ready\n";
     }
 }
 

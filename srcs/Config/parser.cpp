@@ -45,10 +45,11 @@ void ft::lineJoin(std::string& line) {
 			line.replace(it, it + 1, " ");
 		} else if (*it == '\r') {
 			line.replace(it, it + 1, " ");
-		} else if (*it == ';') {
-			line.insert(it, ' ');
-			++it;
 		}
+	}
+	pos = line.find(';');
+	if (pos != -1) {
+		line.insert(pos, 1, ' ');
 	}
 	if (!line.empty() && line.find('}') == std::string::npos && line.find('{') == std::string::npos) {
 		if (line.find(';') == std::string::npos) {
@@ -71,7 +72,7 @@ int ft::readFile(std::vector<std::string>& content, char* path) {
 	}
 	while(std::getline(file, line)) {
 		ft::lineJoin(line);
-		if (line != "") {
+		if (!line.empty()) {
 			ft::split(content, line, ' ');
 		}
 	}
@@ -115,5 +116,21 @@ std::vector<ft::Config> ft::parser(char* path) {
 			configs.push_back(ft::Config(it, content));
 		}
 	}
+	// std::cout << "root: " << configs.front().getRoot() << std::endl;
+    //          std::cout << "404 path: " << configs.front().getErrPages(404) << std::endl;
+    //          std::cout << "405 path: " << configs.front().getErrPages(405) << std::endl;
+    //          std::cout << "Index: " << configs.front().findKeyLocation("/")->second.getIndex().front() << std::endl;
+    //          std::cout << "Allow method: " << configs.front().findKeyLocation("/")->second.getMethods().front() << std::endl;
+    //          std::cout << "Max Body: " << configs.front().findKeyLocation("/")->second.getMaxBody() << std::endl;
+    //          std::cout << "CGI extension: " << configs.front().findKeyLocation("/")->second.getCgiExtension() << std::endl;
+    //          std::cout << "CGI path: " << configs.front().findKeyLocation("/")->second.getCgiPath() << std::endl;
+    //          std::cout << "Loc root: " << configs.front().findKeyLocation("/")->second.getRoot() << std::endl;
+    //          std::cout << "Index: " << configs.front().findKeyLocation("/")->second.getIndex().front() << std::endl;
+    //          std::cout << "Allow method: " << configs.front().findKeyLocation("/")->second.getMethods().front() << std::endl;
+    //          std::cout << "Max Body: " << configs.front().findKeyLocation("/")->second.getMaxBody() << std::endl;
+    //          std::cout << "CGI extension: " << configs.front().findKeyLocation("/")->second.getCgiExtension() << std::endl;
+    //          std::cout << "CGI path: " << configs.front().findKeyLocation("/")->second.getCgiPath() << std::endl;
+    //          std::cout << "Loc root: " << configs.front().findKeyLocation("/")->second.getRoot() << std::endl;
+    //          std::cout << "size = " << configs.front().getLocation().size() << std::endl;
 	return configs;
 }
