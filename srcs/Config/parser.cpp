@@ -116,12 +116,21 @@ std::vector<ft::Config> ft::parser(char* path) {
 			configs.push_back(ft::Config(it, content));
 		}
 	}
-	// std::cout << "Host: " << configs.front().getHost() << std::endl;
-    //          std::cout << "Port: " << configs.front().getPort().front() << std::endl;
-    //          std::cout << "server_name:" << configs.front().getServName() << std::endl;
-    //          std::cout << "root: " << configs.front().getRoot() << std::endl;
+	// std::cout << "root: " << configs.front().getRoot() << std::endl;
     //          std::cout << "404 path: " << configs.front().getErrPages(404) << std::endl;
     //          std::cout << "405 path: " << configs.front().getErrPages(405) << std::endl;
-			 std::cout << "Index: " << configs.front().getIndex().front() << std::endl;
+    //          std::cout << "Index: " << configs.front().findKeyLocation("/")->second.getIndex().front() << std::endl;
+    //          std::cout << "Allow method: " << configs.front().findKeyLocation("/")->second.getMethods().front() << std::endl;
+    //          std::cout << "Max Body: " << configs.front().findKeyLocation("/")->second.getMaxBody() << std::endl;
+    //          std::cout << "CGI extension: " << configs.front().findKeyLocation("/")->second.getCgiExtension() << std::endl;
+    //          std::cout << "CGI path: " << configs.front().findKeyLocation("/")->second.getCgiPath() << std::endl;
+    //          std::cout << "Loc root: " << configs.front().findKeyLocation("/")->second.getRoot() << std::endl;
+    //          std::cout << "Index: " << configs.front().findKeyLocation("/")->second.getIndex().front() << std::endl;
+    //          std::cout << "Allow method: " << configs.front().findKeyLocation("/")->second.getMethods().front() << std::endl;
+    //          std::cout << "Max Body: " << configs.front().findKeyLocation("/")->second.getMaxBody() << std::endl;
+    //          std::cout << "CGI extension: " << configs.front().findKeyLocation("/")->second.getCgiExtension() << std::endl;
+    //          std::cout << "CGI path: " << configs.front().findKeyLocation("/")->second.getCgiPath() << std::endl;
+    //          std::cout << "Loc root: " << configs.front().findKeyLocation("/")->second.getRoot() << std::endl;
+    //          std::cout << "size = " << configs.front().getLocation().size() << std::endl;
 	return configs;
 }

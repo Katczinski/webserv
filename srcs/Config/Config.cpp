@@ -25,15 +25,15 @@ ft::Config::Config(str_iter begin, std::vector<std::string>& content) : _host(),
 			setServName(it, content);
 		}
 		if ((*it == "index")) {
-			if (!_index.empty()) {
-				throw ft::ParserException("Parser Error: index is duplicated");
-			}
+			// if (!_index.empty()) {
+			// 	throw ft::ParserException("Parser Error: index is duplicated");
+			// }
 			setIndex(it, content);
 		}
 		if ((*it == "root"))  {
-			if (!_root.empty()) {
-				throw ft::ParserException("Parser Error: root is duplicated");
-			}
+			// if (!_root.empty()) {
+			// 	throw ft::ParserException("Parser Error: root is duplicated");
+			// }
 			setRoot(it, content);
 		}
 		if (*it == "error_page") {
@@ -221,7 +221,7 @@ void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) 
 	}
 }
 
-void ft::Config::setLocation(str_iter& begin, std::vector<std::string>& content) {
+void ft::Config::setLocation(str_iter begin, std::vector<std::string>& content) {
 	ft:Location newLocation(begin, content);
 	_locations.insert(std::make_pair(*(begin + 1), newLocation));
 }

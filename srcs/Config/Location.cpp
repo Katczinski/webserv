@@ -6,28 +6,51 @@ typedef std::vector<std::string>::iterator str_iter;
 ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(),
 							_cgi_path(), _max_body(), _autoindex(false) {}
 
-ft::Location::Location(str_iter& begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(), _cgi_path(),
+ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(), _cgi_path(),
 																			_cgi_extension(), _max_body(), _autoindex(false) {
+	bool flag = false;
 	for (; begin != content.end() && *begin != "}"; ++begin) {
 		if (*begin == "root") {
+			if (!_root.empty()) {
+				throw ft::ParserException("Parser Error: port in location is duplicated");
+			}
 			setRoot(begin, content);
 		}
 		if (*begin == "index") {
+			if (!_index.empty()) {
+				throw ft::ParserException("Parser Error: index in location is duplicated");
+			}
 			setIndex(begin, content);
 		}
 		if (*begin == "allow_method") {
+			if (!_allowed_methods.empty()) {
+				throw ft::ParserException("Parser Error: allow methods in location is duplicated");
+			}
 			setMethods(begin, content);
 		}
 		if (*begin == "cgi_extension") {
+			if (!_cgi_extension.empty()) {
+				throw ft::ParserException("Parser Error: cgi extension in location is duplicated");
+			}
 			setCgiExtension(begin, content);
 		}
 		if (*begin == "cgi_path") {
+			if (!_cgi_path.empty()) {
+				throw ft::ParserException("Parser Error: cgi path in location is duplicated");
+			}
 			setCgiPath(begin, content);
 		}
 		if (*begin == "autoindex") {
+			if (flag) {
+				throw ft::ParserException("Parser Error: autoindex in location is duplicated");
+			}
 			setAutoindex(begin, content);
+			flag = true;
 		}
 		if (*begin == "max_body_size") {
+			if (!_max_body.empty()) {
+				throw ft::ParserException("Parser Error: max body size in location is duplicated");
+			}
 			setMaxBody(begin ,content);
 		}
 	}
