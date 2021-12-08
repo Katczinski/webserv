@@ -84,7 +84,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         // std::cout << "PATH " << conf.getErrPages(505).c_str() << std::endl;
         // std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
-        std::ifstream input (conf.getIndex().front()); // Есть вопрос, как обращаться к индексу
+        std::ifstream input ((conf.getIndex())[0].c_str()); // Есть вопрос, как обращаться к индексу
         // 
         body << input.rdbuf(); 
         head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";

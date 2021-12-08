@@ -155,7 +155,7 @@ void ft::Config::setPort(str_iter begin, std::vector<std::string>& content) {
 		// example 8080, 8090;
 		if (_port.size() > 1) {
 			// if there is no ',' at the end of the port
-			if ((*it).back() != ',' && it != _port.end() - 1) {
+			if ((*it)[(*it).length() - 1] != ',' && it != _port.end() - 1) {
 				throw ft::ParserException("Parser Error: port in config file is incorrect");
 			}
 			// all ports, except last
