@@ -19,6 +19,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         all_connection[fd].full_buffer+=buff;
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
+        std::cout <<  "BUFFER========================\n"<< all_connection[fd].full_buffer << std::endl;
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config))
         {
             all_connection[fd].clear();

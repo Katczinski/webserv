@@ -11,6 +11,7 @@
 #include <ctime>
 #include <sstream>
 #include "Config.hpp"
+#include <dirent.h>
 
 namespace ft
 {
@@ -32,6 +33,7 @@ namespace ft
         bool answer(int i, int fd,  ft::Config& conf);
         bool general_header_check(int fd, ft::Config& conf);
         int req_methods_settings(std::vector<std::string> str);
+        std::string AutoIndexPage(void);
         // size_t get_length(int fd);
 
     };

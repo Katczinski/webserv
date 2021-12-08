@@ -8,8 +8,8 @@ SRCS		= main.cpp\
 			srcs/Config/Config.cpp\
 			srcs/Config/Location.cpp\
 			srcs/Config/parser.cpp\
-			srcs/HTTP\ requests/Response.cpp\
-			srcs/HTTP\ requests/http_header.cpp\
+			srcs/HTTP_requests/Response.cpp\
+			srcs/HTTP_requests/http_header.cpp\
 			srcs/CGI/CGI.cpp
 
 
@@ -22,7 +22,7 @@ HEADER		= includes/Sockets/Socket.hpp\
 			includes/Config/Config.hpp\
 			includes/Config/Location.hpp\
 			includes/Config/parser.hpp\
-			includes/HTTP\ requests/Response.hpp\
+			includes/HTTP_requests/Response.hpp\
 			includes/CGI/CGI.hpp
 
 
@@ -31,7 +31,7 @@ INC			= -Iincludes/Sockets\
 			 -Iincludes/Config\
 			 -Iincludes/Client\
 			 -Iincludes\
-			 -Iincludes/HTTP\ requests\
+			 -Iincludes/HTTP_requests\
 			 -Iincludes/Cluster\
 			 -Iincludes/CGI
 			 

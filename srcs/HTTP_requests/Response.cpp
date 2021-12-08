@@ -1,6 +1,6 @@
 #include "Response.hpp"
 
-
+std::string indexxx = "on";
 ft::Response::Response()
 {
     this->full_log["ZAPROS"] = "";
@@ -39,6 +39,32 @@ void ft::Response::clear()
     this->full_log["405"] = "Method Not Allowed";
     this->is_content_length = false;
     this->is_chunked = false;
+}
+std::string ft::Response::AutoIndexPage(void)
+{
+    std::cout <<"============DIR=======\n" << this->full_log["Dirrectory"] << std::endl;
+    std::string dir_name = "/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs" + this->full_log["Dirrectory"];
+    std::string req = "";
+    DIR *dir = opendir(dir_name.c_str());
+    struct dirent *ent;
+    if(!dir)
+    {
+        std::cout << "Cant open dirr" << std::endl;
+        return req;
+    }
+    req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
+    while ((ent=readdir(dir)) != NULL) {
+        req +="<body>\r\n<p><a href=\"http://localhost:8080/";
+        req += ent->d_name;
+        req += "\">";
+        req += ent->d_name;
+        req += "</a></p>";
+    }
+    // "<body>\\r\n<p><a href=\"http://localhost:8080/\">Поисковая система Яндекс</a></p>\r\n</body>";  
+    req += "\r\n</body>";
+    closedir(dir);
+    std::cout << "==================================Here==================================\n" << req << std::endl;
+    return req;
 }
 
 bool ft::Response::answer(int i, int fd, ft::Config& conf)
@@ -83,12 +109,24 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         // std::cout << "PATH " << conf.getErrPages(505).c_str() << std::endl;
-        std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
-        // 
-        body << input.rdbuf(); 
-        head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "+time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        head += body.str();
-        // std::cout << head << std::endl;
+        std::string body_1;
+        std::cout << "DIMA DIR====================\n" << conf.getErrPages(200) << std::endl;
+        if(!indexxx.compare("on"))
+        {
+            //  body_1 = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>Тут имя папки</title>\r\n</head>\r\n<body>\
+            //  \r\n<p><a href=\"http://localhost:8080/\">Поисковая система Яндекс</a></p>\r\n</body>";    
+            body_1 =  this->AutoIndexPage();
+        }
+        else
+        {
+            std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
+            body << input.rdbuf(); 
+        }
+        head = "HTTP/1.1 200 OK\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: text/html\r\nDate: "\
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body_1.length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\nSet-Cookie: name=echiles" +"\r\n\r\n";
+        std::cout << head << std::endl;
+        
+        head += body_1;
         send(fd, head.c_str(), head.size(), 0);
         // this->full_log["Connection"] = "close";
     }
