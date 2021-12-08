@@ -20,6 +20,7 @@ namespace ft
         std::vector<std::string>            _port;
         std::string                         _server_name;
         std::string                         _root;
+        std::vector<std::string>            _index;
         std::map<int, std::string>          _error_pages;
         std::map<std::string, Location>     _locations;
     public:
@@ -33,6 +34,7 @@ namespace ft
         std::vector<std::string> const getPort(void) const;
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
+        std::vector<std::string> const getIndex(void) const;
         std::string const getErrPages(int key) const;
         std::map<std::string, ft::Location> getLocation(void) const;
         std::map<std::string, ft::Location>::iterator findKeyLocation(std::string key);
@@ -41,8 +43,9 @@ namespace ft
         void setPort(str_iter begin, std::vector<std::string>& content);
         void setServName(str_iter begin, std::vector<std::string>& content);
         void setRoot(str_iter begin, std::vector<std::string>& content);
+        void setIndex(str_iter begin, std::vector<std::string>& content);
         void setErrPages(str_iter ibegin, std::vector<std::string>& content);
-        void setLocation(str_iter begin, std::vector<std::string>& content);
+        void setLocation(str_iter& begin, std::vector<std::string>& content);
     };
 }
 

@@ -6,29 +6,29 @@ typedef std::vector<std::string>::iterator str_iter;
 ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(),
 							_cgi_path(), _max_body(), _autoindex(false) {}
 
-ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(), _cgi_path(),
+ft::Location::Location(str_iter& begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(), _cgi_path(),
 																			_cgi_extension(), _max_body(), _autoindex(false) {
-	for (str_iter it = begin; it != content.end() && *it != "}"; ++it) {
-		if (*it == "root") {
-			setRoot(it, content);
+	for (; begin != content.end() && *begin != "}"; ++begin) {
+		if (*begin == "root") {
+			setRoot(begin, content);
 		}
-		if (*it == "index") {
-			setIndex(it, content);
+		if (*begin == "index") {
+			setIndex(begin, content);
 		}
-		if (*it == "allow_method") {
-			setMethods(it, content);
+		if (*begin == "allow_method") {
+			setMethods(begin, content);
 		}
-		if (*it == "cgi_extension") {
-			setCgiExtension(it, content);
+		if (*begin == "cgi_extension") {
+			setCgiExtension(begin, content);
 		}
-		if (*it == "cgi_path") {
-			setCgiPath(it, content);
+		if (*begin == "cgi_path") {
+			setCgiPath(begin, content);
 		}
-		if (*it == "autoindex") {
-			setAutoindex(it, content);
+		if (*begin == "autoindex") {
+			setAutoindex(begin, content);
 		}
-		if (*it == "max_body_size") {
-			setMaxBody(it ,content);
+		if (*begin == "max_body_size") {
+			setMaxBody(begin ,content);
 		}
 	}
 }
@@ -92,14 +92,12 @@ void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
 }
 
 void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
-	char dir[1024];
-	getcwd(dir, 1024);
 	str_iter it = begin + 1;
 	if (*it == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
 	while (*it != ";") {
-		_index.push_back(dir + ("/srcs/Pages/" + *it));
+		_index.push_back(_root + *it);
 		++it;
 	}
 }

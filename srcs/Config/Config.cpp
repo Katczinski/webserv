@@ -1,21 +1,39 @@
 #include "Config.hpp"
 
 // Default Constructor
-ft::Config::Config() : _host(), _port(), _server_name(), _root(), _error_pages(), _locations() {}
+ft::Config::Config() : _host(), _port(), _server_name(), _root(), _index(), _error_pages(), _locations() {}
 
 ft::Config::Config(str_iter begin, std::vector<std::string>& content) : _host(), _port(), _server_name(),
-																		_root(), _error_pages(), _locations() {
+																		_root(), _index(), _error_pages(), _locations() {
 	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "listen" && _host.empty()) {
+		if (*it == "listen") {
+			if (!_host.empty()) {
+				throw ft::ParserException("Parser Error: host is duplicated");
+			}
 			setHost(it, content);
 		}
-		if (*it == "port" && _port.empty()) {
+		if (*it == "port") {
+			if (!_port.empty()) {
+				throw ft::ParserException("Parser Error: port is duplicated");
+			}
 			setPort(it, content);
 		}
-		if (*it == "server_name" && _server_name.empty()) {
+		if (*it == "server_name") {
+			if (!_server_name.empty()) {
+				throw ft::ParserException("Parser Error: server_name is duplicated");
+			}
 			setServName(it, content);
 		}
-		if ((*it == "root") && _root.empty()) {
+		if ((*it == "index")) {
+			if (!_index.empty()) {
+				throw ft::ParserException("Parser Error: index is duplicated");
+			}
+			setIndex(it, content);
+		}
+		if ((*it == "root"))  {
+			if (!_root.empty()) {
+				throw ft::ParserException("Parser Error: root is duplicated");
+			}
 			setRoot(it, content);
 		}
 		if (*it == "error_page") {
@@ -47,6 +65,7 @@ ft::Config& ft::Config::operator=(const ft::Config& other) {
 		_root = other._root;
 		_error_pages = other._error_pages;
 		_locations = other._locations;
+		_index = other._index;
 	}
 	return *this;
 }
@@ -65,6 +84,10 @@ std::string const ft::Config::getServName(void) const {
 
 std::string const ft::Config::getRoot(void) const {
 	return this->_root;
+}
+
+std::vector<std::string> const ft::Config::getIndex(void) const {
+	return this->_index;
 }
 
 std::string const ft::Config::getErrPages(int key) const {
@@ -159,18 +182,32 @@ void ft::Config::setServName(str_iter begin, std::vector<std::string>& content) 
 }
 
 void ft::Config::setRoot(str_iter begin, std::vector<std::string>& content) {
-	_root = *(begin + 1);
-	if (_root == ";") {
+	char dir[1024];
+	getcwd(dir, 1024);
+
+	std::string value = *(begin + 1);
+	if (value == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
 	if (*(begin + 2) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
+	_root = dir + value;
+}
+
+void ft::Config::setIndex(str_iter begin, std::vector<std::string>& content) {
+	str_iter it = begin + 1;
+	if (*it == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
+	while (*it != ";") {
+		_index.push_back(_root + *it);
+		++it;
+	}
 }
 
 void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) {
-	char dir[1024];
-	getcwd(dir, 1024);
+	
 
 	if (*(begin + 1) == ";" || *(begin + 2) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
@@ -180,11 +217,11 @@ void ft::Config::setErrPages(str_iter begin, std::vector<std::string>& content) 
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
 	if (it == _error_pages.end()) {
-		_error_pages[std::atoi((*(begin + 1)).c_str())] =  dir + *(begin + 2);
+		_error_pages[std::atoi((*(begin + 1)).c_str())] = _root + *(begin + 2);
 	}
 }
 
-void ft::Config::setLocation(str_iter begin, std::vector<std::string>& content) {
+void ft::Config::setLocation(str_iter& begin, std::vector<std::string>& content) {
 	ft:Location newLocation(begin, content);
 	_locations.insert(std::make_pair(*(begin + 1), newLocation));
 }

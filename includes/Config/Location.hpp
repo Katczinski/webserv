@@ -25,7 +25,7 @@ namespace ft
 		bool								_autoindex;
 	public:
 		Location(void);
-		Location(str_iter begin, std::vector<std::string>& content);
+		Location(str_iter& begin, std::vector<std::string>& content);
 		Location(const Location& other);
 		~Location(void);
 		Location& operator=(const Location& other);

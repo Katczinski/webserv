@@ -116,6 +116,12 @@ std::vector<ft::Config> ft::parser(char* path) {
 			configs.push_back(ft::Config(it, content));
 		}
 	}
-	// std::cout << "port " << configs.front().getPort().front() << std::cout;
+	// std::cout << "Host: " << configs.front().getHost() << std::endl;
+    //          std::cout << "Port: " << configs.front().getPort().front() << std::endl;
+    //          std::cout << "server_name:" << configs.front().getServName() << std::endl;
+    //          std::cout << "root: " << configs.front().getRoot() << std::endl;
+    //          std::cout << "404 path: " << configs.front().getErrPages(404) << std::endl;
+    //          std::cout << "405 path: " << configs.front().getErrPages(405) << std::endl;
+			 std::cout << "Index: " << configs.front().getIndex().front() << std::endl;
 	return configs;
 }
