@@ -74,6 +74,14 @@ std::string const ft::Config::getHost(void) const {
 	return this->_host;
 }
 
+ft::Config::portIterator		ft::Config::portBegin(void){
+	return this->_port.begin();
+}
+
+ft::Config::portIterator		ft::Config::portEnd(void){
+	return this->_port.end();
+}
+
 std::vector<std::string> const ft::Config::getPort(void) const {
 	return this->_port;
 }
