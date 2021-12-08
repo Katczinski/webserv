@@ -52,10 +52,16 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf)
     struct dirent *ent;
     if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
     {
+        // std::ostringstream body; 
+        // std::ifstream input (dir_name.c_str());
+        // body << input.rdbuf(); 
+        // req = "<video controls>\r\n<source src=\"http://localhost:8080/I_mSoLuckyLucky.mp4\" type=\"video/mp4\"></video>";
         // this->full_log["Codes"]  = "206 Partial Content";
-        req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta name=\"viewport\" content=\"width=device-width\">\r\n</head>\r\n<body>\r\n<video controls=\"\" autoplay=\"\" name=\"media\">\r\n<source src=\"http://localhost:8080/I_mSoLuckyLucky.mp4\" type=\"video/mp4\"></video>\r\n</body>\r\n</html>";
-        // this->full_log["Content-Type"] = "video/mp4";
-        return req;
+        // req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta name=\"viewport\" content=\"width=device-width\">\r\n</head>\r\n<body>\r\n<video controls=\"\" autoplay=\"\" name=\"media\">\r\n<source src=\"http://localhost:8080/I_mSoLuckyLucky.mp4\" type=\"video/mp4\"></video>\r\n</body>\r\n</html>";
+        this->full_log["Content-Type"] = "video/mp4";
+        // req = body.str();
+        // req = body.str();
+        return dir_name;
     }
     if(!dir)
     {
@@ -124,6 +130,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     else if(i == 200)
     {
+        // std::ifstream input (conf.getErrPages(405).c_str());
+        // body << input.rdbuf(); 
+
         this->full_log["Codes"] = "200 OK";
         this->full_log["Content-Type"] = "text/html";
         // std::cout << "PATH " << conf.getErrPages(505).c_str() << std::endl;
@@ -134,19 +143,32 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         {
             //  body_1 = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>Тут имя папки</title>\r\n</head>\r\n<body>\
             //  \r\n<p><a href=\"http://localhost:8080/\">Поисковая система Яндекс</a></p>\r\n</body>";    
-            body_1 =  this->AutoIndexPage(conf);
+            body_1 = this->AutoIndexPage(conf);
         }
         else
         {
             std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
             body << input.rdbuf(); 
         }
-        head = "HTTP/1.1 " + this->full_log["Codes"] +"\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body_1.length()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        std::cout << head << std::endl;
+        if(body_1.find("/mnt") != std::string::npos)
+        {
+            std::cout << "Here" << std::endl;
+            std::ifstream input (body_1.c_str());
+            body << input.rdbuf();
+            head = "HTTP/1.1 " + this->full_log["Codes"] +"\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+            +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\nAccept-Ranges: none\r\n";
+            head += body.str();
+            send(fd, head.c_str(), head.size(), 0);
+        }
+        else
+        {
+            head = "HTTP/1.1 " + this->full_log["Codes"] +"\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+            +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body_1.size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+            std::cout << head << std::endl;
+            head += body_1;
+            send(fd, head.c_str(), head.size(), 0);
+        }
         
-        head += body_1;
-        send(fd, head.c_str(), head.size(), 0);
         // this->full_log["Connection"] = "close";
     }
     else if(i == 505)

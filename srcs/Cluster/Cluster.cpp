@@ -5,7 +5,7 @@ ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
-    char buff[30000] = {0};
+    char buff[30001] = {0};
     int ret = recv(fd, buff,  30000, 0);
     buff[ret] = '\0';
     if(ret <= 0)
@@ -69,6 +69,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     {
         int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
         all_connection[fd].answer(200, fd, config);
+
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
             http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
