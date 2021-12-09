@@ -138,14 +138,14 @@ void        ft::Cluster::setConfig(std::vector<ft::Config> configs)
 
 void        ft::Cluster::setup()
 {
-    for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
-    {
-        for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
-            push_back(ft::Server(it->getHost(), *port, *it));
-            std::cout << it->getHost() << ":" << *port << " is ready\n";
-        }
+    // for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
+    // {
+    //     for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
+    //         push_back(ft::Server(it->getHost(), *port, *it));
+    //         std::cout << it->getHost() << ":" << *port << " is ready\n";
+    //     }
         
-    }
+    // }
 }
 
 void        ft::Cluster::run()
