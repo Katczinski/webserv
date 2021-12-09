@@ -24,12 +24,9 @@ namespace ft
         private:
             ft::Socket                              _socket;
             int                                     _server;
-            const ft::Config*                             _config;
+            const ft::Config*                       _config;
         public:
             Server(std::string ip, std::string port, const ft::Config& config);
-            // void                            run();
-            // int                             receive(int fd);
-            // void                            respond(int fd);
             int                             newConnection();
             void                            closeConnection(int client_index);
             const std::vector<Client>       &getClient() const;
