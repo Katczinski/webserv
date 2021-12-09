@@ -102,12 +102,14 @@ void        ft::Cluster::push_poll(int fd)
     else
     {
         if (_size >= _capacity)
-            _connected = (struct pollfd*)realloc(_connected, (_capacity + 1) * sizeof(struct pollfd));
+        {
+            _connected = (struct pollfd*)realloc(_connected, (_capacity * 2) * sizeof(struct pollfd));
+            _capacity *= 2;
+        }
         _connected[_size].events = POLLIN;
         _connected[_size].fd = fd;
         _connected[_size].revents = 0;
         _size++;
-        _capacity++;
     }
 }
 
@@ -121,8 +123,11 @@ void        ft::Cluster::erase_poll(int index)
         index++;
     }
     _size--;
-    // _connected = (struct pollfd*)realloc(_connected, (_size) * sizeof(struct pollfd));
-
+    if (_size < _capacity / 4)
+    {
+        _connected = (struct pollfd*)realloc(_connected, (_capacity / 2) * sizeof(struct pollfd));
+        _capacity /= 2;
+    }
 }
 
 void        ft::Cluster::push_back(const ft::Server& server)

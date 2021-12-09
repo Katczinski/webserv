@@ -11,7 +11,6 @@ bool check_url(ft::Response& req, ft::Config& conf) // добавить чек �
     if(!(conf.getLocation()[req.full_log["Dirrectory"]]).getIndex().size())
         return true;
     std::string server_name_compare = req.full_log["Host"] + (req.full_log["Dirrectory"]).c_str();
-    // поставил getPort.front() для тестов, нужно исправить для работы с несколькими портами!!!!!!!!
     std::string servers_name = conf.getHost() +":"+ conf.getPort() + (conf.getLocation().find(req.full_log["Dirrectory"]))->first;
     if(servers_name.compare(server_name_compare))
         return true;
