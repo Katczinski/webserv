@@ -2,23 +2,18 @@
 
 #define NUM_FDS 10
 
-ft::Server::Server(std::string ip, std::string port, const ft::Config& config)
+ft::Server::Server(std::string ip, std::string port)
 {
     try
     {
         _socket.listenSocket(ip, port);
         _server = _socket.getSock();
-        _config = &config;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what()<<std::endl;
 		exit(1);
     }
-}
-const ft::Config                     ft::Server::getConfig() const
-{
-    return (*_config);
 }
 
 // void        ft::Server::closeConnection(int client_index)

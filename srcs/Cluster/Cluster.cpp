@@ -113,7 +113,7 @@ void        ft::Cluster::push_poll(int fd)
 
 void        ft::Cluster::erase_poll(int index)
 {
-    while (index < _size + 1)
+    while (index < _size - 1)
     {
         _connected[index].fd = _connected[index + 1].fd;
         _connected[index].events = _connected[index + 1].events;
@@ -138,20 +138,17 @@ void        ft::Cluster::setConfig(std::vector<ft::Config> configs)
 
 void        ft::Cluster::setup()
 {
-    // for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
-    // {
-    //     for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
-    //         push_back(ft::Server(it->getHost(), *port, *it));
-    //         std::cout << it->getHost() << ":" << *port << " is ready\n";
-    //     }
-        
-    // }
+    for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
+    {
+        push_back(ft::Server(it->getHost(), it->getPort()));
+        std::cout << it->getHost() << ":" << it->getPort() << " is ready\n";
+    }
 }
 
 void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response>  all_connection;
-    std::map<int, ft::Config>       config_map;
+    std::map<int, ft::Config*>       config_map;
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -168,18 +165,18 @@ void        ft::Cluster::run()
                 {
                     int new_fd = _servers[l].newConnection();
                     push_poll(new_fd);
-                    config_map[new_fd] = _servers[l].getConfig();
+                    config_map[new_fd] = &_configs[l];
                     std::cout << "New connection on FD " << new_fd << std::endl;
                 }
                 else
                 {
                     //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
-                    if (!receive(_connected[i].fd, all_connection, config_map[_connected[i].fd]))
+                    if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd]))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
+                        config_map.erase(_connected[i].fd);
                         close(_connected[i].fd);
                         erase_poll(i);
-                        config_map.erase(_connected[i].fd);
                     }
                 }
             }
