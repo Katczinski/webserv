@@ -5,7 +5,7 @@ ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
-    char buff[30000] = {0};
+    char buff[30001] = {0};
     int ret = recv(fd, buff,  30000, 0);
     buff[ret] = '\0';
     if(ret <= 0)
@@ -20,6 +20,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         all_connection[fd].full_buffer+=buff;
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
+        std::cout <<  "BUFFER========================\n"<< all_connection[fd].full_buffer << std::endl;
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config))
         {
             all_connection[fd].clear();
@@ -68,6 +69,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     {
         int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
         all_connection[fd].answer(200, fd, config);
+
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
             http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
@@ -136,14 +138,14 @@ void        ft::Cluster::setConfig(std::vector<ft::Config> configs)
 
 void        ft::Cluster::setup()
 {
-    for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
-    {
-        for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
-            push_back(ft::Server(it->getHost(), *port, *it));
-            std::cout << it->getHost() << ":" << *port << " is ready\n";
-        }
+    // for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
+    // {
+    //     for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
+    //         push_back(ft::Server(it->getHost(), *port, *it));
+    //         std::cout << it->getHost() << ":" << *port << " is ready\n";
+    //     }
         
-    }
+    // }
 }
 
 void        ft::Cluster::run()
