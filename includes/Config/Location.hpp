@@ -25,7 +25,7 @@ namespace ft
 		bool								_autoindex;
 	public:
 		Location(void);
-		Location(str_iter begin, std::vector<std::string>& content);
+		Location(str_iter& begin, std::vector<std::string>& content, std::string server_root);
 		Location(const Location& other);
 		~Location(void);
 		Location& operator=(const Location& other);
@@ -38,13 +38,13 @@ namespace ft
 		std::string const getMaxBody(void) const;
 		bool const getAutoindex(void) const;
 
-		void setRoot(str_iter iter, std::vector<std::string>& content);
-        void setIndex(str_iter iter, std::vector<std::string>& content);
-		void setMethods(str_iter iter, std::vector<std::string>& content);
-		void setCgiExtension(str_iter iter, std::vector<std::string>& content);
-		void setCgiPath(str_iter iter, std::vector<std::string>& content);
-		void setMaxBody(str_iter iter, std::vector<std::string>& content);
-		void setAutoindex(str_iter iter, std::vector<std::string>& content);
+		void setRoot(str_iter& iter, std::vector<std::string>& content);
+        void setIndex(str_iter& iter, std::vector<std::string>& content);
+		void setMethods(str_iter& iter, std::vector<std::string>& content);
+		void setCgiExtension(str_iter& iter, std::vector<std::string>& content);
+		void setCgiPath(str_iter& iter, std::vector<std::string>& content);
+		void setMaxBody(str_iter& iter, std::vector<std::string>& content);
+		void setAutoindex(str_iter& iter, std::vector<std::string>& content);
 
 	};
 }

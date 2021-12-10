@@ -6,14 +6,16 @@ typedef std::vector<std::string>::iterator str_iter;
 ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(),
 							_cgi_path(), _max_body(), _autoindex(false) {}
 
-ft::Location::Location(str_iter begin, std::vector<std::string>& content) : _root(), _index(), _allowed_methods(), _cgi_path(),
+ft::Location::Location(str_iter& begin, std::vector<std::string>& content, std::string server_root) : _root(), _index(),
+																			_allowed_methods(), _cgi_path(),
 																			_cgi_extension(), _max_body(), _autoindex(false) {
 	bool flag = false;
 	for (; begin != content.end() && *begin != "}"; ++begin) {
 		if (*begin == "root") {
 			if (!_root.empty()) {
-				throw ft::ParserException("Parser Error: port in location is duplicated");
+				throw ft::ParserException("Parser Error: root in location is duplicated");
 			}
+			_root = server_root;
 			setRoot(begin, content);
 		}
 		if (*begin == "index") {
@@ -104,74 +106,72 @@ bool const ft::Location::getAutoindex(void) const {
 	return this->_autoindex;
 }
 
-void ft::Location::setRoot(str_iter begin, std::vector<std::string>& content) {
-	if (*(begin + 1) == ";") {
+void ft::Location::setRoot(str_iter& begin, std::vector<std::string>& content) {
+	if (*(++begin) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
-	if (*(begin + 2) != ";") {
+	if (*(begin + 1) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
-	_root= *(begin + 1);
+	_root += *(begin);
 }
 
-void ft::Location::setIndex(str_iter begin, std::vector<std::string>& content) {
-	str_iter it = begin + 1;
-	if (*it == ";") {
+void ft::Location::setIndex(str_iter& begin, std::vector<std::string>& content) {
+	if (*(++begin) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
-	while (*it != ";") {
-		_index.push_back(_root + *it);
-		++it;
-	}
-}
-
-void ft::Location::setMethods(str_iter begin, std::vector<std::string>& content) {
-	str_iter it = begin + 1;
-	if (*it == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	while (*it != ";") {
-		_allowed_methods.push_back(*it);
-		++it;
+	while (*begin != ";") {
+		_index.push_back(_root + *begin);
+		++begin;
 	}
 }
 
-void ft::Location::setCgiExtension(str_iter begin, std::vector<std::string>& content) {
-	if (*(begin + 1) == ";") {
+void ft::Location::setMethods(str_iter& begin, std::vector<std::string>& content) {
+	if (*(++begin) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
-	if (*(begin + 2) != ";") {
+	while (*begin != ";") {
+		_allowed_methods.push_back(*begin);
+		++begin;
+	}
+}
+
+void ft::Location::setCgiExtension(str_iter& begin, std::vector<std::string>& content) {
+	if (*(++begin) == ";") {
+		throw ft::ParserException("Parser Error: bad config file");
+	}
+	if (*(begin + 1) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
-	_cgi_extension = *(begin + 1);
+	_cgi_extension = *begin;
 }
 
-void ft::Location::setCgiPath(str_iter begin, std::vector<std::string>& content) {
-	if (*(begin + 1) == ";") {
+void ft::Location::setCgiPath(str_iter& begin, std::vector<std::string>& content) {
+	if (*(++begin) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
-	if (*(begin + 2) != ";") {
+	if (*(begin + 1) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
-	_cgi_path = *(begin + 1);
+	_cgi_path = *begin;
 }
 
-void ft::Location::setMaxBody(str_iter begin, std::vector<std::string>& content) {
-	if (*(begin + 1) == ";") {
+void ft::Location::setMaxBody(str_iter& begin, std::vector<std::string>& content) {
+	if (*(++begin) == ";") {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
-	if (*(begin + 2) != ";") {
+	if (*(begin + 1) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
-	_max_body = *(begin + 1);
+	_max_body = *begin;
 }
 
-void ft::Location::setAutoindex(str_iter begin, std::vector<std::string>& content) {
-	std::string value = *(begin + 1);
+void ft::Location::setAutoindex(str_iter& begin, std::vector<std::string>& content) {
+	std::string value = *(++begin);
 	if (value == ";" || (value != "on" && value != "off")) {
 		throw ft::ParserException("Parser Error: bad config file");
 	}
-	if (*(begin + 2) != ";") {
+	if (*(begin + 1) != ";") {
 		throw ft::ParserException("Parser Error: expected ';'");
 	}
 	if (value == "on") {

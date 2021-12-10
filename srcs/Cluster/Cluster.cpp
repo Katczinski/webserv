@@ -102,18 +102,20 @@ void        ft::Cluster::push_poll(int fd)
     else
     {
         if (_size >= _capacity)
-            _connected = (struct pollfd*)realloc(_connected, (_capacity + 1) * sizeof(struct pollfd));
+        {
+            _connected = (struct pollfd*)realloc(_connected, (_capacity * 2) * sizeof(struct pollfd));
+            _capacity *= 2;
+        }
         _connected[_size].events = POLLIN;
         _connected[_size].fd = fd;
         _connected[_size].revents = 0;
         _size++;
-        _capacity++;
     }
 }
 
 void        ft::Cluster::erase_poll(int index)
 {
-    while (index < _size + 1)
+    while (index < _size - 1)
     {
         _connected[index].fd = _connected[index + 1].fd;
         _connected[index].events = _connected[index + 1].events;
@@ -121,8 +123,11 @@ void        ft::Cluster::erase_poll(int index)
         index++;
     }
     _size--;
-    // _connected = (struct pollfd*)realloc(_connected, (_size) * sizeof(struct pollfd));
-
+    if (_size < _capacity / 4)
+    {
+        _connected = (struct pollfd*)realloc(_connected, (_capacity / 2) * sizeof(struct pollfd));
+        _capacity /= 2;
+    }
 }
 
 void        ft::Cluster::push_back(const ft::Server& server)
@@ -140,18 +145,15 @@ void        ft::Cluster::setup()
 {
     for (std::vector<ft::Config>::iterator it = _configs.begin(); it != _configs.end(); it++)
     {
-        for (std::vector<std::string>::iterator port = it->portBegin(); port != it->portEnd(); port++){
-            push_back(ft::Server(it->getHost(), *port, *it));
-            std::cout << it->getHost() << ":" << *port << " is ready\n";
-        }
-        
+        push_back(ft::Server(it->getHost(), it->getPort()));
+        std::cout << it->getHost() << ":" << it->getPort() << " is ready\n";
     }
 }
 
 void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response>  all_connection;
-    std::map<int, ft::Config>       config_map;
+    std::map<int, ft::Config*>       config_map;
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -168,18 +170,18 @@ void        ft::Cluster::run()
                 {
                     int new_fd = _servers[l].newConnection();
                     push_poll(new_fd);
-                    config_map[new_fd] = _servers[l].getConfig();
+                    config_map[new_fd] = &_configs[l];
                     std::cout << "New connection on FD " << new_fd << std::endl;
                 }
                 else
                 {
                     //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
-                    if (!receive(_connected[i].fd, all_connection, config_map[_connected[i].fd]))
+                    if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd]))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
+                        config_map.erase(_connected[i].fd);
                         close(_connected[i].fd);
                         erase_poll(i);
-                        config_map.erase(_connected[i].fd);
                     }
                 }
             }
