@@ -40,37 +40,43 @@ void ft::Response::clear()
     this->is_content_length = false;
     this->is_chunked = false;
 }
-std::string ft::Response::AutoIndexPage(ft::Config& conf)
+std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& body)
 {
     std::string dir_name = conf.getRoot();
     dir_name.erase(dir_name.end() -1);
+    
+    // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
+        // dir_name += current_dirrectory;
     dir_name += this->full_log["Dirrectory"];
-    std::cout <<"============DIR=======\n" << dir_name << std::endl;
+    this->full_log["Location"] += this->full_log["Dirrectory"];
 
-    std::string req = "";
+    std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
+
+    std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
-    if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
+    if(this->full_log["Dirrectory"].find(".") != std::string::npos)
     {
-        // std::ostringstream body; 
-        // std::ifstream input (dir_name.c_str());
-        // body << input.rdbuf(); 
-        // req = "<video controls>\r\n<source src=\"http://localhost:8080/I_mSoLuckyLucky.mp4\" type=\"video/mp4\"></video>";
-        // this->full_log["Codes"]  = "206 Partial Content";
-        // req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta name=\"viewport\" content=\"width=device-width\">\r\n</head>\r\n<body>\r\n<video controls=\"\" autoplay=\"\" name=\"media\">\r\n<source src=\"http://localhost:8080/I_mSoLuckyLucky.mp4\" type=\"video/mp4\"></video>\r\n</body>\r\n</html>";
-        this->full_log["Content-Type"] = "video/mp4";
-        // req = body.str();
-        // req = body.str();
-        return dir_name;
+        if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
+            this->full_log["Content-Type"] = "image/png";
+        else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
+            this->full_log["Content-Type"] = "image/jpeg";
+        else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
+            this->full_log["Content-Type"] = "image/gif";
+        else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
+            this->full_log["Content-Type"] = "video/mp4";
+        this->prev_dirrectory = dir_name;
+        std::ifstream input (dir_name.c_str());
+        body << input.rdbuf();
+        return body.str();
     }
     if(!dir)
     {
         std::cout << "Cant open dirr" << std::endl;
         return req;
     }
-
-    // else if
-        // return req;
+    // else
+        // this->full_log["Location"] += "/";
     req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
     while ((ent=readdir(dir)) != NULL) {
         req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
@@ -82,10 +88,8 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf)
         req += ent->d_name;
         req += "</a></p>";
     }
-    // "<body>\\r\n<p><a href=\"http://localhost:8080/\">Поисковая система Яндекс</a></p>\r\n</body>";  
     req += "\r\n</body>";
     closedir(dir);
-    std::cout << "==================================Here==================================\n" << req << std::endl;
     return req;
 }
 
@@ -130,46 +134,26 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     else if(i == 200)
     {
-        // std::ifstream input (conf.getErrPages(405).c_str());
-        // body << input.rdbuf(); 
-
-        this->full_log["Codes"] = "200 OK";
         this->full_log["Content-Type"] = "text/html";
-        // std::cout << "PATH " << conf.getErrPages(505).c_str() << std::endl;
-        std::string body_1;
-        // std::cout << "DIMA DIR====================\n" << conf.getRoot() << std::endl; Это рут дирректория для autoindex
-        conf.getIndex()[0];// 
-        if(!indexxx.compare("on"))
-        {
-            //  body_1 = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>Тут имя папки</title>\r\n</head>\r\n<body>\
-            //  \r\n<p><a href=\"http://localhost:8080/\">Поисковая система Яндекс</a></p>\r\n</body>";    
-            body_1 = this->AutoIndexPage(conf);
-        }
+        this->full_log["Location"] =  "http://"+this->full_log["Host"];
+        std::string reeal_body;
+        if(!indexxx.compare("on"))    
+            reeal_body = this->AutoIndexPage(conf, body);
         else
         {
-            std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
-            body << input.rdbuf(); 
-        }
-        if(body_1.find("/mnt") != std::string::npos)
-        {
-            std::cout << "Here" << std::endl;
-            std::ifstream input (body_1.c_str());
+            std::ifstream input (conf.getErrPages(405).c_str());
             body << input.rdbuf();
-            head = "HTTP/1.1 " + this->full_log["Codes"] +"\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-            +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\nAccept-Ranges: none\r\n";
-            head += body.str();
-            send(fd, head.c_str(), head.size(), 0);
+            reeal_body = body.str();
         }
-        else
-        {
-            head = "HTTP/1.1 " + this->full_log["Codes"] +"\r\nLocation: http://"+this->full_log["Host"]+this->full_log["Dirrectory"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-            +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body_1.size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-            std::cout << head << std::endl;
-            head += body_1;
-            send(fd, head.c_str(), head.size(), 0);
-        }
-        
-        // this->full_log["Connection"] = "close";
+        head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"];
+        // if(!this->prev_dirrectory.empty())
+        //     head += "Refer:  http://localhost:8080/error_pages";
+        head += "\r\n\r\n";
+        // head += "Accept-Ranges: none\r\n";
+        std::cout << head << std::endl;
+        head += reeal_body;
+        send(fd, head.c_str(), head.size(), 0);
     }
     else if(i == 505)
     {

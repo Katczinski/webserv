@@ -24,6 +24,8 @@ namespace ft
     public:
         std::string full_buffer;
         std::map<std::string, std::string> full_log;
+        std::string current_dirrectory;
+        std::string prev_dirrectory;
         bool is_content_length;
         bool is_chunked;
         size_t body_length;
@@ -33,7 +35,7 @@ namespace ft
         bool answer(int i, int fd,  ft::Config& conf);
         bool general_header_check(int fd, ft::Config& conf);
         int req_methods_settings(std::vector<std::string> str);
-        std::string AutoIndexPage(ft::Config& conf);
+        std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body);
         // size_t get_length(int fd);
 
     };
