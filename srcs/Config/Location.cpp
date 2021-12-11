@@ -1,59 +1,60 @@
 #include "Location.hpp"
 
-typedef std::vector<std::string>::iterator str_iter;
+typedef std::vector<std::string>::iterator v_iter_string;
 
 // Default Constructor
 ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension(),
 							_cgi_path(), _max_body(), _autoindex(false) {}
 
-ft::Location::Location(str_iter& begin, std::vector<std::string>& content, std::string server_root) : _root(), _index(),
+ft::Location::Location(v_iter_v_string& it, v_vec_string& content, std::string server_root) : _root(), _index(),
 																			_allowed_methods(), _cgi_path(),
 																			_cgi_extension(), _max_body(), _autoindex(false) {
+	// flag = checkk duplicate autoindex
 	bool flag = false;
-	for (; begin != content.end() && *begin != "}"; ++begin) {
-		if (*begin == "root") {
+	for (; it != content.end() && it->front() != "}"; ++it) {
+		if (it->front() == "root") {
 			if (!_root.empty()) {
-				throw ft::ParserException("Parser Error: root in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " root in location is duplicated");
 			}
 			_root = server_root;
-			setRoot(begin, content);
+			setRoot(*it);
 		}
-		if (*begin == "index") {
+		if (it->front() == "index") {
 			if (!_index.empty()) {
-				throw ft::ParserException("Parser Error: index in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " index in location is duplicated");
 			}
-			setIndex(begin, content);
+			setIndex(*it);
 		}
-		if (*begin == "allow_method") {
+		if (it->front() == "allow_method") {
 			if (!_allowed_methods.empty()) {
-				throw ft::ParserException("Parser Error: allow methods in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " allow methods in location is duplicated");
 			}
-			setMethods(begin, content);
+			setMethods(*it);
 		}
-		if (*begin == "cgi_extension") {
+		if (it->front() == "cgi_extension") {
 			if (!_cgi_extension.empty()) {
-				throw ft::ParserException("Parser Error: cgi extension in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " cgi extension in location is duplicated");
 			}
-			setCgiExtension(begin, content);
+			setCgiExtension(*it);
 		}
-		if (*begin == "cgi_path") {
+		if (it->front() == "cgi_path") {
 			if (!_cgi_path.empty()) {
-				throw ft::ParserException("Parser Error: cgi path in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " cgi path in location is duplicated");
 			}
-			setCgiPath(begin, content);
+			setCgiPath(*it);
 		}
-		if (*begin == "autoindex") {
+		if (it->front() == "autoindex") {
 			if (flag) {
-				throw ft::ParserException("Parser Error: autoindex in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " autoindex in location is duplicated");
 			}
-			setAutoindex(begin, content);
+			setAutoindex(*it);
 			flag = true;
 		}
-		if (*begin == "max_body_size") {
+		if (it->front() == "max_body_size") {
 			if (!_max_body.empty()) {
-				throw ft::ParserException("Parser Error: max body size in location is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " max body size in location is duplicated");
 			}
-			setMaxBody(begin ,content);
+			setMaxBody(*it);
 		}
 	}
 }
@@ -87,7 +88,7 @@ std::vector<std::string> const ft::Location::getIndex(void) const {
 	return this->_index;
 }
 
-std::vector<std::string> ft::Location::getMethods(void) const {
+std::vector<std::string> const ft::Location::getMethods(void) const {
 	return this->_allowed_methods;
 }
 
@@ -106,73 +107,49 @@ bool const ft::Location::getAutoindex(void) const {
 	return this->_autoindex;
 }
 
-void ft::Location::setRoot(str_iter& begin, std::vector<std::string>& content) {
-	if (*(++begin) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
-	_root += *(begin);
+void ft::Location::setRoot(const v_string& line) {
+	_root += line[1];
+	checkPath(_root, " incorrect root in location, path: ");
 }
 
-void ft::Location::setIndex(str_iter& begin, std::vector<std::string>& content) {
-	if (*(++begin) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	while (*begin != ";") {
-		_index.push_back(_root + *begin);
-		++begin;
+void ft::Location::setIndex(const v_string& line) {
+	v_const_iter_string it = line.begin();
+	++it;
+	while (it != (line.end() - 1)) {
+		checkPath(_root + *it, " incorrect index in location, path: ");
+		_index.push_back(_root + *it);
+		++it;
 	}
 }
 
-void ft::Location::setMethods(str_iter& begin, std::vector<std::string>& content) {
-	if (*(++begin) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	while (*begin != ";") {
-		_allowed_methods.push_back(*begin);
-		++begin;
+void ft::Location::setMethods(const v_string& line) {
+	v_const_iter_string it = line.begin();
+	++it;
+	while (it != (line.end() - 1)) {
+		if (*it != "POST" && *it != "GET" && *it != "DELETE") {
+			throw ft::ParserException(RED "Parser Error:" REST " allowed method " YEL + *it + REST " incorrect");
+		}
+			_allowed_methods.push_back(*it);
+		++it;
 	}
 }
 
-void ft::Location::setCgiExtension(str_iter& begin, std::vector<std::string>& content) {
-	if (*(++begin) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
-	_cgi_extension = *begin;
+void ft::Location::setCgiExtension(const v_string& line) {
+	_cgi_extension = line[1];
 }
 
-void ft::Location::setCgiPath(str_iter& begin, std::vector<std::string>& content) {
-	if (*(++begin) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
-	_cgi_path = *begin;
+void ft::Location::setCgiPath(const v_string& line) {
+	_cgi_path = line[1];
 }
 
-void ft::Location::setMaxBody(str_iter& begin, std::vector<std::string>& content) {
-	if (*(++begin) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
-	_max_body = *begin;
+void ft::Location::setMaxBody(const v_string& line) {
+	_max_body = line[1];
 }
 
-void ft::Location::setAutoindex(str_iter& begin, std::vector<std::string>& content) {
-	std::string value = *(++begin);
-	if (value == ";" || (value != "on" && value != "off")) {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
+void ft::Location::setAutoindex(const v_string& line) {
+	std::string value = line[1];
+	if (value != "on" && value != "off") {
+		throw ft::ParserException(RED "Parser Error:" REST " autoindex incorrect");
 	}
 	if (value == "on") {
 		_autoindex = true;

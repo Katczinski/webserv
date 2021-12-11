@@ -3,47 +3,48 @@
 // Default Constructor
 ft::Config::Config() : _host(), _port(), _server_name(), _root(), _index(), _error_pages(), _locations() {}
 
-ft::Config::Config(str_iter& begin, std::vector<std::string>& content) : _host(), _port(), _server_name(),
+ft::Config::Config(v_iter_v_string& it, v_vec_string& content) : _host(), _port(), _server_name(),
 																		_root(), _index(), _error_pages(), _locations() {
-	for (; begin != content.end() - 1 && *begin != "server"; ++begin) {
-		if (*begin == "listen") {
+	for (; it != content.end() - 1; ++it) {
+		if (it->front() == "server") {
+			--it;
+			break;
+		}
+		if (it->front() == "listen") {
 			if (!_port.empty()) {
-				throw ft::ParserException("Parser Error: host is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " host is duplicated");
 			}
-			setPort(begin, content);
+			setPort(*it);
 		}
-		if (*begin == "host") {
+		if (it->front() == "host") {
 			if (!_host.empty()) {
-				throw ft::ParserException("Parser Error: port is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " port is duplicated");
 			}
-			setHost(begin, content);
+			setHost(*it);
 		}
-		if (*begin == "server_name") {
+		if (it->front() == "server_name") {
 			if (!_server_name.empty()) {
-				throw ft::ParserException("Parser Error: server_name is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " server_name is duplicated");
 			}
-			setServName(begin, content);
+			setServName(*it);
 		}
-		if ((*begin == "index")) {
+		if (it->front() == "index") {
 			if (!_index.empty()) {
-				throw ft::ParserException("Parser Error: index is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST " index in service is duplicated");
 			}
-			setIndex(begin, content);
+			setIndex(*it);
 		}
-		if ((*begin == "root"))  {
+		if (it->front() == "root")  {
 			if (!_root.empty()) {
-				throw ft::ParserException("Parser Error: root is duplicated");
+				throw ft::ParserException(RED "Parser Error:" REST ": root in service is duplicated");
 			}
-			setRoot(begin, content);
+			setRoot(*it);
 		}
-		if (*begin == "error_page") {
-			setErrPages(begin, content);
+		if (it->front() == "error_page") {
+			setErrPages(*it);
 		}
-		if (*begin == "location") {
-			if (*(begin + 2) != "{") {
-				throw ft::ParserException("Parser Error: expected '{'");
-			}
-			setLocation(begin, content, _root);
+		if (it->front() == "location") {
+			setLocation(it, content, _root);
 		}
 	}
 }
@@ -73,14 +74,6 @@ ft::Config& ft::Config::operator=(const ft::Config& other) {
 std::string const ft::Config::getHost(void) const {
 	return this->_host;
 }
-
-// ft::Config::portIterator		ft::Config::portBegin(void){
-// 	return this->_port.begin();
-// }
-
-// ft::Config::portIterator		ft::Config::portEnd(void){
-// 	return this->_port.end();
-// }
 
 std::string const ft::Config::getPort(void) const {
 	return this->_port;
@@ -119,119 +112,91 @@ std::map<std::string, ft::Location>::iterator ft::Config::findKeyLocation(std::s
 	return it;
 }
 
-void ft::Config::setHost(str_iter& begin, std::vector<std::string>& content) {
-	std::string value = *(++begin);
-	if (value == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
+void ft::Config::setHost(const v_string& line) {
+	std::string value = line[1];
 	_host = value;
 	if (_host != "localhost") {
 		size_t count = 0;
 		// example .0.0.1  ||  127.0.0.
 		if (*_host.begin() == '.' || *(_host.end() - 1) == '.')  {
-			throw ft::ParserException("Parser Error: host in config file is incorrect");
+			throw ft::ParserException(RED "Parser Error:" REST " host in config file is incorrect");
 		}
 		for (std::string::iterator it = _host.begin(); it != _host.end(); ++it) {
 			if (*it == '.') {
 				++count;
 				if (!std::isdigit(*(it - 1))) {
-					throw ft::ParserException("Parser Error: host in config file is incorrect");
+					throw ft::ParserException(RED "Parser Error:" REST " host in config file is incorrect");
 				}
 			}
 			if (!std::isdigit(*it) && *it != '.') {
-				throw ft::ParserException("Parser Error: host in config file is incorrect");
+				throw ft::ParserException(RED "Parser Error:" REST " host in config file is incorrect");
 			}
 		}
 		if (count != 3) {
-			throw ft::ParserException("Parser Error: host in config file is incorrect");
+			throw ft::ParserException(RED "Parser Error:" REST " host in config file is incorrect");
 		}
 	}
 }
 
-void ft::Config::setPort(std::string port) {
+void ft::Config::setPort(const std::string& port) {
 	this->_port = port;
 }
 
-void ft::Config::setPort(str_iter& begin, std::vector<std::string>& content) {
-	size_t count = 0;
-	str_iter it = ++begin;
-	if (*it == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	while (*it != ";") {
-		++count;
-		++it;
-	}
-	std::string val = *begin;
+void ft::Config::setPort(const v_string& line) {
+	size_t count = line.size() - 2;
+	std::string value = line[1];
 	if (count != 1) {
 		// if there is no ',' at the end of the port
-		if (val[val.length() - 1] != ',') {
-			throw ft::ParserException("!Parser Error: port in config file is incorrect");
+		if (value[value.length() - 1] != ',') {
+			throw ft::ParserException(RED "Parser Error:" REST " port in config file is incorrect");
 		}
 		// all ports, except last
-		val = val.substr(0, val.length() - 1);
+		value = value.substr(0, value.length() - 1);
 	}
-	for (std::string::iterator iter = val.begin(); iter != val.end(); ++iter) {
+	for (std::string::iterator iter = value.begin(); iter != value.end(); ++iter) {
 		if (!std::isdigit(*iter)) {
-			throw ft::ParserException("Parser Error: port in config file is incorrect");
+			throw ft::ParserException(RED "Parser Error:" REST " port in config file is incorrect");
 		}
 	}
-	_port = val;
+	_port = value;
 }
 
-void ft::Config::setServName(str_iter& begin, std::vector<std::string>& content) {
-	_server_name = *(++begin);
-	if (_server_name == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
+void ft::Config::setServName(const v_string& line) {
+	_server_name = line[1];
 }
 
-void ft::Config::setRoot(str_iter& begin, std::vector<std::string>& content) {
+void ft::Config::setRoot(const v_string& line) {
 	char dir[1024];
 	getcwd(dir, 1024);
 
-	std::string value = *(++begin);
-	if (value == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	if (*(begin + 1) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
+	std::string value = line[1];
 	_root = dir + value;
+	checkPath(_root, " incorrect root in service, path: ");
 }
 
-void ft::Config::setIndex(str_iter& begin, std::vector<std::string>& content) {
-	str_iter it = ++begin;
-	if (*it == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	while (*it != ";") {
+void ft::Config::setIndex(const v_string& line) {
+	v_const_iter_string it = line.begin();
+	++it;
+	std::string value;
+	while (it != (line.end() - 1)) {
+		checkPath(_root + *it, " incorrect index in service, path: ");
 		_index.push_back(_root + *it);
 		++it;
 	}
 }
 
-void ft::Config::setErrPages(str_iter& begin, std::vector<std::string>& content) {
-	if (*(begin + 1) == ";" || *(begin + 2) == ";") {
-		throw ft::ParserException("Parser Error: bad config file");
-	}
-	iter_int_str it = _error_pages.find(atoi((*(++begin)).c_str()));
-	if (*(begin + 2) != ";") {
-		throw ft::ParserException("Parser Error: expected ';'");
-	}
+void ft::Config::setErrPages(const v_string& line) {
+	std::string key = line[1];
+	std::string value = _root + line[2];
+	checkPath(value, " incorrect error page file, path: ");
+	map_iter_int_string it = _error_pages.find(atoi(key.c_str()));
 	if (it == _error_pages.end()) {
-		_error_pages[std::atoi((*(begin)).c_str())] = _root + *(begin + 1);
+		_error_pages[std::atoi(key.c_str())] = value;
 	}
 }
 
-void ft::Config::setLocation(str_iter& begin, std::vector<std::string>& content, std::string server_root) {
-	std::string key = *(++begin);
-	ft:Location newLocation(begin, content, server_root);
+void ft::Config::setLocation(v_iter_v_string& it, v_vec_string& content, std::string server_root) {
+	std::string key = *(it->begin() + 1);
+	ft:Location newLocation(it, content, server_root);
 	_locations.insert(std::make_pair(key, newLocation));
 }
