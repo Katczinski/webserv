@@ -18,9 +18,6 @@ namespace ft
     class Config;
     class Response
     {
-    // private:
-        // std::string current_server;
-        // std::string current_methods;
     public:
         std::string full_buffer;
         std::map<std::string, std::string> full_log;
@@ -28,7 +25,9 @@ namespace ft
         std::string prev_dirrectory;
         bool is_content_length;
         bool is_chunked;
+        bool is_multy;
         size_t body_length;
+        // методы
         Response();
         ~Response(){};
         void clear();
@@ -36,8 +35,6 @@ namespace ft
         bool general_header_check(int fd, ft::Config& conf);
         int req_methods_settings(std::vector<std::string> str);
         std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body);
-        // size_t get_length(int fd);
-
     };
     template<typename T>
     std::string to_string(const T& value)
@@ -49,5 +46,7 @@ namespace ft
 }
 bool http_header(ft::Response& req, std::string buf1, int fd,  ft::Config& conf);
 void ft_split(std::string const &str, const char delim, std::vector<std::string> &out);
+size_t ft_atoi(std::string& str);
+size_t ft_atoi(char* str);
 
 #endif

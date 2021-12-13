@@ -1,24 +1,21 @@
 #include "Response.hpp"
 
-std::string indexxx = "on";
+std::string indexxx = "off";
 ft::Response::Response()
 {
     this->full_log["ZAPROS"] = "";
     this->full_log["Dirrectory"] = "";
     this->full_log["Connection"] = "Keep-Alive";
     this->full_log["Host"] = "";
-    this->full_log["Date"] = "";
     this->full_log["Content-Type"] = "";
     this->full_log["Content-Length"] = "";
-    this->full_log["Server"] = "";
-    this->full_log["User-Agent"] = "";
     this->full_log["Transfer-Encoding"] = "";
-    this->full_log["200"] = "OK";
-    this->full_log["404"] = "Not found";
-    this->full_log["400"] = "Bad Request";
-    this->full_log["405"] = "Method Not Allowed";
+    this->full_log["Body"] = "";
+    this->full_log["boundary"] = "";
     this->is_content_length = false;
     this->is_chunked = false;
+    this->is_multy = false;
+
 }
 
 void ft::Response::clear()
@@ -27,18 +24,14 @@ void ft::Response::clear()
     this->full_log["Dirrectory"] = "";
     this->full_log["Connection"] = "Keep-Alive";
     this->full_log["Host"] = "";
-    this->full_log["Date"] = "";
     this->full_log["Content-Type"] = "";
     this->full_log["Content-Length"] = "";
-    this->full_log["Server"] = "";
-    this->full_log["User-Agent"] = "";
     this->full_log["Transfer-Encoding"] = "";
-    this->full_log["200"] = "OK";
-    this->full_log["404"] = "Not found";
-    this->full_log["400"] = "Bad Request";
-    this->full_log["405"] = "Method Not Allowed";
+    this->full_log["Body"] = "";
+    this->full_log["boundary"] = "";
     this->is_content_length = false;
     this->is_chunked = false;
+    this->is_multy = false;
 }
 std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& body)
 {
@@ -65,6 +58,8 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
             this->full_log["Content-Type"] = "image/gif";
         else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
             this->full_log["Content-Type"] = "video/mp4";
+        else
+            this->full_log["Content-Type"] = "multipart/form-data";
         this->prev_dirrectory = dir_name;
         std::ifstream input (dir_name.c_str());
         body << input.rdbuf();
@@ -129,6 +124,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // body = "<h1>405 Try another method!</h1>\r\n";
         head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
+        std::cout << head << std::endl;
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
     }
@@ -141,16 +137,16 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
             reeal_body = this->AutoIndexPage(conf, body);
         else
         {
-            std::ifstream input (conf.getErrPages(405).c_str());
+            std::ifstream input (conf.getIndex()[0].c_str());
             body << input.rdbuf();
             reeal_body = body.str();
         }
         head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"];
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
+        // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
-        // head += "Accept-Ranges: none\r\n";
         std::cout << head << std::endl;
         head += reeal_body;
         send(fd, head.c_str(), head.size(), 0);
@@ -220,21 +216,25 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         it++;
     }
     if(!this->full_log["ZAPROS"].compare(0, 3, "GET"))
+    {
         this->is_content_length = false;
+        this->is_chunked = false;
+    }
     if(!this->full_log["ZAPROS"].compare(0,4,"POST"))
     {
         // std::map<std::string, ft::Location> it =  conf.getLocation(); в строке пути, в локейшене все его описание
         if(methods.find("POST") == std::string::npos) // заменить переменню Allowed из парсера Димы
             return(405);
-        if(!this->full_log["Content-Type"].size() || !this->full_log["Content-Length"].size())
+        if(this->full_log["Content-Type"].empty())
             return(400);
-        std::stringstream ss;
-        ss << this->full_log["Content-Length"];
-        ss >> this->body_length;
+        this->body_length =  ft_atoi(this->full_log["Content-Length"]);
         if(!this->body_length)
             this->is_content_length = false;
         if(this->is_chunked)
+        {
             this->is_content_length = false;
+            this->body_length = 0;
+        }
     }
     return 0;
 }
@@ -252,3 +252,20 @@ void ft_split(std::string const &str, const char delim,
     }
 }
 
+size_t ft_atoi(std::string& str)
+{
+    size_t i = 0;
+    std::stringstream ss;
+    ss << str;
+    ss >> i;
+    return i;
+}
+
+size_t ft_atoi(char* str)
+{
+    size_t i = 0;
+    std::stringstream ss;
+    ss << str;
+    ss >> i;
+    return i;
+}
