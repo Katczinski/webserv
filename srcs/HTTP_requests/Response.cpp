@@ -44,12 +44,14 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
 {
     std::string dir_name = conf.getRoot();
     dir_name.erase(dir_name.end() -1);
-    
-    // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
-        // dir_name += current_dirrectory;
-    dir_name += this->full_log["Dirrectory"];
-    this->full_log["Location"] += this->full_log["Dirrectory"];
 
+    // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
+    //     dir_name += current_dirrectory;)
+    if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
+        this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
+    }
+    dir_name += this->full_log["Dirrectory"];
+    this->full_log["Location"] += this->full_log["Directory"];
     std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
 
     std::string req;
@@ -65,7 +67,6 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
             this->full_log["Content-Type"] = "image/gif";
         else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
             this->full_log["Content-Type"] = "video/mp4";
-        this->prev_dirrectory = dir_name;
         std::ifstream input (dir_name.c_str());
         body << input.rdbuf();
         return body.str();
@@ -90,6 +91,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     }
     req += "\r\n</body>";
     closedir(dir);
+    prev_dirrectory = this->full_log["Dirrectory"];
     return req;
 }
 
