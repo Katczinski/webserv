@@ -1,8 +1,5 @@
 #include "parser.hpp"
 
-typedef  std::vector<std::string>::iterator str_iter;
-typedef  std::map<std::string, ft::Location>::iterator const_iter_str_loc;
-
 ft::ParserException::ParserException(std::string message) throw() : _message(message) {}
 
 const char* ft::ParserException::what(void) const throw() {
@@ -11,7 +8,7 @@ const char* ft::ParserException::what(void) const throw() {
 
 ft::ParserException::~ParserException() throw() {}
 
-void ft::split(std::vector<std::string>& content, const std::string& line, char c) {
+void ft::split(v_string& content, const std::string& line, char c) {
 	size_t size = line.size();
 	size_t start = 0;
 	size_t end;
@@ -51,16 +48,12 @@ void ft::lineJoin(std::string& line) {
 	if (pos != -1) {
 		line.insert(pos, 1, ' ');
 	}
-	if (!line.empty() && line.find('}') == std::string::npos && line.find('{') == std::string::npos) {
-		if (line.find(';') == std::string::npos) {
-			throw ft::ParserException("Parser Error: expected ';'");
-		}
-	}
 }
 
-int ft::readFile(std::vector<std::string>& content, char* path) {
+int ft::readFile(v_vec_string& content, char* path) {
 	std::string line;
 	std::string filename;
+	v_string words;
     if (!path) {
         filename = "srcs/Config/file/default.conf";
     } else {
@@ -73,7 +66,11 @@ int ft::readFile(std::vector<std::string>& content, char* path) {
 	while(std::getline(file, line)) {
 		ft::lineJoin(line);
 		if (!line.empty()) {
-			ft::split(content, line, ' ');
+			ft::split(words, line, ' ');
+			if (!words.empty()) {
+				content.push_back(words);
+				words.clear();
+			}
 		}
 	}
 	file.close();
@@ -84,35 +81,35 @@ int ft::readFile(std::vector<std::string>& content, char* path) {
 void ft::checkValidPort(std::string& port) {
 	// if there is no ',' at the end of the port
 	if (port[port.length() - 1] != ',') {
-		throw ft::ParserException("!Parser Error: port in config file is incorrect");
+		throw ft::ParserException(RED "Parser Error:" REST " port in config file is incorrect");
 	}
 	// all ports, except last
 	port = port.substr(0, port.length() - 1);
 }
-std::vector<std::string> ft::checkMultiplePort(str_iter begin, const std::vector<std::string>& content) {
+
+std::vector<std::string> ft::checkMultiplePort(v_iter_v_string& it, const v_vec_string& content) {
 	std::string value;
 	std::vector<std::string> ret;
-	for (str_iter it = begin; it != content.end(); ++it) {
-		if (*it == "listen") {
-			++it;
-			if (*it == ";") {
-				throw ft::ParserException("Parser Error: bad config file");
-			}
-			while (*it != ";") {
-				ret.push_back(*it);
-				++it;
+	for (v_iter_v_string iter = it; iter != content.end() && iter->front() != "}"; ++iter) {
+		if (iter->front() == "listen") {
+			// Next after the listen, i.e. port numbers
+			v_iter_string ports = iter->begin() + 1;
+			while (ports != iter->end() - 1) {
+				ret.push_back(*ports);
+				++ports;
 			}
 			break;
 		}
 	}
 	if (ret.size() > 1) {
-		for (str_iter it = ret.begin(); it != ret.end(); ++it) {
+		for (v_iter_string it = ret.begin(); it != ret.end(); ++it) {
+			// Because the last port number has no ','
 			if (it != (ret.end() - 1)) {
 				checkValidPort(*it);
 			}
 			for (std::string::iterator iter = (*it).begin(); iter != (*it).end(); ++iter) {
 				if (!std::isdigit(*iter)) {
-					throw ft::ParserException("Parser Error: port in config file is incorrect");
+					throw ft::ParserException(RED "Parser Error:" REST " port in config file is incorrect");
 				}
 			}
 		}
@@ -120,42 +117,139 @@ std::vector<std::string> ft::checkMultiplePort(str_iter begin, const std::vector
 	return ret;
 }
 
-void ft::checkContent(const std::vector<std::string>& content) {
-	if (std::count(content.begin(), content.end(), "}") - std::count(content.begin(), content.end(), "{")) {
-		throw ft::ParserException("Parser Error: invalid number of brackets");
-	}
-	bool flag = false;
-	for (const_str_iter it = content.begin(); it != content.end(); ++it) {
-		if (*it == "server") {
-			flag = true;
+int ft::checkCountBrackets(const v_vec_string& content) {
+	size_t left_br = 0;
+	size_t right_br = 0;
+	for (v_const_iter_v_string it = content.begin(); it != content.end(); ++it) {
+		for (v_const_iter_string iter = it->begin(); iter != it->end(); ++iter) {
+			if (*iter == "}") {
+				++right_br;
+			}
+			if (*iter == "{") {
+				++left_br;
+			}
 		}
 	}
-	if (!flag) {
-		throw ft::ParserException("Parser Error: not a server");
+	if (right_br != left_br) {
+		return 1;
 	}
-	if (content.front() != "server") {
-		throw ft::ParserException("Parser Error: bad config file");
+	return 0;
+}
+
+void ft::printErrParser(const v_string& line,  std::string message) {
+	std::string text = "in line: " YEL;
+	for (v_const_iter_string iter = line.begin(); iter != line.end(); ++iter) {
+		text += *iter;
+		text += " ";
+	}
+	throw ft::ParserException(RED "Parser Error: " REST + message + text + REST);
+}
+
+void ft::checkSemicolon(const v_vec_string& content) {
+	for (v_const_iter_v_string it = content.begin(); it != content.end(); ++it) {
+		if (it->front() ==  "server") {
+			if (it->back() != "{") {
+				printErrParser(*it, "bad config file");
+			}
+		} else if (it->front() ==  "location") {
+			if (it->back() != "{") {
+				printErrParser(*it, "bad config file");
+			}
+		} else if (it->front() ==  "}") {
+			if (it.base()->size() != 1) {
+				printErrParser(*it, "bad config file");
+			}
+		} else if (it->front() != "}" && it->front() !=  "server" && it->front() != "location") {
+			if (it->back() != ";") {
+				printErrParser(*it, "expected '"RED ";"REST "'");
+			}
+		}
+	}
+
+}
+
+void ft::checkPath(std::string path, std::string message) {
+	std::ifstream in(path.c_str());
+		if (!in) {
+			in.close();
+			throw ft::ParserException(RED "Parser Error: " REST + message + YEL + path + REST " does not exist");
+		}
+		in.close();
+}
+
+void ft::checkContent(const v_vec_string& content) {
+	// check count brackets in all lines
+	if (checkCountBrackets(content)) {
+			throw ft::ParserException(RED "Parser Error:" REST " invalid number of brackets");
+	}
+	bool server = false;
+	bool listen = false;
+	for (size_t i = 0; i < content.size(); ++i) {
+		if (content[i][0] == "server") {
+			server = true;
+		}
+		if (content[i][0] == "server") {
+			listen = true;
+		}
+	}
+	if (!server) {
+		throw ft::ParserException(RED "Parser Error:" REST " not a server");
+	}
+	if (!listen) {
+		throw ft::ParserException(RED "Parser Error:" REST " not a listen");
+	}
+	if (content.front().front() != "server") {
+		throw ft::ParserException(RED "Parser Error:" REST " bad config file");
+	}
+	// check symbol ';' in line and number of parametrs
+	ft::checkSemicolon(content);
+	for (v_const_iter_v_string it = content.begin(); it != content.end(); ++it) {
+		if (it->front() ==  "server" && it->size() != 2) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "listen" && it->size() < 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "host" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "server_name" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "root" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "index" && it->size() < 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "error_page" && it->size() < 4) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "location" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "allow_method" && it->size() < 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "max_body_size" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "cgi_extension" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "cgi_path" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "autoindex" && it->size() != 3) {
+			printErrParser(*it, "bad config file, missing value");
+		}
 	}
 }
 
 std::vector<ft::Config> ft::parser(char* path) {
-	std::vector<std::string> content;
 	std::vector<ft::Config>configs;
+	v_vec_string content;
 	size_t countPorts;
 
 	if (ft::readFile(content, path)) {
-		throw ft::ParserException("Parser Error: could not open file");
+		throw ft::ParserException(RED "Parser Error:" REST " could not open file");
 	}
 	ft::checkContent(content);
-	str_iter it = content.begin();
-	for (str_iter it = content.begin(); it != content.end(); ++it) {
-		if (*it == "server") {
-			if (*(++it) != "{") {
-				throw ft::ParserException("Parser Error: expected '{'");
-			}
+	for (v_iter_v_string it = content.begin(); it != content.end(); ++it) {
+		if (it->front() == "server") {
+			++it;
 			std::vector<std::string> multiplePorts = ft::checkMultiplePort(it, content);
 			configs.push_back(ft::Config(it, content));
 			if (multiplePorts.size() > 1) {
+				// because first port has already been added to the config above
 				size_t i = 1;
 				while (i < multiplePorts.size()) {
 					ft::Config newConfig = configs.back();
@@ -166,40 +260,5 @@ std::vector<ft::Config> ft::parser(char* path) {
 			}
 		}
 	}
-			// std::cout << "size: " << configs.size() << std::endl;;
-			// std::cout << "port: " << configs.front().getPort() << std::endl;
-			// std::cout << "port 2: " << configs[1].getPort() << std::endl;
-			// std::cout << "host: " << configs.front().getHost() << std::endl;
-			// std::cout << "index: " << configs.front().getIndex().front() << std::endl;
-			// std::cout << "server_name: " << configs.front().getServName() << std::endl;
-			// std::cout << "root: " << configs.front().getRoot() << std::endl;
-            //  std::cout << "404 path: " << configs.front().getErrPages(404) << std::endl;
-            //  std::cout << "405 path: " << configs.front().getErrPages(405) << std::endl;
-            //  std::cout << "Loc Index: " << configs.front().findKeyLocation("/")->second.getIndex().front() << std::endl;
-            //  std::cout << "Allow method: " << configs.front().findKeyLocation("/")->second.getMethods().front() << std::endl;
-            //  std::cout << "Max Body: " << configs.front().findKeyLocation("/")->second.getMaxBody() << std::endl;
-            //  std::cout << "CGI extension: " << configs.front().findKeyLocation("/")->second.getCgiExtension() << std::endl;
-            //  std::cout << "CGI path: " << configs.front().findKeyLocation("/")->second.getCgiPath() << std::endl;
-            //  std::cout << "Loc root: " << configs.front().findKeyLocation("/")->second.getRoot() << std::endl;
-            //  std::cout << "Allow method: " << configs.front().findKeyLocation("/")->second.getMethods().front() << std::endl;
-            //  std::cout << "Max Body: " << configs.front().findKeyLocation("/")->second.getMaxBody() << std::endl;
-            //  std::cout << "CGI extension: " << configs.front().findKeyLocation("/")->second.getCgiExtension() << std::endl;
-            //  std::cout << "CGI path: " << configs.front().findKeyLocation("/")->second.getCgiPath() << std::endl;
-            //  std::cout << "Loc root: " << configs.front().findKeyLocation("/")->second.getRoot() << std::endl;
-            //  std::cout << "size = " << configs.front().getLocation().size() << std::endl;
-			//  std::cout << "==========================\n";
-			//  std::cout << "Loc Index: " << configs.front().findKeyLocation("hz")->second.getIndex().front() << std::endl;
-            //  std::cout << "Allow method: " << configs.front().findKeyLocation("hz")->second.getMethods().front() << std::endl;
-            //  std::cout << "Max Body: " << configs.front().findKeyLocation("hz")->second.getMaxBody() << std::endl;
-            //  std::cout << "CGI extension: " << configs.front().findKeyLocation("hz")->second.getCgiExtension() << std::endl;
-            //  std::cout << "CGI path: " << configs.front().findKeyLocation("hz")->second.getCgiPath() << std::endl;
-            //  std::cout << "Loc root: " << configs.front().findKeyLocation("hz")->second.getRoot() << std::endl;
-            //  std::cout << "Allow method: " << configs.front().findKeyLocation("hz")->second.getMethods().front() << std::endl;
-            //  std::cout << "Max Body: " << configs.front().findKeyLocation("hz")->second.getMaxBody() << std::endl;
-            //  std::cout << "CGI extension: " << configs.front().findKeyLocation("hz")->second.getCgiExtension() << std::endl;
-            //  std::cout << "CGI path: " << configs.front().findKeyLocation("hz")->second.getCgiPath() << std::endl;
-            //  std::cout << "Loc root: " << configs.front().findKeyLocation("hz")->second.getRoot() << std::endl;
-			//  std::cout << "********************************************************************\n";
-			
 	return configs;
 }

@@ -20,20 +20,22 @@ namespace ft
         std::vector<std::string>                    _index;
         std::map<int, std::string>                  _error_pages;
         std::map<std::string, Location>             _locations;
-        // typedef std::vector<std::string>::iterator  portIterator;
-        typedef std::vector<std::string>::iterator str_iter;
-        typedef std::map<int, std::string>::iterator iter_int_str;
+        typedef std::vector<std::string>::iterator v_iter_string;
+        typedef std::map<int, std::string>::iterator map_iter_int_string;
+        typedef std::vector<std::string>::const_iterator v_const_iter_string;
+        typedef std::vector<std::vector<std::string> >::iterator v_iter_v_string;
+        typedef std::vector<std::vector<std::string> >::const_iterator v_const_iter_v_string;
+        typedef std::vector<std::string> v_string;
+        typedef std::vector<std::vector<std::string> > v_vec_string;
     public:
         Config();
-        Config(str_iter& begin, std::vector<std::string>& content);
+        Config(v_iter_v_string& it, v_vec_string& content);
         Config(const Config& other);
         ~Config();
         Config& operator=(const Config& other);
 
         std::string const getHost(void) const;
         std::string const getPort(void) const;
-        // portIterator 	               portBegin(void);
-        // portIterator 	               portEnd(void);
         std::string const getServName(void) const;
         std::string const getRoot(void) const;
         std::vector<std::string> const getIndex(void) const;
@@ -41,14 +43,14 @@ namespace ft
         std::map<std::string, ft::Location> getLocation(void) const;
         std::map<std::string, ft::Location>::iterator findKeyLocation(std::string key);
 
-        void setHost(str_iter& begin, std::vector<std::string>& content);
-        void setPort(str_iter& begin, std::vector<std::string>& content);
-        void setPort(std::string port);
-        void setServName(str_iter& begin, std::vector<std::string>& content);
-        void setRoot(str_iter& begin, std::vector<std::string>& content);
-        void setIndex(str_iter& begin, std::vector<std::string>& content);
-        void setErrPages(str_iter& ibegin, std::vector<std::string>& content);
-        void setLocation(str_iter& begin, std::vector<std::string>& content, std::string server_root);
+        void setHost(const v_string& line);
+        void setPort(const v_string& line);
+        void setPort(const std::string& port);
+        void setServName(const v_string& line);
+        void setRoot(const v_string& line);
+        void setIndex(const v_string& line);
+        void setErrPages(const v_string& line);
+        void setLocation(v_iter_v_string& it, v_vec_string& content, std::string server_root);
     };
 }
 
