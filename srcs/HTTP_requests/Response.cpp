@@ -185,6 +185,66 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     return false;
 }
 
+bool ft::Response::post_request(ft::Config& config)
+{
+    std::string buffer;
+    std::istringstream is(this->full_log["Body"]);
+    // this->full_log["Body"] = "";
+    std::string filename;
+    std::vector<std::string> for_filename;
+    size_t i = 0;
+    if(this->full_log["Body"].find("--"+this->full_log["boundary"]) != std::string::npos &&  this->full_log["Body"].find("--"+this->full_log["boundary"]+"--") != std::string::npos)
+    {
+        while(std::getline(is, buffer, '\n'))
+        {
+            if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
+                break;
+            if(!buffer.compare(0, this->full_log["boundary"].size() + 2, "--"+this->full_log["boundary"]))
+            {
+
+                std::getline(is, buffer, '\n');
+        std::cout << "Im here=============================\n" << std::endl;
+
+                if(!buffer.compare(0, 31, "Content-Disposition: form-data;"))
+                {
+                    std::vector<std::string>::iterator it = for_filename.begin();
+                    while (it != for_filename.end())
+                    {
+                        i = (*it).find("filename=");
+                        if(i != std::string::npos)
+                            std::string filename = (*it).substr(i, (*it).size());
+                        it++;
+                    }   
+                }
+                else
+                    return false;                
+                std::getline(is, buffer, '\n');
+                if(!buffer.compare(0, 13, "Content-Type:"))
+                    std::cout << "check\n";
+                else
+                    return false;
+                std::getline(is, buffer, '\n');
+                if(!buffer.compare(0, 1, "\r"))
+                    std::cout << "check\n";
+                else
+                    return false;
+                while (std::getline(is, buffer, '\n'))
+                {
+                    if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
+                        break;
+                    this->full_log["Body"] += buffer;
+                }
+            }
+            // 
+        }
+        std::cout << "FILEPATH" << filename << std::endl;
+        std::ofstream nope((config.getRoot() + "da.txt").c_str());
+        nope << this->full_log["Body"];
+        return true;
+    }
+    return true;
+}
+
 bool ft::Response::general_header_check(int fd, ft::Config& conf)
 {
     std::vector<std::string> header;
@@ -237,6 +297,7 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
     {
         this->is_content_length = false;
         this->is_chunked = false;
+        this->is_multy = false;
     }
     if(!this->full_log["ZAPROS"].compare(0,4,"POST"))
     {
@@ -248,11 +309,13 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]);
         if(!this->body_length)
             this->is_content_length = false;
-        if(this->is_chunked)
+        if(this->is_chunked && !this->is_multy)
         {
             this->is_content_length = false;
             this->body_length = 0;
         }
+        if(this->is_multy)
+            this->is_chunked = false;
     }
     return 0;
 }

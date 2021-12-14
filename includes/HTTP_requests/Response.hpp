@@ -25,6 +25,7 @@ namespace ft
         bool is_content_length; // если есть Content-length и нет chunked
         bool is_chunked; // Content-length: chunked
         bool is_multy; // Content-type: multipary/*
+        bool is_body;
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
         // методы
         Response();
@@ -36,6 +37,7 @@ namespace ft
         bool general_header_check(int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
         std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body); // неработающий автоиндекс
+        bool post_request(ft::Config& config);
     };
     template<typename T>
     std::string to_string(const T& value) // что либо в строку

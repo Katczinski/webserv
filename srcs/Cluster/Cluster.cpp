@@ -8,9 +8,9 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     char buff[30001] = {0};
     int ret = recv(fd, buff,  30000, 0);
     buff[ret] = '\0';
-    if(ret <= 0)
-        return 0;
-    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")))
+    // if(ret <= 0)
+        // return 0;
+    if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) && (!all_connection[fd].is_content_length && !all_connection[fd].is_chunked))
     {
         all_connection[fd].full_buffer+=buff;
         if(!all_connection[fd].general_header_check(fd, config))
@@ -29,22 +29,38 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         all_connection[fd].full_buffer.clear();
     }
-    else if(all_connection[fd].is_content_length && all_connection[fd].is_multy)
+    if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked && !all_connection[fd].is_multy)
     {
-        std::cout << "NU MOLODEC " << std::endl;
+        int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
+        all_connection[fd].answer(200, fd, config);
+
+        all_connection[fd].full_log.clear();
+        if(all_connection[fd].full_buffer.size())
+            http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
+        all_connection[fd].full_buffer.clear();
+        return (i);
     }
     else if(all_connection[fd].is_content_length)
     {
-        if(all_connection[fd].full_buffer.size() > all_connection[fd].body_length)
+        if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
         {
+        std::cout << "BODY==============================\n" << all_connection[fd].full_buffer << std::endl;
+
             all_connection[fd].full_log["Body"] = all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
             all_connection[fd].full_buffer = all_connection[fd].full_buffer.substr(all_connection[fd].body_length, all_connection[fd].full_buffer.size()) += "\r\n\r\n";
         }
+        // std::cout << "BODY-SIZE==========================\n" << all_connection[fd].full_log["Body"].size() << " == " << all_connection[fd].body_length <<  std::endl;
+
         if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length)
         {
+            if(all_connection[fd].is_multy)
+            {
+                if(!all_connection[fd].post_request(config))
+                    all_connection[fd].answer(400,fd, config);
+            }
             int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
             //вот тут функция на body; body лежит в all_connection[fd].full_log["Body"]
-            all_connection[fd].answer(200,fd, config);
+            all_connection[fd].answer(200,fd, config); // временный ответ-затычка
             all_connection[fd].clear();
             return(i);
         }
@@ -89,17 +105,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             all_connection[fd].clear();
             return ret;
         }
-    }
-    if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
-    {
-        int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
-        all_connection[fd].answer(200, fd, config);
-
-        all_connection[fd].full_log.clear();
-        if(all_connection[fd].full_buffer.size())
-            http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
-        all_connection[fd].full_buffer.clear();
-        return (i);
     }
     return(ret);
 }

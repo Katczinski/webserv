@@ -10,7 +10,6 @@ bool check_url(ft::Response& req, ft::Config& conf) // добавить чек �
 {
     if(!(conf.getLocation()[req.full_log["Dirrectory"]]).getIndex().size())
     {
-        std::cout << "IM HERE ====================================\n" << std::endl;
         return true;
     }
     std::string server_name_compare = req.full_log["Host"] + (req.full_log["Dirrectory"]).c_str();
@@ -56,7 +55,10 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
                 {
                     i = req.full_log["Content-Type"].find("boundary=", 0);
                     if(i != std::string::npos)
+                    {
                         req.full_log["boundary"] = req.full_log["Content-Type"].substr(i+9, req.full_log["Content-Type"].size());
+                        req.full_log["boundary"].erase(req.full_log["boundary"].begin() + req.full_log["boundary"].find('\r'));
+                    }
                     else
                         return req.answer(400,fd,conf);
                     req.is_multy = true;
@@ -68,6 +70,11 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
             req.is_content_length = true;
             if(req.full_log["Content-Length"] == "")
                 req.full_log["Content-Length"] = buffer.substr((buffer[15] == ' ') ?  16 : 15);
+        }
+        if(!buffer.compare(0, 1, "\r"))
+        {
+            while(std::getline(is, buffer, '\n'))
+                req.full_log["Body"] += buffer +='\n';
         }
     }
     if(!req.full_log["Host"].size())
