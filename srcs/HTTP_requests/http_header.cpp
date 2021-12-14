@@ -9,7 +9,10 @@
 bool check_url(ft::Response& req, ft::Config& conf) // добавить чек нескольких серверов
 {
     if(!(conf.getLocation()[req.full_log["Dirrectory"]]).getIndex().size())
+    {
+        std::cout << "IM HERE ====================================\n" << std::endl;
         return true;
+    }
     std::string server_name_compare = req.full_log["Host"] + (req.full_log["Dirrectory"]).c_str();
     std::string servers_name = conf.getHost() +":"+ conf.getPort() + (conf.getLocation().find(req.full_log["Dirrectory"]))->first;
     if(servers_name.compare(server_name_compare))
@@ -71,7 +74,7 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(400, fd, conf));    
     else if(check_url(req, conf))
         return(req.answer(404,fd, conf));
-    int i = req.req_methods_settings((conf.getLocation().find(req.full_log["Dirrectory"]))->second.getMethods()); // bad_alloc ?!?!?!?
+    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["Dirrectory"]))->second.getMethods()); // bad_alloc ?!?!?!?
     if(i)
         return(req.answer(i, fd, conf));
     return true;

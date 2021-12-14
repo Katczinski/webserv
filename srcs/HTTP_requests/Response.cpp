@@ -1,6 +1,23 @@
 #include "Response.hpp"
 
 std::string indexxx = "off";
+ft::Response::~Response() {}
+ft::Response::Response(ft::Response const& other)
+{
+    *this = other;
+}
+ft::Response& ft::Response::operator=(ft::Response const& other)
+{
+    if(this != &other)
+    {
+        this->full_log = other.full_log;
+        this->full_buffer = other.full_buffer;
+        this->is_content_length = other.is_content_length;
+        this->is_multy = other.is_multy;
+        this->is_chunked = other.is_chunked;
+    }
+    return *this;
+}
 ft::Response::Response()
 {
     this->full_log["ZAPROS"] = "";
@@ -40,9 +57,9 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
 
     // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
     //     dir_name += current_dirrectory;)
-    if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
-        this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
-    }
+    // if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
+        // this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
+    // }
     dir_name += this->full_log["Dirrectory"];
     this->full_log["Location"] += this->full_log["Directory"];
     std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
@@ -84,7 +101,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     }
     req += "\r\n</body>";
     closedir(dir);
-    prev_dirrectory = this->full_log["Dirrectory"];
+    // prev_dirrectory = this->full_log["Dirrectory"];
     return req;
 }
 
@@ -113,7 +130,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         head += body.str();
-        // std::cout << head << std::endl;
+        std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         this->full_log["Connection"] = "close";
     }
@@ -133,14 +150,15 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         this->full_log["Content-Type"] = "text/html";
         this->full_log["Location"] =  "http://"+this->full_log["Host"];
         std::string reeal_body;
-        if(!indexxx.compare("on"))    
-            reeal_body = this->AutoIndexPage(conf, body);
-        else
-        {
-            std::ifstream input (conf.getIndex()[0].c_str());
-            body << input.rdbuf();
-            reeal_body = body.str();
-        }
+        // conf.getLocation()[this->full_log["Dirrectory"];
+        // if(!indexxx.compare("on"))  
+            // reeal_body = this->AutoIndexPage(conf, body);
+        // else
+        // {
+        std::ifstream input (conf.getIndex()[0].c_str()); // проверять, если буфер == 0, то попробовать следующий, выкинуть 403
+        body << input.rdbuf();
+        reeal_body = body.str();
+        // }
         head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
@@ -227,7 +245,7 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
             return(405);
         if(this->full_log["Content-Type"].empty())
             return(400);
-        this->body_length =  ft_atoi(this->full_log["Content-Length"]);
+        this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]);
         if(!this->body_length)
             this->is_content_length = false;
         if(this->is_chunked)
@@ -250,22 +268,4 @@ void ft_split(std::string const &str, const char delim,
         end = str.find(delim, start);
         out.push_back(str.substr(start, end - start));
     }
-}
-
-size_t ft_atoi(std::string& str)
-{
-    size_t i = 0;
-    std::stringstream ss;
-    ss << str;
-    ss >> i;
-    return i;
-}
-
-size_t ft_atoi(char* str)
-{
-    size_t i = 0;
-    std::stringstream ss;
-    ss << str;
-    ss >> i;
-    return i;
 }
