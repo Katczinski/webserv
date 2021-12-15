@@ -169,7 +169,7 @@ void ft::checkSemicolon(const v_vec_string& content) {
 }
 
 void ft::checkPath(std::string path, std::string message) {
-	std::ifstream in(path);
+	std::ifstream in(path.c_str());
 		if (!in) {
 			in.close();
 			throw ft::ParserException(RED "Parser Error: " REST + message + YEL + path + REST " does not exist");
