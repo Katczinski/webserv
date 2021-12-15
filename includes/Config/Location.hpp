@@ -21,12 +21,12 @@ namespace ft
 		std::string							_cgi_path;
 		std::string							_max_body;
 		bool								_autoindex;
-		typedef std::vector<std::string>::iterator v_iter_string;
-		typedef std::vector<std::string>::const_iterator v_const_iter_string;
-		typedef std::vector<std::vector<std::string> >::iterator v_iter_v_string;
-		typedef std::vector<std::vector<std::string> >::const_iterator v_const_iter_v_string;
-		typedef std::vector<std::string> v_string;
-		typedef std::vector<std::vector<std::string> > v_vec_string;
+		typedef std::vector<std::string>::iterator 						v_iter_string;
+		typedef std::vector<std::string>::const_iterator 				v_const_iter_string;
+		typedef std::vector<std::vector<std::string> >::iterator 		v_iter_v_string;
+		typedef std::vector<std::vector<std::string> >::const_iterator 	v_const_iter_v_string;
+		typedef std::vector<std::string> 								v_string;
+		typedef std::vector<std::vector<std::string> > 					v_vec_string;
 	public:
 		Location(void);
 		Location(v_iter_v_string& it, v_vec_string& content, std::string server_root);

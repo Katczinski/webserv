@@ -31,9 +31,7 @@ namespace ft
             CGI(ft::Response& req);
             ~CGI();
             void                                init_env(ft::Response& req);
-            void                                CGI_read();
-            void                                CGI_write(const std::string& body);
-
+            void                                CGI_read(long fd);
             void                                parseQString(const char *qstring);
             std::string                         execute(ft::Response& req);
 

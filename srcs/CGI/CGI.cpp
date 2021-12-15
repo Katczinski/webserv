@@ -34,11 +34,10 @@ ft::CGI::~CGI() {
     free(_cenv);
 }
 
-void            ft::CGI::CGI_read()
+void            ft::CGI::CGI_read(long fd)
 {
     char buf[3000];
     int ret = 1;
-    int fd = open("cgi_output.txt", O_RDONLY);
     while (ret)
     {
         ret = read(fd, buf, 3000);
@@ -46,12 +45,6 @@ void            ft::CGI::CGI_read()
         _data += std::string(buf);
     }
     std::cout << "Response:\n" << _data << std::endl;
-}
-
-void    ft::CGI::CGI_write(const std::string& body)
-{
-    int fd = open("cgi_input.txt", O_CREAT | O_WRONLY);
-    write(fd, body.c_str(), body.length());
 }
 
 void    ft::CGI::parseQString(const char *qstring)
@@ -130,29 +123,34 @@ void            ft::CGI::init_env(ft::Response& req)
 std::string             ft::CGI::execute(ft::Response& req)
 {
     pid_t   pid;
-    int     fdIn;
-    int     fdOut;
+    FILE	*fIn = tmpfile();
+	FILE	*fOut = tmpfile();
+	long	fdIn = fileno(fIn);
+	long	fdOut = fileno(fOut);
     int     status;
 
-    CGI_write(req.full_log["Body"]);
+    // CGI_write(req.full_log["Body"]);
+    write(fdIn, req.full_log["Body"].c_str(), req.full_log["Body"].size());
+    lseek(fdIn, 0, SEEK_SET);
     pid = fork();
     if (pid == 0)
     {
-        fdIn = open("cgi_input.txt", O_RDONLY);
         dup2(fdIn, 0);
-        fdOut = open("cgi_output.txt", O_CREAT | O_WRONLY | O_TRUNC);
         dup2(fdOut, 1);
         status = execve(_argv[0], _argv, _cenv);
         std::cerr << "Execve failed\n" << strerror(errno) << std::endl;
         exit(status);
     }
-    else{
-        waitpid(pid, &status, WUNTRACED);
-        close(fdIn);
-        // close(fdOut);
-        CGI_read();
-        std::remove("cgi_input.txt");
-        std::remove("cgi_output.txt");
+    else if (pid > 0){
+        waitpid(pid, &status, 0);
+        lseek(fdOut, 0, SEEK_SET);
+        CGI_read(fdOut);
     }
+    else
+        std::cerr << "Fork failed\n";
+    close(fdIn);
+    close(fdOut);
+    fclose(fIn);
+    fclose(fOut);
     return (_data);
 }

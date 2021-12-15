@@ -198,8 +198,8 @@ void        ft::Cluster::setup()
 void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response>  all_connection;
-    std::map<int, ft::Config*>       config_map;
-    char* buff = (char*)malloc(sizeof(char)* 11000000);
+    std::map<int, ft::Config*>      config_map;
+    char* buff = (char*)malloc(sizeof(char) * 11000000);
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -221,7 +221,7 @@ void        ft::Cluster::run()
                 }
                 else
                 {
-                    //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
+                    //config_map[_connected[i].fd] - ключ = фд, валью = конфиг
                     if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd], buff))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
