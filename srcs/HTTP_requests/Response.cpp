@@ -47,9 +47,9 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
 
     // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
     //     dir_name += current_dirrectory;)
-    if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
-        this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
-    }
+    // if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
+    //     this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
+    // }
     dir_name += this->full_log["Dirrectory"];
     this->full_log["Location"] += this->full_log["Directory"];
     std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
@@ -91,7 +91,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     }
     req += "\r\n</body>";
     closedir(dir);
-    prev_dirrectory = this->full_log["Dirrectory"];
+    // prev_dirrectory = this->full_log["Dirrectory"];
     return req;
 }
 

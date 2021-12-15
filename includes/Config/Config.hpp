@@ -49,6 +49,7 @@ namespace ft
         void setServName(const v_string& line);
         void setRoot(const v_string& line);
         void setIndex(const v_string& line);
+        void initErrPages(void);
         void setErrPages(const v_string& line);
         void setLocation(v_iter_v_string& it, v_vec_string& content, std::string server_root);
     };
