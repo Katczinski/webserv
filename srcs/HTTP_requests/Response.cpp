@@ -1,24 +1,38 @@
 #include "Response.hpp"
 
-std::string indexxx = "on";
+std::string indexxx = "off";
+ft::Response::~Response() {}
+ft::Response::Response(ft::Response const& other)
+{
+    *this = other;
+}
+ft::Response& ft::Response::operator=(ft::Response const& other)
+{
+    if(this != &other)
+    {
+        this->full_log = other.full_log;
+        this->full_buffer = other.full_buffer;
+        this->is_content_length = other.is_content_length;
+        this->is_multy = other.is_multy;
+        this->is_chunked = other.is_chunked;
+    }
+    return *this;
+}
 ft::Response::Response()
 {
     this->full_log["ZAPROS"] = "";
     this->full_log["Dirrectory"] = "";
     this->full_log["Connection"] = "Keep-Alive";
     this->full_log["Host"] = "";
-    this->full_log["Date"] = "";
     this->full_log["Content-Type"] = "";
     this->full_log["Content-Length"] = "";
-    this->full_log["Server"] = "";
-    this->full_log["User-Agent"] = "";
     this->full_log["Transfer-Encoding"] = "";
-    this->full_log["200"] = "OK";
-    this->full_log["404"] = "Not found";
-    this->full_log["400"] = "Bad Request";
-    this->full_log["405"] = "Method Not Allowed";
+    this->full_log["Body"] = "";
+    this->full_log["boundary"] = "";
     this->is_content_length = false;
     this->is_chunked = false;
+    this->is_multy = false;
+
 }
 
 void ft::Response::clear()
@@ -27,29 +41,27 @@ void ft::Response::clear()
     this->full_log["Dirrectory"] = "";
     this->full_log["Connection"] = "Keep-Alive";
     this->full_log["Host"] = "";
-    this->full_log["Date"] = "";
     this->full_log["Content-Type"] = "";
     this->full_log["Content-Length"] = "";
-    this->full_log["Server"] = "";
-    this->full_log["User-Agent"] = "";
     this->full_log["Transfer-Encoding"] = "";
-    this->full_log["200"] = "OK";
-    this->full_log["404"] = "Not found";
-    this->full_log["400"] = "Bad Request";
-    this->full_log["405"] = "Method Not Allowed";
+    this->full_log["Body"] = "";
+    this->full_log["boundary"] = "";
     this->is_content_length = false;
     this->is_chunked = false;
+    this->is_multy = false;
 }
 std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& body)
 {
     std::string dir_name = conf.getRoot();
     dir_name.erase(dir_name.end() -1);
-    
-    // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
-        // dir_name += current_dirrectory;
-    dir_name += this->full_log["Dirrectory"];
-    this->full_log["Location"] += this->full_log["Dirrectory"];
 
+    // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
+    //     dir_name += current_dirrectory;)
+    // if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
+        // this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
+    // }
+    dir_name += this->full_log["Dirrectory"];
+    this->full_log["Location"] += this->full_log["Directory"];
     std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
 
     std::string req;
@@ -65,7 +77,6 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
             this->full_log["Content-Type"] = "image/gif";
         else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
             this->full_log["Content-Type"] = "video/mp4";
-        this->prev_dirrectory = dir_name;
         std::ifstream input (dir_name.c_str());
         body << input.rdbuf();
         return body.str();
@@ -90,6 +101,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     }
     req += "\r\n</body>";
     closedir(dir);
+    // prev_dirrectory = this->full_log["Dirrectory"];
     return req;
 }
 
@@ -118,7 +130,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         head += body.str();
-        // std::cout << head << std::endl;
+        std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         this->full_log["Connection"] = "close";
     }
@@ -129,6 +141,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // body = "<h1>405 Try another method!</h1>\r\n";
         head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
+        std::cout << head << std::endl;
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
     }
@@ -137,20 +150,21 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         this->full_log["Content-Type"] = "text/html";
         this->full_log["Location"] =  "http://"+this->full_log["Host"];
         std::string reeal_body;
-        if(!indexxx.compare("on"))    
-            reeal_body = this->AutoIndexPage(conf, body);
-        else
-        {
-            std::ifstream input (conf.getErrPages(405).c_str());
-            body << input.rdbuf();
-            reeal_body = body.str();
-        }
+        // conf.getLocation()[this->full_log["Dirrectory"];
+        // if(!indexxx.compare("on"))  
+            // reeal_body = this->AutoIndexPage(conf, body);
+        // else
+        // {
+        std::ifstream input (conf.getIndex()[0].c_str()); // проверять, если буфер == 0, то попробовать следующий, выкинуть 403
+        body << input.rdbuf();
+        reeal_body = body.str();
+        // }
         head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"];
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
+        // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
-        // head += "Accept-Ranges: none\r\n";
         std::cout << head << std::endl;
         head += reeal_body;
         send(fd, head.c_str(), head.size(), 0);
@@ -169,6 +183,66 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     if(i == 200)
         return true;
     return false;
+}
+
+bool ft::Response::post_request(ft::Config& config)
+{
+    std::string buffer;
+    std::istringstream is(this->full_log["Body"]);
+    // this->full_log["Body"] = "";
+    std::string filename;
+    std::vector<std::string> for_filename;
+    size_t i = 0;
+    if(this->full_log["Body"].find("--"+this->full_log["boundary"]) != std::string::npos &&  this->full_log["Body"].find("--"+this->full_log["boundary"]+"--") != std::string::npos)
+    {
+        while(std::getline(is, buffer, '\n'))
+        {
+            if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
+                break;
+            if(!buffer.compare(0, this->full_log["boundary"].size() + 2, "--"+this->full_log["boundary"]))
+            {
+
+                std::getline(is, buffer, '\n');
+        std::cout << "Im here=============================\n" << std::endl;
+
+                if(!buffer.compare(0, 31, "Content-Disposition: form-data;"))
+                {
+                    std::vector<std::string>::iterator it = for_filename.begin();
+                    while (it != for_filename.end())
+                    {
+                        i = (*it).find("filename=");
+                        if(i != std::string::npos)
+                            std::string filename = (*it).substr(i, (*it).size());
+                        it++;
+                    }   
+                }
+                else
+                    return false;                
+                std::getline(is, buffer, '\n');
+                if(!buffer.compare(0, 13, "Content-Type:"))
+                    std::cout << "check\n";
+                else
+                    return false;
+                std::getline(is, buffer, '\n');
+                if(!buffer.compare(0, 1, "\r"))
+                    std::cout << "check\n";
+                else
+                    return false;
+                while (std::getline(is, buffer, '\n'))
+                {
+                    if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
+                        break;
+                    this->full_log["Body"] += buffer;
+                }
+            }
+            // 
+        }
+        std::cout << "FILEPATH" << filename << std::endl;
+        std::ofstream nope((config.getRoot() + "da.txt").c_str());
+        nope << this->full_log["Body"];
+        return true;
+    }
+    return true;
 }
 
 bool ft::Response::general_header_check(int fd, ft::Config& conf)
@@ -220,21 +294,28 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         it++;
     }
     if(!this->full_log["ZAPROS"].compare(0, 3, "GET"))
+    {
         this->is_content_length = false;
+        this->is_chunked = false;
+        this->is_multy = false;
+    }
     if(!this->full_log["ZAPROS"].compare(0,4,"POST"))
     {
         // std::map<std::string, ft::Location> it =  conf.getLocation(); в строке пути, в локейшене все его описание
         if(methods.find("POST") == std::string::npos) // заменить переменню Allowed из парсера Димы
             return(405);
-        if(!this->full_log["Content-Type"].size() || !this->full_log["Content-Length"].size())
+        if(this->full_log["Content-Type"].empty())
             return(400);
-        std::stringstream ss;
-        ss << this->full_log["Content-Length"];
-        ss >> this->body_length;
+        this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]);
         if(!this->body_length)
             this->is_content_length = false;
-        if(this->is_chunked)
+        if(this->is_chunked && !this->is_multy)
+        {
             this->is_content_length = false;
+            this->body_length = 0;
+        }
+        if(this->is_multy)
+            this->is_chunked = false;
     }
     return 0;
 }
@@ -251,4 +332,3 @@ void ft_split(std::string const &str, const char delim,
         out.push_back(str.substr(start, end - start));
     }
 }
-

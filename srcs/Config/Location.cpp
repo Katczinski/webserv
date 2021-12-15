@@ -116,7 +116,6 @@ void ft::Location::setIndex(const v_string& line) {
 	v_const_iter_string it = line.begin();
 	++it;
 	while (it != (line.end() - 1)) {
-		checkPath(_root + *it, " incorrect index in location, path: ");
 		_index.push_back(_root + *it);
 		++it;
 	}

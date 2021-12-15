@@ -5,6 +5,7 @@ ft::Config::Config() : _host(), _port(), _server_name(), _root(), _index(), _err
 
 ft::Config::Config(v_iter_v_string& it, v_vec_string& content) : _host(), _port(), _server_name(),
 																		_root(), _index(), _error_pages(), _locations() {
+	initErrPages();
 	for (; it != content.end() - 1; ++it) {
 		if (it->front() == "server") {
 			--it;
@@ -179,10 +180,21 @@ void ft::Config::setIndex(const v_string& line) {
 	++it;
 	std::string value;
 	while (it != (line.end() - 1)) {
-		checkPath(_root + *it, " incorrect index in service, path: ");
 		_index.push_back(_root + *it);
 		++it;
 	}
+}
+
+void ft::Config::initErrPages(void) {
+	char dir[1024];
+	getcwd(dir, 1024);
+	std::string root = dir;
+
+	_error_pages[400] = root + "/srcs/www/default_pages/400.html";
+	_error_pages[404] = root + "/srcs/www/default_pages/404.html";
+	_error_pages[405] = root + "/srcs/www/default_pages/405.html";
+	_error_pages[500] = root + "/srcs/www/default_pages/500.html";
+	_error_pages[505] = root + "/srcs/www/default_pages/505.html";
 }
 
 void ft::Config::setErrPages(const v_string& line) {
@@ -190,7 +202,7 @@ void ft::Config::setErrPages(const v_string& line) {
 	std::string value = _root + line[2];
 	checkPath(value, " incorrect error page file, path: ");
 	map_iter_int_string it = _error_pages.find(atoi(key.c_str()));
-	if (it == _error_pages.end()) {
+	if (it != _error_pages.end()) {
 		_error_pages[std::atoi(key.c_str())] = value;
 	}
 }
