@@ -9,13 +9,19 @@
 bool check_url(ft::Response& req, ft::Config& conf)
 {
     bool is_file = false;
-    std::string real_root = conf.getRoot().substr(0, conf.getRoot().size() - 1);
+    std::string real_root;
+    std::string real_dir;
+
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it !=  conf.getEndLocation())
     {
-        if((real_root + req.full_log["Dirrectory"]) == (*it).second.getRoot())
+        real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
+        real_dir = req.full_log["Dirrectory"].substr(req.full_log["Dirrectory"].find_last_of("/"), req.full_log["Dirrectory"].size());
+        if((real_root + real_dir) == (*it).second.getRoot())
         {
             req.full_log["for_methods_location"] = req.full_log["Dirrectory"];
+            if((real_root + req.full_log["Dirrectory"]).find("cgi") != std::string::npos)
+                return true;
             return false;
         }
         else
@@ -23,7 +29,8 @@ bool check_url(ft::Response& req, ft::Config& conf)
             int i = 0;
             while (i < (*it).second.getIndex().size())
             {
-                if((real_root + req.full_log["Dirrectory"]) == (*it).second.getIndex()[i])
+                std::cout << "MOYO " << (real_root + real_dir) << " NE MOYO " << (*it).second.getIndex()[i] << std::endl;
+                if((real_root + real_dir) == (*it).second.getIndex()[i])
                 {
                     size_t i = req.full_log["Dirrectory"].find_last_of('/');
                     req.full_log["for_methods_location"] = req.full_log["Dirrectory"].substr(0, i+1);
