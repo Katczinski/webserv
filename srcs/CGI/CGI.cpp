@@ -150,9 +150,9 @@ std::string             ft::CGI::execute(ft::Response& req)
         waitpid(pid, &status, WUNTRACED);
         close(fdIn);
         // close(fdOut);
+        CGI_read();
         std::remove("cgi_input.txt");
         std::remove("cgi_output.txt");
-        CGI_read();
     }
     return (_data);
 }
