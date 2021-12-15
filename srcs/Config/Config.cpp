@@ -212,3 +212,12 @@ void ft::Config::setLocation(v_iter_v_string& it, v_vec_string& content, std::st
 	ft:Location newLocation(it, content, server_root);
 	_locations.insert(std::make_pair(key, newLocation));
 }
+
+ft::Config::v_iterator_locationov ft::Config::getBeginLocation()
+{
+	return this->_locations.begin();
+}
+ft::Config::v_iterator_locationov ft::Config::getEndLocation()
+{
+	return this->_locations.end();
+}
