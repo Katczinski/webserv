@@ -5,6 +5,7 @@ ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
+    
     char buff[30001] = {0};
     int ret = recv(fd, buff,  30000, 0);
     buff[ret] = '\0';
@@ -22,7 +23,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     {
         std::cout <<  "BUFFER========================\n"<< all_connection[fd].full_buffer << std::endl;
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config))
-        {
+        {            
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();
             return ret;
@@ -32,7 +33,11 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked && !all_connection[fd].is_multy)
     {
         int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
-        all_connection[fd].answer(200, fd, config);
+        all_connection[fd].full_log["Dirrectory"] = "/cgi-bin/hello";
+        ft::CGI cgi(all_connection[fd]);
+        std::string response = cgi.execute(all_connection[fd]);
+        send(fd, response.c_str(), response.length(), 0);
+        // all_connection[fd].answer(200, fd, config);
 
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())
@@ -53,6 +58,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 
         if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length)
         {
+            std::cout << "--------------------------------------------------------------------------\n";
             if(all_connection[fd].is_multy)
             {
                 if(!all_connection[fd].post_request(config))
@@ -60,7 +66,11 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             }
             int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
             //вот тут функция на body; body лежит в all_connection[fd].full_log["Body"]
-            all_connection[fd].answer(200,fd, config); // временный ответ-затычка
+            
+            ft::CGI cgi(all_connection[fd]);
+            std::string response = cgi.execute(all_connection[fd]);
+            send(fd, response.c_str(), response.length(), 0);
+            // all_connection[fd].answer(200,fd, config); // временный ответ-затычка
             all_connection[fd].clear();
             return(i);
         }

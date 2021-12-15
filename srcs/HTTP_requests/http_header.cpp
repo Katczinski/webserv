@@ -79,9 +79,9 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
     }
     if(!req.full_log["Host"].size())
         return(req.answer(400, fd, conf));    
-    else if(check_url(req, conf))
-        return(req.answer(404,fd, conf));
-    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["Dirrectory"]))->second.getMethods()); // bad_alloc ?!?!?!?
+    // else if(check_url(req, conf))
+        // return(req.answer(404,fd, conf));
+    int i = 0;// =  req.req_methods_settings((conf.getLocation().find(req.full_log["Dirrectory"]))->second.getMethods()); // bad_alloc ?!?!?!?    
     if(i)
         return(req.answer(i, fd, conf));
     return true;
