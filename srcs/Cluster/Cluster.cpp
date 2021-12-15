@@ -32,11 +32,16 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked && !all_connection[fd].is_multy)
     {
         int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
-        all_connection[fd].full_log["Dirrectory"] = "/cgi-bin/hello";
-        ft::CGI cgi(all_connection[fd]);
-        std::string response = cgi.execute(all_connection[fd]);
-        send(fd, response.c_str(), response.length(), 0);
-        // all_connection[fd].answer(200, fd, config);
+        // all_connection[fd].full_log["Dirrectory"] = "/cgi-bin/hello";
+        std::cout << "=================" << all_connection[fd].full_log["Dirrectory"] << "===========\n";
+        if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
+        {
+            ft::CGI cgi(all_connection[fd]);
+            std::string response = cgi.execute(all_connection[fd]);
+            send(fd, response.c_str(), response.length(), 0);
+        }
+        else
+            all_connection[fd].answer(200, fd, config);
 
         all_connection[fd].full_log.clear();
         if(all_connection[fd].full_buffer.size())

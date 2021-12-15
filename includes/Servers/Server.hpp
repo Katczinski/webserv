@@ -16,6 +16,7 @@
 #include <sys/select.h>
 #include <vector>
 #include "Response.hpp"
+#include "CGI.hpp"
 
 namespace ft
 {
