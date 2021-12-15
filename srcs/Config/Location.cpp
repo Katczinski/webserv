@@ -76,6 +76,7 @@ ft::Location& ft::Location::operator=(const ft::Location& other) {
 		_cgi_extension = other._cgi_extension;
 		_cgi_path = other._cgi_path;
 		_max_body = other._max_body;
+		_autoindex = other._autoindex;
 	}
 	return *this;
 }
