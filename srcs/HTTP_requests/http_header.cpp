@@ -29,11 +29,13 @@ bool check_url(ft::Response& req, ft::Config& conf)
             int i = 0;
             while (i < (*it).second.getIndex().size())
             {
-                std::cout << "MOYO " << (real_root + real_dir) << " NE MOYO " << (*it).second.getIndex()[i] << std::endl;
                 if((real_root + real_dir) == (*it).second.getIndex()[i])
                 {
                     size_t i = req.full_log["Dirrectory"].find_last_of('/');
                     req.full_log["for_methods_location"] = req.full_log["Dirrectory"].substr(0, i+1);
+                    i = req.full_log["for_methods_location"].find_first_of('/');
+                    if(i != std::string::npos && i == 0 && req.full_log["for_methods_location"].size() > 1)
+                        req.full_log["for_methods_location"].erase(req.full_log["for_methods_location"].begin() +i);
                     return false;
                 }
                 i++;
@@ -107,8 +109,9 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(400, fd, conf));    
     else if(check_url(req, conf))
         return(req.answer(404,fd, conf));
-    // int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // bad_alloc ?!?!?!?
-    // if(i)
-        // return(req.answer(i, fd, conf));
+    std::cout << "=============================\n\n\n" << req.full_log["for_methods_location"] << std::endl;
+    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // bad_alloc ?!?!?!?
+    if(i)
+        return(req.answer(i, fd, conf));
     return true;
 }
