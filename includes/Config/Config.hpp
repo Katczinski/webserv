@@ -13,20 +13,20 @@ namespace ft
     class Location;
     class Config {
     private:
-        std::string                                 _host;
-        std::string                                 _port;
-        std::string                                 _server_name;
-        std::string                                 _root;
-        std::vector<std::string>                    _index;
-        std::map<int, std::string>                  _error_pages;
-        std::map<std::string, Location>             _locations;
-        typedef std::vector<std::string>::iterator v_iter_string;
-        typedef std::map<int, std::string>::iterator map_iter_int_string;
-        typedef std::vector<std::string>::const_iterator v_const_iter_string;
-        typedef std::vector<std::vector<std::string> >::iterator v_iter_v_string;
-        typedef std::vector<std::vector<std::string> >::const_iterator v_const_iter_v_string;
-        typedef std::vector<std::string> v_string;
-        typedef std::vector<std::vector<std::string> > v_vec_string;
+        std::string                                                     _host;
+        std::string                                                     _port;
+        std::string                                                     _server_name;
+        std::string                                                     _root;
+        std::vector<std::string>                                        _index;
+        std::map<int, std::string>                                      _error_pages;
+        std::map<std::string, Location>                                 _locations;
+        typedef std::vector<std::string>::iterator                      v_iter_string;
+        typedef std::map<int, std::string>::iterator                    map_iter_int_string;
+        typedef std::vector<std::string>::const_iterator                v_const_iter_string;
+        typedef std::vector<std::vector<std::string> >::iterator        v_iter_v_string;
+        typedef std::vector<std::vector<std::string> >::const_iterator  v_const_iter_v_string;
+        typedef std::vector<std::string>                                v_string;
+        typedef std::vector<std::vector<std::string> >                  v_vec_string;
     public:
         Config();
         Config(v_iter_v_string& it, v_vec_string& content);
