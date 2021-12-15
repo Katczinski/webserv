@@ -29,6 +29,7 @@ ft::Response::Response()
     this->full_log["Transfer-Encoding"] = "";
     this->full_log["Body"] = "";
     this->full_log["boundary"] = "";
+    this->full_log["for_methods_location"] = "";
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
@@ -46,6 +47,8 @@ void ft::Response::clear()
     this->full_log["Transfer-Encoding"] = "";
     this->full_log["Body"] = "";
     this->full_log["boundary"] = "";
+    this->full_log["for_methods_location"] = "";
+    this->body_length = 0;
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
@@ -125,6 +128,8 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     else if(i == 400)
     {
+        std::ifstream input (conf.getErrPages(400).c_str());
+        body << input.rdbuf(); 
         // std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
         // body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
@@ -151,12 +156,23 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         this->full_log["Location"] =  "http://"+this->full_log["Host"];
         std::string reeal_body;
         // conf.getLocation()[this->full_log["Dirrectory"];
-        // if(!indexxx.compare("on"))  
+        // if((conf.getLocation()[this->full_log["Dirrectory"]]).getAutoindex())  
             // reeal_body = this->AutoIndexPage(conf, body);
         // else
         // {
-        std::ifstream input (conf.getIndex()[0].c_str()); // проверять, если буфер == 0, то попробовать следующий, выкинуть 403
-        body << input.rdbuf();
+        int i = 0;
+        while(i < conf.getIndex().size())
+        {
+            std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
+            if(input.is_open())
+            {
+                body << input.rdbuf();
+                break;
+            }
+            i++;
+        }
+        if(i == conf.getIndex().size())
+            return this->answer(403,fd,conf);
         reeal_body = body.str();
         // }
         head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
@@ -180,6 +196,17 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
     }
+    else if(i == 403)
+    {
+        std::ifstream input (conf.getErrPages(403).c_str());
+        body << input.rdbuf(); 
+        // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
+        head = "HTTP/1.1 403 Forbidden\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+        head += body.str();
+        // std::cout << head << std::endl;
+        send(fd, head.c_str(), head.size(), 0);
+    }
     if(i == 200)
         return true;
     return false;
@@ -189,57 +216,75 @@ bool ft::Response::post_request(ft::Config& config)
 {
     std::string buffer;
     std::istringstream is(this->full_log["Body"]);
-    // this->full_log["Body"] = "";
+    bool is_bound = false;
+    bool is_body = false;
     std::string filename;
     std::vector<std::string> for_filename;
+    std::string real_body;
     size_t i = 0;
     if(this->full_log["Body"].find("--"+this->full_log["boundary"]) != std::string::npos &&  this->full_log["Body"].find("--"+this->full_log["boundary"]+"--") != std::string::npos)
     {
         while(std::getline(is, buffer, '\n'))
         {
             if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
-                break;
-            if(!buffer.compare(0, this->full_log["boundary"].size() + 2, "--"+this->full_log["boundary"]))
             {
-
-                std::getline(is, buffer, '\n');
-        std::cout << "Im here=============================\n" << std::endl;
-
+                is_body = true;
+                is_bound = false;
+            }
+            if(!buffer.compare(("--"+this->full_log["boundary"]+'\r')))
+                is_bound = true;
+            if(is_bound)
+            {
                 if(!buffer.compare(0, 31, "Content-Disposition: form-data;"))
                 {
+                    ft_split(buffer, ';', for_filename);
                     std::vector<std::string>::iterator it = for_filename.begin();
                     while (it != for_filename.end())
                     {
                         i = (*it).find("filename=");
                         if(i != std::string::npos)
-                            std::string filename = (*it).substr(i, (*it).size());
+                        {
+                            (*it).erase((*it).begin() + (*it).find('\r'));  
+                            filename = (*it).substr(i + 9, (*it).size());
+                            while ((i = filename.find('"')) != std::string::npos)
+                            {
+                                filename.erase(filename.begin() + i);
+                            }
+                        }
                         it++;
                     }   
                 }
-                else
-                    return false;                
-                std::getline(is, buffer, '\n');
-                if(!buffer.compare(0, 13, "Content-Type:"))
-                    std::cout << "check\n";
-                else
-                    return false;
-                std::getline(is, buffer, '\n');
-                if(!buffer.compare(0, 1, "\r"))
-                    std::cout << "check\n";
-                else
-                    return false;
-                while (std::getline(is, buffer, '\n'))
+                // else if(!buffer.compare(0, 13, "Content-Type:")) // нужен ли он? 
+                else if(!buffer.compare(0, 1, "\r") && !filename.empty())
                 {
-                    if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
-                        break;
-                    this->full_log["Body"] += buffer;
+                    is_bound = false;
+                    is_body = true;
                 }
             }
-            // 
+            else if(is_body)
+            {
+                // std::cout << "PATH=============\n" << (config.getRoot() + filename).c_str() << std::endl;
+                if(!buffer.compare(("--"+this->full_log["boundary"]+'\r')))
+                {
+                    std::ofstream nope((config.getRoot() + filename).c_str(), std::ios_base::app);
+                    nope << real_body;
+                    nope.close();
+                    is_bound = true;
+                }
+                else if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
+                {
+                    // std::cout << "END ==================\n " << std::endl;
+                    // std::cout << "PATH=============\n" << (config.getRoot() + filename).c_str() << std::endl;
+                    real_body.erase(real_body.end()-1);
+                    std::ofstream nope((config.getRoot() + filename).c_str(), std::ios_base::app);
+                    nope << real_body;
+                    nope.close();
+                    break;
+                }
+                else
+                    real_body += buffer;
+            }
         }
-        std::cout << "FILEPATH" << filename << std::endl;
-        std::ofstream nope((config.getRoot() + "da.txt").c_str());
-        nope << this->full_log["Body"];
         return true;
     }
     return true;
@@ -301,8 +346,7 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
     }
     if(!this->full_log["ZAPROS"].compare(0,4,"POST"))
     {
-        // std::map<std::string, ft::Location> it =  conf.getLocation(); в строке пути, в локейшене все его описание
-        if(methods.find("POST") == std::string::npos) // заменить переменню Allowed из парсера Димы
+        if(methods.find("POST") == std::string::npos)
             return(405);
         if(this->full_log["Content-Type"].empty())
             return(400);

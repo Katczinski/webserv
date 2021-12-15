@@ -3,14 +3,13 @@
 
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 
-int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
+int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config, char* buff)
 {
-    
-    char buff[30001] = {0};
-    int ret = recv(fd, buff,  30000, 0);
+    // char buff[300001] = {0};
+    int ret = recv(fd, buff,  11000000, 0);
     buff[ret] = '\0';
-    // if(ret <= 0)
-        // return 0;
+    if(ret <= 0)
+        return 0;
     if((!all_connection[fd].full_buffer.size() && strcmp(buff, "\r\n")) && (!all_connection[fd].is_content_length && !all_connection[fd].is_chunked))
     {
         all_connection[fd].full_buffer+=buff;
@@ -47,20 +46,21 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     }
     else if(all_connection[fd].is_content_length)
     {
+        std::cout << "Я ТУТ № 1 =========================\n" <<" BODY_SIZEE " << all_connection[fd].full_log["Body"].size() << " BUFFER_SIZE " << all_connection[fd].full_buffer.size() << " BODY_L " << all_connection[fd].body_length << std::endl;
         if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
         {
-        std::cout << "BODY==============================\n" << all_connection[fd].full_buffer << std::endl;
+            std::cout << "Я ТУТ № 2 =========================\n";
 
             all_connection[fd].full_log["Body"] = all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
             all_connection[fd].full_buffer = all_connection[fd].full_buffer.substr(all_connection[fd].body_length, all_connection[fd].full_buffer.size()) += "\r\n\r\n";
         }
-        // std::cout << "BODY-SIZE==========================\n" << all_connection[fd].full_log["Body"].size() << " == " << all_connection[fd].body_length <<  std::endl;
-
         if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length)
         {
             std::cout << "--------------------------------------------------------------------------\n";
             if(all_connection[fd].is_multy)
             {
+        std::cout << "Я ТУТ № 3 =========================\n";
+
                 if(!all_connection[fd].post_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
@@ -194,6 +194,7 @@ void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response>  all_connection;
     std::map<int, ft::Config*>       config_map;
+    char* buff = (char*)malloc(sizeof(char)* 11000000);
     for (;;)
     {
         if ((poll(_connected, _size, 2)) <= 0)
@@ -216,7 +217,7 @@ void        ft::Cluster::run()
                 else
                 {
                     //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
-                    if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd]))
+                    if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd], buff))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         config_map.erase(_connected[i].fd);
