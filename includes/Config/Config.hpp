@@ -27,12 +27,16 @@ namespace ft
         typedef std::vector<std::vector<std::string> >::const_iterator v_const_iter_v_string;
         typedef std::vector<std::string> v_string;
         typedef std::vector<std::vector<std::string> > v_vec_string;
+        typedef std::map<std::string, ft::Location>::iterator v_iterator_locationov;
     public:
         Config();
         Config(v_iter_v_string& it, v_vec_string& content);
         Config(const Config& other);
         ~Config();
         Config& operator=(const Config& other);
+
+        v_iterator_locationov getBeginLocation();
+        v_iterator_locationov getEndLocation();
 
         std::string const getHost(void) const;
         std::string const getPort(void) const;

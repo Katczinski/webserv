@@ -10,25 +10,31 @@ bool check_url(ft::Response& req, ft::Config& conf)
 {
     bool is_file = false;
     std::string real_root = conf.getRoot().substr(0, conf.getRoot().size() - 1);
-    if((real_root + req.full_log["Dirrectory"]) == conf.getRoot())
+    std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
+    while(it !=  conf.getEndLocation())
     {
-        req.full_log["for_methods_location"] = req.full_log["Dirrectory"];
-        return false;
-    }
-    else
-    {
-        int i = 0;
-        while (i < conf.getIndex().size())
+        if((real_root + req.full_log["Dirrectory"]) == (*it).second.getRoot())
         {
-            if((real_root + req.full_log["Dirrectory"]) == conf.getIndex()[i])
-            {
-                size_t i = req.full_log["Dirrectory"].find_last_of('/');
-                req.full_log["for_methods_location"] = req.full_log["Dirrectory"].substr(0, i+1);
-                return false;
-            }
-            i++;
+            req.full_log["for_methods_location"] = req.full_log["Dirrectory"];
+            return false;
         }
+        else
+        {
+            int i = 0;
+            while (i < (*it).second.getIndex().size())
+            {
+                if((real_root + req.full_log["Dirrectory"]) == (*it).second.getIndex()[i])
+                {
+                    size_t i = req.full_log["Dirrectory"].find_last_of('/');
+                    req.full_log["for_methods_location"] = req.full_log["Dirrectory"].substr(0, i+1);
+                    return false;
+                }
+                i++;
+            }
+        }
+        it++;
     }
+
     return true;
 }
 
@@ -94,8 +100,8 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(400, fd, conf));    
     else if(check_url(req, conf))
         return(req.answer(404,fd, conf));
-    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // bad_alloc ?!?!?!?
-    if(i)
-        return(req.answer(i, fd, conf));
+    // int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // bad_alloc ?!?!?!?
+    // if(i)
+        // return(req.answer(i, fd, conf));
     return true;
 }
