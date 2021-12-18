@@ -191,6 +191,7 @@ void ft::Config::initErrPages(void) {
 	std::string root = dir;
 
 	_error_pages[400] = root + "/srcs/www/default_pages/400.html";
+	_error_pages[403] = root + "/srcs/www/default_pages/403.html";
 	_error_pages[404] = root + "/srcs/www/default_pages/404.html";
 	_error_pages[405] = root + "/srcs/www/default_pages/405.html";
 	_error_pages[500] = root + "/srcs/www/default_pages/500.html";
