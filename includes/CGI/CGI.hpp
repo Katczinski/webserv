@@ -33,7 +33,7 @@ namespace ft
             void                                init_env(ft::Response& req);
             void                                CGI_read(long fd);
             void                                parseQString(const char *qstring);
-            std::string                         execute(ft::Response& req);
+            std::string                         execute(ft::Response& req, int fd);
 
     };
 }

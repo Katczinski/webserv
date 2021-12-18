@@ -37,8 +37,9 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
         {
             ft::CGI cgi(all_connection[fd]);
-            std::string response = cgi.execute(all_connection[fd]);
-            send(fd, response.c_str(), response.length(), 0);
+            std::string response = cgi.execute(all_connection[fd], fd);
+            std::cout << "I'm here\n";
+            // send(fd, response.c_str(), response.length(), 0);
         }
         else
             all_connection[fd].answer(200, fd, config);
@@ -64,20 +65,22 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             std::cout << "--------------------------------------------------------------------------\n";
             if(all_connection[fd].is_multy)
             {
-        std::cout << "Я ТУТ № 3 =========================\n";
+                std::cout << "Я ТУТ № 3 =========================\n";
 
                 if(!all_connection[fd].post_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
-            int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
-            //вот тут функция на body; body лежит в all_connection[fd].full_log["Body"]
-            
-            ft::CGI cgi(all_connection[fd]);
-            std::string response = cgi.execute(all_connection[fd]);
-            send(fd, response.c_str(), response.length(), 0);
-            // all_connection[fd].answer(200,fd, config); // временный ответ-затычка
-            all_connection[fd].clear();
-            return(i);
+                int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
+                //вот тут функция на body; body лежит в all_connection[fd].full_log["Body"]
+
+                ft::CGI cgi(all_connection[fd]);
+                std::string response = cgi.execute(all_connection[fd], fd);
+                std::cout << "I'm there\n";
+
+                // send(fd, response.c_str(), response.length(), 0);
+                // all_connection[fd].answer(200,fd, config); // временный ответ-затычка
+                all_connection[fd].clear();
+                return(i);
         }
     }
     else if(all_connection[fd].is_chunked)
