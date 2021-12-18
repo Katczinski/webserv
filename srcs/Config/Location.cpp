@@ -143,7 +143,24 @@ void ft::Location::setCgiPath(const v_string& line) {
 }
 
 void ft::Location::setMaxBody(const v_string& line) {
-	_max_body = line[1];
+	std::string value = line[1];
+	size_t i = 0;
+	while (i < value.length() - 1) {
+		if (!isdigit(value[i])) {
+			throw ft::ParserException(RED "Parser Error:" REST " max body size " YEL + value + REST " incorrect");
+		}
+		++i;
+	}
+	if (value[i] != 'm' && value[i] != 'b') {
+		throw ft::ParserException(RED "Parser Error:" REST " max body size " YEL + value + REST " incorrect");
+	}
+	if (value[i] == 'm') {
+		value.pop_back();
+		value += "000";
+	} else if (value[i] == 'b') {
+		value.pop_back();
+	}
+	_max_body = value;
 }
 
 void ft::Location::setAutoindex(const v_string& line) {
