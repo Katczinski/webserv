@@ -21,13 +21,18 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if(ret <= 0)
         return 0;
     size_t i = 0;
-    while(i < ret && all_connection[fd].full_log["Host"].empty())
+    while(i < ret && all_connection[fd].full_log["Host"].empty() || (i < ret && all_connection[fd].is_chunked))
     {
-        all_connection[fd].full_buffer += buf1[i++];
-        if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos) // считываем хэдер пришедший, если еще не был в парсере
-            break;
+        if(buf1[0] == '\r' && all_connection[fd].full_buffer.empty() && !all_connection[fd].is_chunked)
+            i++;
+        else
+        {
+            all_connection[fd].full_buffer += buf1[i++];
+            if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos) // считываем хэдер пришедший, если еще не был в парсере
+                break;
+        }
     }
-    if(!all_connection[fd].general_header_check(all_connection[fd].full_buffer.substr(0, 2100), fd, config)) // смотрим general header, max размер URL 2048
+    if(!all_connection[fd].full_buffer.empty() && !all_connection[fd].general_header_check(all_connection[fd].full_buffer.substr(0, 2100), fd, config)) // смотрим general header, max размер URL 2048
         return (1);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
@@ -88,49 +93,49 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             return(ans);
         }
     }
-    // else if(all_connection[fd].is_chunked)
-    // {
-    //     //исполняется пока не будет chunked == 0\r\n
-    //     if(!all_connection[fd].body_length)
-    //     {
-    //         std::string buffer;
-    //         int i = 0;
-    //         while(i < (buf1.size() - 2))
-    //         {
-    //             if(!isdigit(buf1[i]))
-    //             {
-    //                 all_connection[fd].answer(400, fd, config);
-    //                 all_connection[fd].clear();
-    //                 all_connection[fd].full_buffer.clear();
-    //                 return ret;
-    //             }
-    //             buffer += buf1[i];
-    //             i++;
-    //         }
-    //         all_connection[fd].body_length = ft_atoi(buffer);
-    //     }
-    //     else if(all_connection[fd].body_length)
-    //     {
-    //         if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
-    //         {
-    //             all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
-    //             all_connection[fd].body_length = 0;
-    //             all_connection[fd].full_buffer.clear();
-    //         }
-    //     }
-    //     if(all_connection[fd].full_buffer.find("0\r\n\r\n") != std::string::npos || 
-    //     (all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].body_length))
-    //     {
-    //         std::cout << "U HERE MY FRINED " << std::endl;
-    //         if(!all_connection[fd].full_log["ZAPROS"].compare(0, 3, "GET"))
-    //             all_connection[fd].answer(200, fd, config);
-    //         else
-    //             std::cout << "ISPOLNENIT POST ZAPROSA " << std::endl;  // исполнение тут, body =  all_connection[fd].full_log["Body"]
-    //         all_connection[fd].full_buffer.clear();
-    //         all_connection[fd].clear();
-    //         return ret;
-    //     }
-    // }
+    else if(all_connection[fd].is_chunked) // протестил не всё
+    {
+        //исполняется пока не будет chunked == 0\r\n
+        if(!all_connection[fd].body_length) // записываем размер чанка, если он не \r\n
+        {
+            std::string buffer;
+            int i = 0;
+            while(i < ret)
+                buffer += buf1[i++];
+            if(buffer[0] != '\r')
+            {
+                all_connection[fd].body_length = ft_hex_to_dec(buffer);
+                all_connection[fd].full_buffer.clear();
+            }
+            std::cout << "SIZE " << ret << " buffer \n|" << buffer <<"|" << " LEN= " << all_connection[fd].body_length << std::endl;
+        }
+        if(all_connection[fd].full_buffer.find("0\r\n\r\n") != std::string::npos || 
+        (all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].body_length)) // чекам на конец или двойной пропуск
+        {
+            std::cout << "ISPOLNENIT POST ZAPROSA " << std::endl;  // исполнение тут, body =  all_connection[fd].full_log["Body"]
+            all_connection[fd].answer(200,fd,config); // ответ заглушка
+            all_connection[fd].full_buffer.clear();
+            all_connection[fd].clear();
+            return ret;
+        }
+        else if(all_connection[fd].body_length) // записываем BODY по RFC ограничивая Content-leght'ом
+        {
+            if(all_connection[fd].full_buffer.size() > all_connection[fd].body_length)
+            {
+                all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
+                all_connection[fd].body_length = 0;
+                all_connection[fd].full_buffer.clear();
+            }
+            else
+            {
+                all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer;
+                if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
+                    all_connection[fd].body_length = 0;
+                else
+                    all_connection[fd].body_length -= all_connection[fd].full_buffer.size();
+            }
+        }
+    }
     return(ret);
 }
 
