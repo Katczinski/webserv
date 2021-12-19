@@ -38,6 +38,7 @@ namespace ft
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
         std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body); // неработающий автоиндекс
         bool post_request(ft::Config& config);
+        std::string status(int code); // в аргумент передается код ошибки, возвращается название ошибки
     };
     template<typename T>
     std::string to_string(const T& value) // что либо в строку
