@@ -11,7 +11,14 @@ bool check_url(ft::Response& req, ft::Config& conf)
     bool is_file = false;
     std::string real_root;
     std::string real_dir;
-
+    int         qs;
+    if ((qs = req.full_log["Dirrectory"].find("?")) != std::string::npos)
+    {
+        req.full_log["Query_string"] = req.full_log["Dirrectory"].substr(qs + 1, req.full_log["Dirrectory"].length());
+        req.full_log["Dirrectory"].erase(qs, req.full_log["Dirrectory"].length());
+    }
+    else
+        req.full_log["Query_string"] = "";
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it !=  conf.getEndLocation())
     {

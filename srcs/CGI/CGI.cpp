@@ -101,7 +101,7 @@ void            ft::CGI::init_env(ft::Response& req)
     _env["GATEWAY_INTERFACE"] = "CGI/1.1";
     _env["PATH_INFO"] = getExt(req.full_log["Location"], '?');
     _env["PATH_TRANSLATED"] = getExt(req.full_log["Location"], '?');
-    // _env["QUERY_STRING"] = "";
+    _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
     // _env["REMOTE_HOST"] = "";
     // _env["REMOTE_IDENT"] = "";
