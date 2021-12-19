@@ -345,27 +345,27 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         methods += *it;
         it++;
     }
-    if(!this->full_log["ZAPROS"].compare(0, 3, "GET"))
+    if(!this->full_log["ZAPROS"].compare(0, 3, "GET")) // если запрос GET - почти на все насрать
     {
         this->is_content_length = false;
         this->is_chunked = false;
         this->is_multy = false;
     }
-    if(!this->full_log["ZAPROS"].compare(0,4,"POST"))
+    if(!this->full_log["ZAPROS"].compare(0,4,"POST")) // если пост
     {
-        if(methods.find("POST") == std::string::npos)
+        if(methods.find("POST") == std::string::npos) // если не разрешен метод = ошибка
             return(405);
-        if(this->full_log["Content-Type"].empty())
+        if(this->full_log["Content-Type"].empty()) // если нет Content-type - Ошибка
             return(400);
-        this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]);
-        if(!this->body_length)
+        this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]); // полуучаем длинну контента
+        if(!this->body_length) // если == 0, то убираем флаг на длинну контента
             this->is_content_length = false;
-        if(this->is_chunked && !this->is_multy)
+        if(this->is_chunked && !this->is_multy) // если есть Transfer-Encoding: chunked, то длинна контента игнорируется
         {
             this->is_content_length = false;
             this->body_length = 0;
         }
-        if(this->is_multy)
+        if(this->is_multy) // если тип данных multipart/form-data - надо убарть chunked (по RFC)
             this->is_chunked = false;
     }
     return 0;
@@ -382,4 +382,13 @@ void ft_split(std::string const &str, const char delim,
         end = str.find(delim, start);
         out.push_back(str.substr(start, end - start));
     }
+}
+
+int  ft_hex_to_dec(std::string& str)
+{
+    unsigned int x;   
+    std::stringstream ss;
+    ss << std::hex << "fffefffe";
+    ss >> x;
+    std::cout << static_cast<int>(x) << std::endl;
 }

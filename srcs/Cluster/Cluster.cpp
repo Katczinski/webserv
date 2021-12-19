@@ -2,6 +2,17 @@
 #include "Response.hpp"
 
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
+ft::Cluster::~Cluster() {}
+ft::Cluster::Cluster(const ft::Cluster& other) { *this = other; }
+ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
+{
+    _servers = other._servers;
+    _configs = other._configs;
+    _connected = other._connected;
+    _size = other._size;
+    _capacity = other._capacity;
+    return *this;
+}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
@@ -20,7 +31,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         return (1);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры, Диме сюда
         {            
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();
@@ -36,9 +47,10 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     {
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
         {
-            ft::CGI cgi(all_connection[fd]);
-            std::string response = cgi.execute(all_connection[fd]);
-            send(fd, response.c_str(), response.length(), 0);
+            ft::CGI cgi(all_connection[fd], config);
+            std::string response = cgi.execute(all_connection[fd], fd);
+            std::cout << "I'm here\n";
+            // send(fd, response.c_str(), response.length(), 0);
         }
         else
             all_connection[fd].answer(200, fd, config);
@@ -76,49 +88,49 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             return(ans);
         }
     }
-    else if(all_connection[fd].is_chunked)
-    {
-        //исполняется пока не будет chunked == 0\r\n
-        if(!all_connection[fd].body_length)
-        {
-            std::string buffer;
-            int i = 0;
-            while(i < (buf1.size() - 2))
-            {
-                if(!isdigit(buf1[i]))
-                {
-                    all_connection[fd].answer(400, fd, config);
-                    all_connection[fd].clear();
-                    all_connection[fd].full_buffer.clear();
-                    return ret;
-                }
-                buffer += buf1[i];
-                i++;
-            }
-            all_connection[fd].body_length = ft_atoi(buffer);
-        }
-        else if(all_connection[fd].body_length)
-        {
-            if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
-            {
-                all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
-                all_connection[fd].body_length = 0;
-                all_connection[fd].full_buffer.clear();
-            }
-        }
-        if(all_connection[fd].full_buffer.find("0\r\n\r\n") != std::string::npos || 
-        (all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].body_length))
-        {
-            std::cout << "U HERE MY FRINED " << std::endl;
-            if(!all_connection[fd].full_log["ZAPROS"].compare(0, 3, "GET"))
-                all_connection[fd].answer(200, fd, config);
-            else
-                std::cout << "ISPOLNENIT POST ZAPROSA " << std::endl;  // исполнение тут, body =  all_connection[fd].full_log["Body"]
-            all_connection[fd].full_buffer.clear();
-            all_connection[fd].clear();
-            return ret;
-        }
-    }
+    // else if(all_connection[fd].is_chunked)
+    // {
+    //     //исполняется пока не будет chunked == 0\r\n
+    //     if(!all_connection[fd].body_length)
+    //     {
+    //         std::string buffer;
+    //         int i = 0;
+    //         while(i < (buf1.size() - 2))
+    //         {
+    //             if(!isdigit(buf1[i]))
+    //             {
+    //                 all_connection[fd].answer(400, fd, config);
+    //                 all_connection[fd].clear();
+    //                 all_connection[fd].full_buffer.clear();
+    //                 return ret;
+    //             }
+    //             buffer += buf1[i];
+    //             i++;
+    //         }
+    //         all_connection[fd].body_length = ft_atoi(buffer);
+    //     }
+    //     else if(all_connection[fd].body_length)
+    //     {
+    //         if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
+    //         {
+    //             all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
+    //             all_connection[fd].body_length = 0;
+    //             all_connection[fd].full_buffer.clear();
+    //         }
+    //     }
+    //     if(all_connection[fd].full_buffer.find("0\r\n\r\n") != std::string::npos || 
+    //     (all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].body_length))
+    //     {
+    //         std::cout << "U HERE MY FRINED " << std::endl;
+    //         if(!all_connection[fd].full_log["ZAPROS"].compare(0, 3, "GET"))
+    //             all_connection[fd].answer(200, fd, config);
+    //         else
+    //             std::cout << "ISPOLNENIT POST ZAPROSA " << std::endl;  // исполнение тут, body =  all_connection[fd].full_log["Body"]
+    //         all_connection[fd].full_buffer.clear();
+    //         all_connection[fd].clear();
+    //         return ret;
+    //     }
+    // }
     return(ret);
 }
 
@@ -219,7 +231,6 @@ void        ft::Cluster::run()
                 else
                 {
                     //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
-                    // buf1.clear();
                     if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd]))
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";

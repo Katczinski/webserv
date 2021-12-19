@@ -76,6 +76,7 @@ ft::Location& ft::Location::operator=(const ft::Location& other) {
 		_cgi_extension = other._cgi_extension;
 		_cgi_path = other._cgi_path;
 		_max_body = other._max_body;
+		_autoindex = other._autoindex;
 	}
 	return *this;
 }
@@ -142,7 +143,24 @@ void ft::Location::setCgiPath(const v_string& line) {
 }
 
 void ft::Location::setMaxBody(const v_string& line) {
-	_max_body = line[1];
+	std::string value = line[1];
+	size_t i = 0;
+	while (i < value.length() - 1) {
+		if (!isdigit(value[i])) {
+			throw ft::ParserException(RED "Parser Error:" REST " max body size " YEL + value + REST " incorrect");
+		}
+		++i;
+	}
+	if (value[i] != 'm' && value[i] != 'b') {
+		throw ft::ParserException(RED "Parser Error:" REST " max body size " YEL + value + REST " incorrect");
+	}
+	if (value[i] == 'm') {
+		value.erase(value.length() - 1);
+		value += "000";
+	} else if (value[i] == 'b') {
+		value.erase(value.length() - 1);
+	}
+	_max_body = value;
 }
 
 void ft::Location::setAutoindex(const v_string& line) {

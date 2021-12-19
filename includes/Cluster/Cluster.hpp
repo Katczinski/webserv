@@ -16,6 +16,11 @@ namespace ft
             int                         _capacity;
         public:
             Cluster();
+            Cluster(const Cluster& other);
+            ~Cluster();
+            
+            Cluster&                    operator=(const Cluster& other);
+
             void                        push_back(const ft::Server& server);
             void                        erase_poll(int index);
             void                        push_poll(int fd);

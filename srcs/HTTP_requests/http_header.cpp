@@ -11,7 +11,6 @@ bool check_url(ft::Response& req, ft::Config& conf)
     bool is_file = false;
     std::string real_root;
     std::string real_dir;
-
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it !=  conf.getEndLocation())
     {
@@ -53,7 +52,7 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
     std::string buffer;
     std::istringstream is(buf1);
 
-    while(std::getline(is, buffer, '\n'))
+    while(std::getline(is, buffer, '\n')) // парс хэдеров, ничего тут не предстоит делать, если не понадобится какой-то особенный хэдер ( особенные лежат в дефолт конструкторе Responsee - добавь если понадобится + продублируй в clear())
     {
         if(!buffer.compare(0, 5, "Host:"))
         {
@@ -103,15 +102,15 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
                 req.body_length = ft::ft_atoi(req.full_log["Content-Length"]);
             }
         }
-        if(!buffer.compare(0, 1, "\r"))
+        if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }
 
-    if(!req.full_log["Host"].size())
+    if(!req.full_log["Host"].size()) // проверка был ли хост в принципе
         return(req.answer(400, fd, conf));
-    else if(check_url(req, conf))
+    else if(check_url(req, conf)) // вот тут происходит чек location
         return(req.answer(404,fd, conf));
-    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // bad_alloc ?!?!?!?
+    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
     if(i)
         return(req.answer(i, fd, conf));    
     return true;

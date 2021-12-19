@@ -58,4 +58,5 @@ namespace ft
 }
 bool http_header(ft::Response& req, std::string buf1, int fd,  ft::Config& conf);
 void ft_split(std::string const &str, const char delim, std::vector<std::string> &out);
+int  ft_hex_to_dec(std::string str); // 16 -> 10
 #endif

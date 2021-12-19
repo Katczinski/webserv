@@ -8,6 +8,14 @@ char upperchar(char ch) {
 	} else return ch;
 };
 
+std::string     toHex(int number)
+{
+    std::stringstream sstream;
+    sstream << std::hex << number;
+    std::string result = sstream.str();
+    return result;
+}
+
 // Переводит из Hex в Dec
 char gethex(char ch) {
 	ch = upperchar(ch);
@@ -16,14 +24,14 @@ char gethex(char ch) {
     else return (ch);
 };
 
-ft::CGI::CGI(ft::Response& req)
+ft::CGI::CGI(ft::Response& req, ft::Config& conf)
 {
     std::cout << "====================================================================================\n";
     init_env(req);
-    _argv = (char**)malloc(sizeof(char*) * 2);
-    _argv[0] = strdup((std::string(std::getenv("PWD")) + "/srcs/www" + _env["SCRIPT_NAME"]).c_str());
-    std::cout << "\n\n" << _argv[0] << "\n\n";
-    _argv[1] = NULL;
+    _argv = (char**)malloc(sizeof(char*) * 3);
+    _argv[0] = strdup((*conf.getLocation().find("cgi-bin/")).second.getCgiPath().c_str());
+    _argv[1] = strdup((std::string(std::getenv("PWD")) + "/srcs/www" + _env["SCRIPT_NAME"]).c_str());
+    _argv[2] = NULL;
 }
 
 ft::CGI::~CGI() { 
@@ -32,26 +40,16 @@ ft::CGI::~CGI() {
         free(_cenv[i]);
     free(_cenv[i]);
     free(_cenv);
+    free(_argv[0]);
+    free(_argv[1]);
+    free(_argv[2]);
+    free(_argv);
+    _env.clear();
 }
 
-void            ft::CGI::CGI_read()
+void    ft::CGI::formHeader(std::string& header)
 {
-    char buf[3000];
-    int ret = 1;
-    int fd = open("cgi_output.txt", O_RDONLY);
-    while (ret)
-    {
-        ret = read(fd, buf, 3000);
-        buf[ret] = '\0';
-        _data += std::string(buf);
-    }
-    std::cout << "Response:\n" << _data << std::endl;
-}
-
-void    ft::CGI::CGI_write(const std::string& body)
-{
-    int fd = open("cgi_input.txt", O_CREAT | O_WRONLY);
-    write(fd, body.c_str(), body.length());
+    header.insert(0, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\n\r\n");
 }
 
 void    ft::CGI::parseQString(const char *qstring)
@@ -127,32 +125,85 @@ void            ft::CGI::init_env(ft::Response& req)
     // _env.clear();
 }
 
-std::string             ft::CGI::execute(ft::Response& req)
+std::string             ft::CGI::execute(ft::Response& req, int fd)
 {
     pid_t   pid;
-    int     fdIn;
-    int     fdOut;
+    int     pipe_in[2], pipe_out[2];
     int     status;
 
-    CGI_write(req.full_log["Body"]);
+    if (pipe(pipe_in) < 0)
+    {
+        std::cerr << "pipe failed\n";
+        //send something? i dunno
+        return "";
+    }
+    if (pipe(pipe_out) < 0)
+    {
+        std::cerr << "pipe failed\n";
+        close(pipe_in[0]);
+        close(pipe_in[1]);
+        return "";
+    }
     pid = fork();
     if (pid == 0)
     {
-        fdIn = open("cgi_input.txt", O_RDONLY);
-        dup2(fdIn, 0);
-        fdOut = open("cgi_output.txt", O_CREAT | O_WRONLY | O_TRUNC);
-        dup2(fdOut, 1);
+        dup2(pipe_in[0], STDIN_FILENO);
+        dup2(pipe_out[1], STDOUT_FILENO);
+        close(pipe_in[0]);
+        close(pipe_in[1]);
+        close(pipe_out[0]);
+        close(pipe_out[1]);
         status = execve(_argv[0], _argv, _cenv);
+        // вернуть 500 ошибку
         std::cerr << "Execve failed\n" << strerror(errno) << std::endl;
         exit(status);
     }
-    else{
-        waitpid(pid, &status, WUNTRACED);
-        close(fdIn);
-        // close(fdOut);
-        CGI_read();
-        std::remove("cgi_input.txt");
-        std::remove("cgi_output.txt");
+    else if (pid > 0){
+        waitpid(pid, &status, 0);
+        close(pipe_out[1]);
+        char        buf[201];
+        int         res = read(pipe_out[0], buf, 100);
+        buf[res] = '\0';
+        std::string header(buf);
+        std::string body;
+        size_t      dcrlf = header.find("\r\n\r\n");
+
+        if (dcrlf != std::string::npos)
+        {
+            body = header.substr(dcrlf + 4, res);
+            header.erase(dcrlf + 4, header.length());
+            header.insert(dcrlf, "\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive");
+        }
+        else
+        {
+            formHeader(header);
+            dcrlf = header.find("\r\n\r\n");
+            body = header.substr(dcrlf + 4, res);
+            header.erase(dcrlf + 4, header.length());
+        }
+        send(fd, header.c_str(), header.length(), 0);
+        do 
+        {
+            std::string chunk;
+            chunk = to_string(toHex(body.length()));
+            chunk += "\r\n";
+            chunk += body;
+            chunk += "\r\n";
+            std::cout << chunk << std::endl;
+            send(fd, chunk.c_str(), chunk.length(), 0);
+            if (res <= 0)
+                break;
+            res = read(pipe_out[0], buf, 200);
+            buf[res] = '\0';
+            body = to_string(buf);
+        }while (res > 0);
+        send(fd, "0\r\n\r\n", 5, 0);
+        close(pipe_out[0]);
+        close(pipe_in[1]);
+        close(pipe_in[0]);
     }
+    else
+        std::cerr << "Fork failed\n";
+
     return (_data);
 }
