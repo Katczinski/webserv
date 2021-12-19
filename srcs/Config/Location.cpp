@@ -155,10 +155,10 @@ void ft::Location::setMaxBody(const v_string& line) {
 		throw ft::ParserException(RED "Parser Error:" REST " max body size " YEL + value + REST " incorrect");
 	}
 	if (value[i] == 'm') {
-		value.pop_back();
+		value.erase(value.length() - 1);
 		value += "000";
 	} else if (value[i] == 'b') {
-		value.pop_back();
+		value.erase(value.length() - 1);
 	}
 	_max_body = value;
 }
