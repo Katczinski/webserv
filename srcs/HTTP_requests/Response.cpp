@@ -120,6 +120,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>Ne horosho</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+        std::cout << head << std::endl;
         head += body.str();
         // std::cout << head << std::endl;
         if(send(fd, head.c_str(), head.size(), 0) == -1)
@@ -134,8 +135,8 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        head += body.str();
         std::cout << head << std::endl;
+        head += body.str();
         send(fd, head.c_str(), head.size(), 0);
         this->full_log["Connection"] = "close";
     }

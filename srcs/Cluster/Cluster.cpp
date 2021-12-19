@@ -27,6 +27,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             i++;
         else
         {
+            std::cout << buf1[i];
             all_connection[fd].full_buffer += buf1[i++];
             if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos) // считываем хэдер пришедший, если еще не был в парсере
                 break;
