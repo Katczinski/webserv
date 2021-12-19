@@ -2,6 +2,17 @@
 #include "Response.hpp"
 
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
+ft::Cluster::~Cluster() {}
+ft::Cluster::Cluster(const ft::Cluster& other) { *this = other; }
+ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
+{
+    _servers = other._servers;
+    _configs = other._configs;
+    _connected = other._connected;
+    _size = other._size;
+    _capacity = other._capacity;
+    return *this;
+}
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config, char* buff)
 {
@@ -29,6 +40,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         all_connection[fd].full_buffer.clear();
     }
+
     if(all_connection[fd].full_log["Host"].size() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked && !all_connection[fd].is_multy)
     {
         int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
@@ -36,7 +48,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         std::cout << "=================" << all_connection[fd].full_log["Dirrectory"] << "===========\n";
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
         {
-            ft::CGI cgi(all_connection[fd]);
+            ft::CGI cgi(all_connection[fd], config);
             std::string response = cgi.execute(all_connection[fd], fd);
             std::cout << "I'm here\n";
             // send(fd, response.c_str(), response.length(), 0);
@@ -73,7 +85,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 int i = (all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0;
                 //вот тут функция на body; body лежит в all_connection[fd].full_log["Body"]
 
-                ft::CGI cgi(all_connection[fd]);
+                ft::CGI cgi(all_connection[fd], config);
                 std::string response = cgi.execute(all_connection[fd], fd);
                 std::cout << "I'm there\n";
 

@@ -25,11 +25,13 @@ namespace ft
             char**                              _cenv;
             std::string                         _data;
             char**                              _argv;
+            std::string                         _path;
             std::string                         getExt(const std::string& path, char delim);
             std::string                         getHost(const std::string& path);
         public:
-            CGI(ft::Response& req);
+            CGI(ft::Response& req, ft::Config& conf);
             ~CGI();
+            void                                formHeader(std::string& header);
             void                                init_env(ft::Response& req);
             void                                CGI_read(long fd);
             void                                parseQString(const char *qstring);

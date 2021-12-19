@@ -24,14 +24,14 @@ char gethex(char ch) {
     else return (ch);
 };
 
-ft::CGI::CGI(ft::Response& req)
+ft::CGI::CGI(ft::Response& req, ft::Config& conf)
 {
     std::cout << "====================================================================================\n";
     init_env(req);
-    _argv = (char**)malloc(sizeof(char*) * 2);
-    _argv[0] = strdup((std::string(std::getenv("PWD")) + "/srcs/www" + _env["SCRIPT_NAME"]).c_str());
-    std::cout << "\n\n" << _argv[0] << "\n\n";
-    _argv[1] = NULL;
+    _argv = (char**)malloc(sizeof(char*) * 3);
+    _argv[0] = strdup((*conf.getLocation().find("cgi-bin/")).second.getCgiPath().c_str());
+    _argv[1] = strdup((std::string(std::getenv("PWD")) + "/srcs/www" + _env["SCRIPT_NAME"]).c_str());
+    _argv[2] = NULL;
 }
 
 ft::CGI::~CGI() { 
@@ -42,8 +42,14 @@ ft::CGI::~CGI() {
     free(_cenv);
     free(_argv[0]);
     free(_argv[1]);
+    free(_argv[2]);
     free(_argv);
     _env.clear();
+}
+
+void    ft::CGI::formHeader(std::string& header)
+{
+    header.insert(0, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\n\r\n");
 }
 
 void    ft::CGI::parseQString(const char *qstring)
@@ -169,7 +175,12 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
             header.insert(dcrlf, "\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive");
         }
         else
-            return ""; //invalid header ???
+        {
+            formHeader(header);
+            dcrlf = header.find("\r\n\r\n");
+            body = header.substr(dcrlf + 4, res);
+            header.erase(dcrlf + 4, header.length());
+        }
         send(fd, header.c_str(), header.length(), 0);
         do 
         {
