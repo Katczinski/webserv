@@ -179,7 +179,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
             return this->answer(403,fd,conf);
         reeal_body = body.str();
         // }
-        head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+        head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
@@ -194,7 +194,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         std::ifstream input (conf.getErrPages(505).c_str());
         body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        head = "HTTP/1.1 505 " + status(505) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
         head += body.str();
         // std::cout << head << std::endl;
@@ -203,9 +203,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 403)
     {
         std::ifstream input (conf.getErrPages(403).c_str());
-        body << input.rdbuf(); 
+        body << input.rdbuf();
         // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 403 Forbidden\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        head = "HTTP/1.1 403 " + status(403) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
         head += body.str();
         // std::cout << head << std::endl;
@@ -370,6 +370,30 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
             this->is_chunked = false;
     }
     return 0;
+}
+
+std::string ft::Response::status(int code) {
+    std::map<int, std::string> status;
+    status[100] = "Continue"; //"Продолжить". Этот промежуточный ответ указывает, что запрос успешно принят и клиент может
+                              // продолжать присылать запросы либо проигнорировать этот ответ, если запрос был завершён.
+    status[200] = "OK"; // "Успешно". Запрос успешно обработан. Что значит "успешно", зависит от метода HTTP
+    status[202] = "Accepted"; // "Принято". Запрос принят, но ещё не обработан. Это предназначено для случаев,
+                             // когда запрос обрабатывается другим процессом или сервером, либо для пакетной обработки.
+    status[204] = "No Content"; // "Нет содержимого". Нет содержимого для ответа на запрос, например при методе DELETE
+    status[301] = "Moved Permanently"; // "Перемещён на постоянной основе". Этот код ответа значит,
+                                       // что URI запрашиваемого ресурса был изменён. Возможно, новый URI будет предоставлен в ответе.
+    status[307] = "Temporary Redirect"; // "Временное перенаправление". Сервер отправил этот ответ, чтобы клиент получил
+                                       // запрошенный ресурс на другой URL-адрес с тем же методом, который использовал предыдущий запрос.
+    status[400] = "Bad Request"; // "Плохой запрос". Этот ответ означает, что сервер не понимает запрос из-за неверного синтаксиса.
+    status[403] = "Forbidden"; // "Запрещено". У клиента нет прав доступа к содержимому, поэтому сервер отказывается дать надлежащий ответ.
+    status[404] = "Not Found"; // "Не найден". Сервер не может найти запрашиваемый ресурс.
+    status[405] = "Method Not Allowed"; // "Метод не разрешён". Метод не может быть использован, потому что не указан в конфиге. Методы GET и HEAD всегда разрешены
+    status[408] = "Request Timeout"; // Он означает, что сервер хотел бы отключить это неиспользуемое соединение
+    status[413] = "Request Entity Too Large"; // Размер запроса превышает лимит, объявленный сервером. Сервер может закрыть соединение, вернув заголовок Retry-After
+    status[500] = "Internal Server Error"; // "Внутренняя ошибка сервера". Сервер столкнулся с ситуацией, которую он не знает как обработать.
+    status[501] = "Not Implemented"; // "Не выполнено". Метод запроса не поддерживается сервером и не может быть обработан. Исключение GET и HEAD
+    status[505] = "HTTP Version Not Supported"; // "HTTP-версия не поддерживается". HTTP-версия, используемая в запросе, не поддерживается сервером.
+    return status[code];
 }
 
 void ft_split(std::string const &str, const char delim,
