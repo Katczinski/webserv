@@ -34,7 +34,7 @@ namespace ft
         Response& operator=(Response const& other); // конец Coplien формы
         void clear(); // очищает хедеры запроса текущего
         bool answer(int i, int fd,  ft::Config& conf); // тут куются ответы, скорее всего переделаю
-        bool general_header_check(int fd, ft::Config& conf); // проверка главного хэдера
+        bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
         std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body); // неработающий автоиндекс
         bool post_request(ft::Config& config);
@@ -58,4 +58,5 @@ namespace ft
 }
 bool http_header(ft::Response& req, std::string buf1, int fd,  ft::Config& conf);
 void ft_split(std::string const &str, const char delim, std::vector<std::string> &out);
+int  ft_hex_to_dec(std::string str); // 16 -> 10
 #endif
