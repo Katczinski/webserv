@@ -16,6 +16,7 @@ bool check_url(ft::Response& req, ft::Config& conf)
     while(it !=  conf.getEndLocation())
     {
         real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
+
         real_dir = req.full_log["Dirrectory"].substr(req.full_log["Dirrectory"].find_last_of("/"), req.full_log["Dirrectory"].size());
         if((real_root + real_dir) == (*it).second.getRoot())
         {
@@ -97,21 +98,21 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         {
             req.is_content_length = true;
             if(req.full_log["Content-Length"] == "")
+            {
                 req.full_log["Content-Length"] = buffer.substr((buffer[15] == ' ') ?  16 : 15);
+                req.body_length = ft::ft_atoi(req.full_log["Content-Length"]);
+            }
         }
         if(!buffer.compare(0, 1, "\r"))
-        {
-            while(std::getline(is, buffer, '\n'))
-                req.full_log["Body"] += buffer +='\n';            
-        }
+            break;   
     }
+
     if(!req.full_log["Host"].size())
-        return(req.answer(400, fd, conf));    
+        return(req.answer(400, fd, conf));
     else if(check_url(req, conf))
         return(req.answer(404,fd, conf));
-    std::cout << "=============================\n\n\n" << req.full_log["for_methods_location"] << std::endl;
     int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // bad_alloc ?!?!?!?
     if(i)
-        return(req.answer(i, fd, conf));
+        return(req.answer(i, fd, conf));    
     return true;
 }

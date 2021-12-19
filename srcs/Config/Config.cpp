@@ -217,6 +217,7 @@ ft::Config::v_iterator_locationov ft::Config::getBeginLocation()
 {
 	return this->_locations.begin();
 }
+
 ft::Config::v_iterator_locationov ft::Config::getEndLocation()
 {
 	return this->_locations.end();

@@ -22,7 +22,7 @@ namespace ft
             void                        setup();
             void                        setConfig(std::vector<ft::Config> configs);
             void                        run();
-            int                         receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config, char* buff);
+            int                         receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config);
             int                         is_listening(int fd);
     };
 }

@@ -154,6 +154,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         this->full_log["Content-Type"] = "text/html";
         this->full_log["Location"] =  "http://"+this->full_log["Host"];
+
         std::string reeal_body;
         // conf.getLocation()[this->full_log["Dirrectory"];
         // if((conf.getLocation()[this->full_log["Dirrectory"]]).getAutoindex())  
@@ -161,8 +162,10 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // else
         // {
         int i = 0;
+
         while(i < conf.getIndex().size())
         {
+
             std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
             if(input.is_open())
             {
@@ -215,17 +218,23 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
 bool ft::Response::post_request(ft::Config& config)
 {
     std::string buffer;
-    std::istringstream is(this->full_log["Body"]);
+    std::string real_body;
+    std::string filename;
     bool is_bound = false;
     bool is_body = false;
-    std::string filename;
     std::vector<std::string> for_filename;
-    std::string real_body;
     size_t i = 0;
+    size_t for_split = 0;
     if(this->full_log["Body"].find("--"+this->full_log["boundary"]) != std::string::npos &&  this->full_log["Body"].find("--"+this->full_log["boundary"]+"--") != std::string::npos)
     {
-        while(std::getline(is, buffer, '\n'))
+        while(for_split < this->body_length)
         {
+            buffer.clear();
+            while(this->full_log["Body"][for_split] != '\n')
+            {
+                buffer += this->full_log["Body"][for_split];
+                for_split++;
+            }
             if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
             {
                 is_body = true;
@@ -254,7 +263,6 @@ bool ft::Response::post_request(ft::Config& config)
                         it++;
                     }   
                 }
-                // else if(!buffer.compare(0, 13, "Content-Type:")) // нужен ли он? 
                 else if(!buffer.compare(0, 1, "\r") && !filename.empty())
                 {
                     is_bound = false;
@@ -263,7 +271,6 @@ bool ft::Response::post_request(ft::Config& config)
             }
             else if(is_body)
             {
-                // std::cout << "PATH=============\n" << (config.getRoot() + filename).c_str() << std::endl;
                 if(!buffer.compare(("--"+this->full_log["boundary"]+'\r')))
                 {
                     std::ofstream nope((config.getRoot() + filename).c_str(), std::ios_base::app);
@@ -273,30 +280,30 @@ bool ft::Response::post_request(ft::Config& config)
                 }
                 else if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
                 {
-                    // std::cout << "END ==================\n " << std::endl;
-                    // std::cout << "PATH=============\n" << (config.getRoot() + filename).c_str() << std::endl;
                     real_body.erase(real_body.end()-1);
-                    std::ofstream nope((config.getRoot() + filename).c_str(), std::ios_base::app);
+                    std::ofstream nope((config.getRoot() + "dowlands/"+ filename).c_str(), std::ios_base::app);
+                    real_body.erase(real_body.end() - 1);
                     nope << real_body;
                     nope.close();
                     break;
                 }
                 else
-                    real_body += buffer;
+                    real_body += (buffer + "\n");
             }
+        for_split++;
         }
         return true;
     }
-    return true;
+    return false;
 }
 
-bool ft::Response::general_header_check(int fd, ft::Config& conf)
+bool ft::Response::general_header_check(std::string str, int fd, ft::Config& conf)
 {
     std::vector<std::string> header;
     size_t i = 0;
     if(!this->full_log["ZAPROS"].size())
     {
-        ft_split(this->full_buffer, ' ', header);
+        ft_split(str, ' ', header);
         if(header.size() < 3)
         {
             answer(400, fd, conf);
