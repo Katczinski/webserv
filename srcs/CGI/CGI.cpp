@@ -161,7 +161,7 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
     else if (pid > 0){
         waitpid(pid, &status, 0);
         close(pipe_out[1]);
-        char        buf[200];
+        char        buf[201];
         int         res = read(pipe_out[0], buf, 100);
         buf[res] = '\0';
         std::string header(buf);
