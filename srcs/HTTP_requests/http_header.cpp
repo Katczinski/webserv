@@ -105,10 +105,7 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         {
             req.is_content_length = true;
             if(req.full_log["Content-Length"] == "")
-            {
                 req.full_log["Content-Length"] = buffer.substr((buffer[15] == ' ') ?  16 : 15);
-                req.body_length = ft::ft_atoi(req.full_log["Content-Length"]);
-            }
         }
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   

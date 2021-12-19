@@ -33,7 +33,7 @@ ft::Response::Response()
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
-
+    this->body_length = 0;
 }
 
 void ft::Response::clear()
@@ -408,11 +408,11 @@ void ft_split(std::string const &str, const char delim,
     }
 }
 
-int  ft_hex_to_dec(std::string& str)
+size_t  ft_hex_to_dec(std::string& str)
 {
-    unsigned int x;   
+    size_t x;   
     std::stringstream ss;
-    ss << std::hex << "fffefffe";
+    ss << std::hex << str;
     ss >> x;
-    std::cout << static_cast<int>(x) << std::endl;
+    return(x);
 }
