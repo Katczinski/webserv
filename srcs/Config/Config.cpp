@@ -45,6 +45,10 @@ ft::Config::Config(v_iter_v_string& it, v_vec_string& content) : _host(), _port(
 			setErrPages(*it);
 		}
 		if (it->front() == "location") {
+			v_iterator_locationov iter = _locations.find(*(it->begin() + 1));
+			if (iter != _locations.end()) {
+				throw ft::ParserException(RED "Parser Error:" REST ": location is duplicated");
+			}
 			setLocation(it, content, _root);
 		}
 	}
