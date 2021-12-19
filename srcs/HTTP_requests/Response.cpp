@@ -178,7 +178,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
             return this->answer(403,fd,conf);
         reeal_body = body.str();
         // }
-        head = "HTTP/1.1 200 OK\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+        head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
@@ -193,7 +193,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         std::ifstream input (conf.getErrPages(505).c_str());
         body << input.rdbuf(); 
         // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 505 HTTP Version Not Supported\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        head = "HTTP/1.1 505 " + status(505) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
         head += body.str();
         // std::cout << head << std::endl;
@@ -202,9 +202,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 403)
     {
         std::ifstream input (conf.getErrPages(403).c_str());
-        body << input.rdbuf(); 
+        body << input.rdbuf();
         // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
-        head = "HTTP/1.1 403 Forbidden\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        head = "HTTP/1.1 403 " + status(403) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
         head += body.str();
         // std::cout << head << std::endl;
