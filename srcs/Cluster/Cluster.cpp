@@ -86,8 +86,9 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 if(!all_connection[fd].post_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
-            // CGI вот тут вставить
-            all_connection[fd].answer(200,fd, config); // временный ответ-затычка
+            ft::CGI cgi(all_connection[fd], config);
+            std::string response = cgi.execute(all_connection[fd], fd);
+            // all_connection[fd].answer(200,fd, config); // временный ответ-затычка
             size_t ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
             all_connection[fd].clear();
             return(ans);
