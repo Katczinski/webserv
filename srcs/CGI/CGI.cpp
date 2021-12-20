@@ -150,7 +150,7 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
     {
         dup2(pipe_in[0], STDIN_FILENO);
         dup2(pipe_out[1], STDOUT_FILENO);
-        write(pipe_in[1], req.full_log["Body"].c_str(), atoi(_env["CONTENT_LENGTH"].c_str()) + 1);
+        write(pipe_in[1], req.full_log["Body"].c_str(), atoi(_env["CONTENT_LENGTH"].c_str()));
         close(pipe_in[0]);
         close(pipe_in[1]);
         close(pipe_out[0]);
