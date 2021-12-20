@@ -27,6 +27,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             i++;
         else
         {
+            std::cout << buf1[i];
             all_connection[fd].full_buffer += buf1[i++];
             if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos) // считываем хэдер пришедший, если еще не был в парсере
                 break;
@@ -86,9 +87,13 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 if(!all_connection[fd].post_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
-            ft::CGI cgi(all_connection[fd], config);
-            std::string response = cgi.execute(all_connection[fd], fd);
-            // all_connection[fd].answer(200,fd, config); // временный ответ-затычка
+            if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
+            {
+                ft::CGI cgi(all_connection[fd], config);
+                std::string response = cgi.execute(all_connection[fd], fd);
+            }
+            else
+                all_connection[fd].answer(200,fd, config); // временный ответ-затычка
             size_t ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
             all_connection[fd].clear();
             return(ans);

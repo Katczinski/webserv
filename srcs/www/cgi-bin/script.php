@@ -2,8 +2,10 @@
 $env_array = getenv();
 
 echo "<h3>The list of environment variables with values are :</h3>";
-if (empty($_ENV))
-    echo "_ENV is empty <br />";
+if (empty($_POST))
+    echo "_POST is empty <br />";
+// else
+//     echo $POST;
 //Print all environment variable names with values
 $array;
 foreach ($env_array as $key=>$value)
