@@ -9,6 +9,11 @@
 		 <p><input type="file" name="f">
 		 <input type="submit" value="Отправить" href="#"></p>
 		</form>
+		<script>
+			if ( window.history.replaceState ) {
+				window.history.replaceState( null, null, window.location.href );
+			}
+		</script>
 	   </body>
 <head>
 <title>Welcome to Webserver!</title>
