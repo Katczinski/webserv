@@ -37,7 +37,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         return (1);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры, Диме сюда
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры
         {            
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();

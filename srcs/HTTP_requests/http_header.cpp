@@ -12,6 +12,8 @@ bool check_url(ft::Response& req, ft::Config& conf)
     std::string real_root;
     std::string real_dir;
     int         qs;
+    if(req.is_auto_in)
+        return false;
     if ((qs = req.full_log["Dirrectory"].find("?")) != std::string::npos)
     {
         req.full_log["Query_string"] = req.full_log["Dirrectory"].substr(qs + 1, req.full_log["Dirrectory"].length());
@@ -28,6 +30,8 @@ bool check_url(ft::Response& req, ft::Config& conf)
         if((real_root + real_dir) == (*it).second.getRoot())
         {
             req.full_log["for_methods_location"] = req.full_log["Dirrectory"];
+            if(req.full_log["for_methods_location"][0] == '/' && req.full_log["for_methods_location"].size() > 1)
+                req.full_log["for_methods_location"].erase(req.full_log["for_methods_location"].begin());
             if((real_root + req.full_log["Dirrectory"]).find("cgi") != std::string::npos)
                 return true;
             return false;
@@ -115,8 +119,11 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(400, fd, conf));
     else if(check_url(req, conf)) // вот тут происходит чек location
         return(req.answer(404,fd, conf));
-    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
-    if(i)
-        return(req.answer(i, fd, conf));    
+    if(!req.is_auto_in)
+    {
+        int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
+        if(i)
+            return(req.answer(i, fd, conf));
+    }
     return true;
 }

@@ -30,6 +30,7 @@ ft::Response::Response()
     this->full_log["Body"] = "";
     this->full_log["boundary"] = "";
     this->full_log["for_methods_location"] = "";
+    this->is_auto_in = false;
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
@@ -57,16 +58,10 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
 {
     std::string dir_name = conf.getRoot();
     dir_name.erase(dir_name.end() -1);
-
-    // if(!current_dirrectory.empty() && this->full_log["Dirrectory"] != "/")
-    //     dir_name += current_dirrectory;)
-    // if (!opendir((dir_name + this->full_log["Dirrectory"]).c_str())) {
-        // this->full_log["Dirrectory"] = prev_dirrectory + this->full_log["Dirrectory"];
-    // }
     dir_name += this->full_log["Dirrectory"];
     this->full_log["Location"] += this->full_log["Directory"];
     std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
-
+    this->is_auto_in = true;
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
@@ -157,27 +152,29 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         this->full_log["Location"] =  "http://"+this->full_log["Host"];
 
         std::string reeal_body;
-        // conf.getLocation()[this->full_log["Dirrectory"];
-        // if((conf.getLocation()[this->full_log["Dirrectory"]]).getAutoindex())  
-            // reeal_body = this->AutoIndexPage(conf, body);
-        // else
-        // {
-        int i = 0;
-
-        while(i < conf.getIndex().size())
+        std::string dir = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].size());
+        std::cout << "DIR " << dir << std::endl;
+        if((conf.getLocation()[dir]).getAutoindex() || this->is_auto_in)  
+            reeal_body = this->AutoIndexPage(conf, body);
+        else
         {
+            int i = 0;
 
-            std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
-            if(input.is_open())
+            while(i < conf.getIndex().size())
             {
-                body << input.rdbuf();
-                break;
+
+                std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
+                if(input.is_open())
+                {
+                    body << input.rdbuf();
+                    break;
+                }
+                i++;
             }
-            i++;
+            if(i == conf.getIndex().size())
+                return this->answer(403,fd,conf);
+            reeal_body = body.str();
         }
-        if(i == conf.getIndex().size())
-            return this->answer(403,fd,conf);
-        reeal_body = body.str();
         // }
         head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
