@@ -55,6 +55,8 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
             this->full_log["Content-Type"] = "image/png";
         else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
             this->full_log["Content-Type"] = "image/jpg";
+        else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
+            this->full_log["Content-Type"] = "image/jpeg";
         else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
             this->full_log["Content-Type"] = "image/gif";
         else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
