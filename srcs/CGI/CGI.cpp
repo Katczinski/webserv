@@ -101,6 +101,7 @@ void            ft::CGI::init_env(ft::Response& req)
     _env["GATEWAY_INTERFACE"] = "CGI/1.1";
     _env["PATH_INFO"] = getExt(req.full_log["Location"], '?');
     _env["PATH_TRANSLATED"] = getExt(req.full_log["Location"], '?');
+    
     _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
     // _env["REMOTE_HOST"] = "";
@@ -149,16 +150,20 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
     {
         dup2(pipe_in[0], STDIN_FILENO);
         dup2(pipe_out[1], STDOUT_FILENO);
+        write(pipe_in[1], req.full_log["Body"].c_str(), atoi(_env["CONTENT_LENGTH"].c_str()) + 1);
         close(pipe_in[0]);
         close(pipe_in[1]);
         close(pipe_out[0]);
         close(pipe_out[1]);
+        //chdir here
         status = execve(_argv[0], _argv, _cenv);
         // вернуть 500 ошибку
         std::cerr << "Execve failed\n" << strerror(errno) << std::endl;
         exit(status);
     }
     else if (pid > 0){
+
+        close(pipe_in[1]);
         waitpid(pid, &status, 0);
         close(pipe_out[1]);
         char        buf[201];
@@ -200,7 +205,6 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
         }while (res > 0);
         send(fd, "0\r\n\r\n", 5, 0);
         close(pipe_out[0]);
-        close(pipe_in[1]);
         close(pipe_in[0]);
     }
     else

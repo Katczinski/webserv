@@ -1,16 +1,29 @@
 <?php
-$env_array =getenv();
+$env_array = getenv();
 
-echo "<h3>The list of environment variables with values are :</h3>";
 
+// else
+//     echo $POST;
 //Print all environment variable names with values
-$array;
-foreach ($env_array as $key=>$value)
+$array = "";
+if ($env_array['REQUEST_METHOD'] == 'GET')
 {
-    echo "$key => $value <br />";
-    if ($key == 'QUERY_STRING'){
-        parse_str($value, $array);
+    echo "<h3>The list of environment variables with values are :</h3>";
+    if (empty($_POST))
+        echo "_POST is empty <br />";
+    foreach ($env_array as $key=>$value)
+    {
+        echo "$key => $value <br />";
+        if ($key == 'QUERY_STRING'){
+            parse_str($value, $array);
+        }
     }
+}
+else
+{
+    while( $line = fgets(STDIN) ) {
+        parse_str($line, $array);
+    }   
 }
 if (array_key_exists('user', $array)){
     if ($array['user'] == 'echiles')

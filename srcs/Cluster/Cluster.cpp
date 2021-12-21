@@ -84,11 +84,16 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             if(all_connection[fd].is_multy) // если загрузка
             {
-                if(!all_connection[fd].post_request(config))
+                if(!all_connection[fd].post_download_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
-            // CGI вот тут вставить
-            all_connection[fd].answer(200,fd, config); // временный ответ-затычка
+            if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
+            {
+                ft::CGI cgi(all_connection[fd], config);
+                std::string response = cgi.execute(all_connection[fd], fd);
+            }
+            else
+                all_connection[fd].answer(200,fd, config); // временный ответ-затычка
             size_t ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
             all_connection[fd].clear();
             return(ans);

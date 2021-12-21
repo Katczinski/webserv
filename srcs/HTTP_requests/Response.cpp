@@ -20,35 +20,20 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
 }
 ft::Response::Response()
 {
-    this->full_log["ZAPROS"] = "";
-    this->full_log["Dirrectory"] = "";
     this->full_log["Connection"] = "Keep-Alive";
-    this->full_log["Host"] = "";
-    this->full_log["Content-Type"] = "";
-    this->full_log["Content-Length"] = "";
-    this->full_log["Transfer-Encoding"] = "";
-    this->full_log["Body"] = "";
-    this->full_log["boundary"] = "";
-    this->full_log["for_methods_location"] = "";
-    this->is_auto_in = false;
+    this->current_location = NULL;
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
     this->body_length = 0;
 }
 
+
 void ft::Response::clear()
 {
-    this->full_log["ZAPROS"] = "";
-    this->full_log["Dirrectory"] = "";
+    this->full_log.clear();
     this->full_log["Connection"] = "Keep-Alive";
-    this->full_log["Host"] = "";
-    this->full_log["Content-Type"] = "";
-    this->full_log["Content-Length"] = "";
-    this->full_log["Transfer-Encoding"] = "";
-    this->full_log["Body"] = "";
-    this->full_log["boundary"] = "";
-    this->full_log["for_methods_location"] = "";
+    this->current_location = NULL;
     this->body_length = 0;
     this->is_content_length = false;
     this->is_chunked = false;
@@ -56,21 +41,20 @@ void ft::Response::clear()
 }
 std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& body)
 {
-    std::string dir_name = conf.getRoot();
-    dir_name.erase(dir_name.end() -1);
-    dir_name += this->full_log["Dirrectory"];
-    this->full_log["Location"] += this->full_log["Directory"];
+
+    std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
+    std::string dir_name = conf.getRoot() + dir_nn; // откуда взять рут
     std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
-    this->is_auto_in = true;
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
-    if(this->full_log["Dirrectory"].find(".") != std::string::npos)
+    struct stat dir_check;
+    if(dir_nn.find(".") != std::string::npos)
     {
         if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
             this->full_log["Content-Type"] = "image/png";
-        else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
-            this->full_log["Content-Type"] = "image/jpeg";
+        else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
+            this->full_log["Content-Type"] = "image/jpg";
         else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
             this->full_log["Content-Type"] = "image/gif";
         else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
@@ -84,22 +68,27 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
         std::cout << "Cant open dirr" << std::endl;
         return req;
     }
-    // else
-        // this->full_log["Location"] += "/";
     req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
     while ((ent=readdir(dir)) != NULL) {
         req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
         req += "8080";
         req += "/";
+        req += dir_nn;
         req += ent->d_name;
+        std::string str = dir_name;
+        str += ent->d_name;
+        if(!stat(str.c_str(), &dir_check))
+        {
+            std::cout << "HER SATAT " << std::endl;
+            if(S_ISDIR(dir_check.st_mode)){req += "/";}
+        }// проверка на дирректорию, если она = добавляем / в конце
         req += "\">";
         req += ent->d_name;
         req += "</a></p>";
     }
     req += "\r\n</body>";
     closedir(dir);
-    // prev_dirrectory = this->full_log["Dirrectory"];
     return req;
 }
 
@@ -152,17 +141,13 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         this->full_log["Location"] =  "http://"+this->full_log["Host"];
 
         std::string reeal_body;
-        std::string dir = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].size());
-        std::cout << "DIR " << dir << std::endl;
-        if((conf.getLocation()[dir]).getAutoindex() || this->is_auto_in)  
+        if((current_location->getAutoindex()))  
             reeal_body = this->AutoIndexPage(conf, body);
         else
         {
             int i = 0;
-
             while(i < conf.getIndex().size())
             {
-
                 std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
                 if(input.is_open())
                 {
@@ -177,7 +162,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         }
         // }
         head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: "+this->full_log["Connection"]; //+"\r\n";
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
         // head += "Accept-Ranges: none";
@@ -213,7 +198,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     return false;
 }
 
-bool ft::Response::post_request(ft::Config& config)
+bool ft::Response::post_download_request(ft::Config& config)
 {
     std::string buffer;
     std::string real_body;
@@ -414,3 +399,80 @@ size_t  ft_hex_to_dec(std::string& str)
     ss >> x;
     return(x);
 }
+
+
+
+// set/get
+
+// void ft::Response::setFullBuffer(std::string& str, bool clear)
+// {
+//     if(clear)
+//         this->full_buffer = str;
+//     else
+//         this->full_buffer += str;
+// }
+// std::string const ft::Response::getFullBuffer() const
+// {
+//     return this->full_buffer;
+// }
+// void ft::Response::setFullLog(std::string& key, std::string& val, bool append)
+// {
+//     if(append)
+//         this->full_log[key] += val;
+//     else
+//         this->full_log[key] = val;
+// }
+// std::map<std::string, std::string> const ft::Response::getFullLog() const
+// {
+//     return this->full_log;
+// }
+// void ft::Response::setIsContentLength(bool set)
+// {
+//     this->is_content_length = set;
+// }
+// bool const ft::Response::getIsContentLength() const
+// {
+//     return this->is_content_length;
+// }
+// void ft::Response::setIsChunked(bool set)
+// {
+//     this->is_chunked = set;
+// }
+// bool const ft::Response::getIsChunked() const
+// {
+//     return this->is_chunked;
+// }
+// void ft::Response::setIsMulty(bool set)
+// {
+//     this->is_multy = set;
+// }
+// bool const ft::Response::getIsMulty() const
+// {
+//     return this->is_multy;
+// }
+// void ft::Response::setIsBody(bool set)
+// {
+//     this->is_body = set;
+// }
+// bool const ft::Response::getIsBody() const
+// {
+//     return this->is_body;
+// }
+// void ft::Response::setIsAutoIndex(bool set)
+// {
+//     this->is_auto_in = set;
+// }
+// bool const ft::Response::getIsAutoIndex() const 
+// {
+//     return this->is_auto_in;
+// }
+// void ft::Response::setBodyLength(size_t length)
+// {
+//     this->body_length = length;
+// }
+// size_t const ft::Response::getBodyLength() const
+// {
+//     return this->body_length;
+// }
+
+// end
