@@ -49,7 +49,11 @@ ft::CGI::~CGI() {
 
 void    ft::CGI::formHeader(std::string& header)
 {
-    header.insert(0, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\n\r\n");
+    header.insert(0, "HTTP/1.1 200 OK\r\n\
+Content-type: text/html\r\n\
+Transfer-Encoding: chunked\r\n\
+Connection: keep-alive\r\n\r\n");    
+    std::cout << header << std::endl;
 }
 
 void    ft::CGI::parseQString(const char *qstring)
@@ -126,7 +130,7 @@ void            ft::CGI::init_env(ft::Response& req)
     // _env.clear();
 }
 
-std::string             ft::CGI::execute(ft::Response& req, int fd)
+void             ft::CGI::execute(ft::Response& req, int fd)
 {
     pid_t   pid;
     int     pipe_in[2], pipe_out[2];
@@ -136,14 +140,14 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
     {
         std::cerr << "pipe failed\n";
         //send something? i dunno
-        return "";
+        return ;
     }
     if (pipe(pipe_out) < 0)
     {
         std::cerr << "pipe failed\n";
         close(pipe_in[0]);
         close(pipe_in[1]);
-        return "";
+        return ;
     }
     pid = fork();
     if (pid == 0)
@@ -166,26 +170,19 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
         close(pipe_in[1]);
         waitpid(pid, &status, 0);
         close(pipe_out[1]);
+
         char        buf[201];
-        int         res = read(pipe_out[0], buf, 100);
+        int         res = read(pipe_out[0], buf, 50);
         buf[res] = '\0';
         std::string header(buf);
         std::string body;
-        size_t      dcrlf = header.find("\r\n\r\n");
+        size_t      dcrlf;
 
-        if (dcrlf != std::string::npos)
-        {
-            body = header.substr(dcrlf + 4, res);
-            header.erase(dcrlf + 4, header.length());
-            header.insert(dcrlf, "\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive");
-        }
-        else
-        {
-            formHeader(header);
-            dcrlf = header.find("\r\n\r\n");
-            body = header.substr(dcrlf + 4, res);
-            header.erase(dcrlf + 4, header.length());
-        }
+        formHeader(header);
+        dcrlf = header.find("\r\n\r\n");
+        body = header.substr(dcrlf + 4);
+        header.erase(dcrlf + 4);
+
         send(fd, header.c_str(), header.length(), 0);
         do 
         {
@@ -209,6 +206,4 @@ std::string             ft::CGI::execute(ft::Response& req, int fd)
     }
     else
         std::cerr << "Fork failed\n";
-
-    return (_data);
 }

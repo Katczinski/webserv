@@ -1,7 +1,6 @@
 <?php
 $env_array = getenv();
 
-
 // else
 //     echo $POST;
 //Print all environment variable names with values
@@ -33,7 +32,8 @@ if (array_key_exists('user', $array)){
     else if ($array['user'] == 'agigi')
         echo "<h1 align='center'>Welcome Dima</h1>";
     else
-        echo "<h1 align='center'>Vi kto takie? Ya vas ne zval</h1>";
+        echo "<h1 align='center'>Vi kto takie? Ya vas ne zval</h1></br>
+                <h3 align='center'> Idite nahooy</h3>";
 }
 if (array_key_exists('color', $array)){
     echo "<body style=background:"; echo $array['color']; echo ">";
