@@ -44,7 +44,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
 
     std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
     std::string dir_name = conf.getRoot() + dir_nn; // откуда взять рут
-    std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
+    // std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
@@ -70,6 +70,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     }
     req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
     while ((ent=readdir(dir)) != NULL) {
+
         req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
         req += "8080";
@@ -80,7 +81,6 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
         str += ent->d_name;
         if(!stat(str.c_str(), &dir_check))
         {
-            std::cout << "HER SATAT " << std::endl;
             if(S_ISDIR(dir_check.st_mode)){req += "/";}
         }// проверка на дирректорию, если она = добавляем / в конце
         req += "\">";
