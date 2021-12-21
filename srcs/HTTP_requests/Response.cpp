@@ -66,7 +66,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     if(!dir)
     {
         std::cout << "Cant open dirr" << std::endl;
-        return req;
+        return "";
     }
     req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
     while ((ent=readdir(dir)) != NULL) {
@@ -102,11 +102,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         std::ifstream input (conf.getErrPages(404).c_str());
         body << input.rdbuf(); 
-        // body = "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>Ne horosho</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
-        // std::cout << head << std::endl;
         if(send(fd, head.c_str(), head.size(), 0) == -1)
         this->full_log["Connection"] = "close";
 
@@ -115,9 +113,6 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         std::ifstream input (conf.getErrPages(400).c_str());
         body << input.rdbuf(); 
-        // std::ifstream input ("/mnt/c/Users/Alex/Desktop/ft_server/webserver/srcs/Pages/index.html");
-        // body << input.rdbuf(); 
-        // body = "<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n<center><h1>400 Bad Request</h1>\r\n</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
@@ -128,7 +123,6 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         std::ifstream input (conf.getErrPages(405).c_str());
         body << input.rdbuf(); 
-        // body = "<h1>405 Try another method!</h1>\r\n";
         head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
         std::cout << head << std::endl;
@@ -138,11 +132,14 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
-        this->full_log["Location"] =  "http://"+this->full_log["Host"];
-
+        this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
         std::string reeal_body;
         if((current_location->getAutoindex()))  
+        {
             reeal_body = this->AutoIndexPage(conf, body);
+            if(reeal_body.empty())
+                return this->answer(404,fd,conf);
+        }
         else
         {
             int i = 0;
@@ -169,28 +166,53 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         head += "\r\n\r\n";
         std::cout << head << std::endl;
         head += reeal_body;
-        send(fd, head.c_str(), head.size(), 0);
+        size_t how = 0;
+
+        while(!head.empty())
+        {
+            how = send(fd, head.c_str(), head.size(), 0);
+            if(how > 0)
+                head.erase(0, how);
+        }
     }
     else if(i == 505)
     {
         std::ifstream input (conf.getErrPages(505).c_str());
         body << input.rdbuf(); 
-        // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 505 " + status(505) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+        std::cout << head << std::endl;
         head += body.str();
-        // std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
     }
     else if(i == 403)
     {
         std::ifstream input (conf.getErrPages(403).c_str());
         body << input.rdbuf();
-        // body = "<html>\r\n<head><title>505 HTTP Version Not Supported</title></head>\r\n<body>\r\n<center><h1>505 HTTP Version Not Supported</h1></center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 403 " + status(403) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+        std::cout << head << std::endl;
         head += body.str();
-        // std::cout << head << std::endl;
+        send(fd, head.c_str(), head.size(), 0);
+    }
+    else if(i == 413)
+    {
+        std::ifstream input(conf.getErrPages(413).c_str());
+        body << input.rdbuf();
+        head = "HTTP/1.1 413 " + status(413) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+        std::cout << head << std::endl;
+        head += body.str();
+        send(fd, head.c_str(), head.size(), 0);
+    }
+    else if(i == 500)
+    {
+        std::ifstream input(conf.getErrPages(500).c_str());
+        body << input.rdbuf();
+        head = "HTTP/1.1 500 " + status(500) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+        std::cout << head << std::endl;
+        head += body.str();
         send(fd, head.c_str(), head.size(), 0);
     }
     if(i == 200)
@@ -343,6 +365,8 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]); // полуучаем длинну контента
         if(!this->body_length) // если == 0, то убираем флаг на длинну контента
             this->is_content_length = false;
+        if(!current_location->getMaxBody().empty() && (ft::ft_atoi(current_location->getMaxBody()) < this->body_length))
+            return (413);
         if(this->is_chunked && !this->is_multy) // если есть Transfer-Encoding: chunked, то длинна контента игнорируется
         {
             this->is_content_length = false;
