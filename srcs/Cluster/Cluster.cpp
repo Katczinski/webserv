@@ -54,8 +54,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
         {
             ft::CGI cgi(all_connection[fd], config);
-            std::string response = cgi.execute(all_connection[fd], fd);
-            std::cout << "I'm here\n";
+            cgi.execute(all_connection[fd], fd);
             // send(fd, response.c_str(), response.length(), 0);
         }
         else
@@ -90,7 +89,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
             {
                 ft::CGI cgi(all_connection[fd], config);
-                std::string response = cgi.execute(all_connection[fd], fd);
+                cgi.execute(all_connection[fd], fd);
             }
             else
                 all_connection[fd].answer(200,fd, config); // временный ответ-затычка

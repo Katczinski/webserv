@@ -4,7 +4,6 @@
 #include "Config.hpp"
 #include "parser.hpp"
 #include "Socket.hpp"
-#include "Client.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -29,7 +28,6 @@ namespace ft
             Server(std::string ip, std::string port);
             int                             newConnection();
             void                            closeConnection(int client_index);
-            const std::vector<Client>       &getClient() const;
             const int                       getServer() const;
             std::vector<pollfd>             getPollFds();
             ft::Socket                      getSocket();
