@@ -4,7 +4,6 @@ SRCS		= main.cpp\
 			srcs/Sockets/Socket.cpp\
 			srcs/Servers/Server.cpp\
 			srcs/Cluster/Cluster.cpp\
-			srcs/Client/Client.cpp\
 			srcs/Config/Config.cpp\
 			srcs/Config/Location.cpp\
 			srcs/Config/parser.cpp\
@@ -18,7 +17,6 @@ OBJS		= $(SRCS:.cpp=.o)
 HEADER		= includes/Sockets/Socket.hpp\
 			includes/Servers/Server.hpp\
 			includes/Cluster/Cluster.hpp\
-			includes/Client/Client.hpp\
 			includes/Config/Config.hpp\
 			includes/Config/Location.hpp\
 			includes/Config/parser.hpp\
@@ -29,7 +27,6 @@ HEADER		= includes/Sockets/Socket.hpp\
 INC			= -Iincludes/Sockets\
 			 -Iincludes/Servers\
 			 -Iincludes/Config\
-			 -Iincludes/Client\
 			 -Iincludes\
 			 -Iincludes/HTTP_requests\
 			 -Iincludes/Cluster\
