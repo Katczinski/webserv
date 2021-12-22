@@ -15,6 +15,7 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
         this->is_content_length = other.is_content_length;
         this->is_multy = other.is_multy;
         this->is_chunked = other.is_chunked;
+        this->is_delete = other.is_delete;
     }
     return *this;
 }
@@ -25,6 +26,7 @@ ft::Response::Response()
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
+    this->is_delete = false;
     this->body_length = 0;
 }
 
@@ -37,6 +39,7 @@ void ft::Response::clear()
     this->body_length = 0;
     this->is_content_length = false;
     this->is_chunked = false;
+    this->is_delete = false;
     this->is_multy = false;
 }
 std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& body)
@@ -100,14 +103,22 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     std::ostringstream body; 
     if(i == 404)
     {
-        std::ifstream input (conf.getErrPages(404).c_str());
-        body << input.rdbuf(); 
-        head = "HTTP/1.1 404 Not found\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        if(send(fd, head.c_str(), head.size(), 0) == -1)
-        this->full_log["Connection"] = "close";
-
+        if (!is_delete)
+        {
+            std::ifstream input (conf.getErrPages(404).c_str());
+            body << input.rdbuf(); 
+            head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+            std::cout << head << std::endl;
+            head += body.str();
+            if(send(fd, head.c_str(), head.size(), 0) == -1)
+                this->full_log["Connection"] = "close";
+        }
+        else
+        {
+            head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time;
+            std::cout << head << std::endl;
+            send(fd, head.c_str(), head.size(), 0);
+        }
     }
     else if(i == 400)
     {
@@ -129,12 +140,17 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
     }
+    else if(i == 204)
+    {
+        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
+        send(fd, head.c_str(), head.size(), 0);
+    }
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
         this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
         std::string reeal_body;
-        if((current_location->getAutoindex()))  
+        if((current_location->getAutoindex()))
         {
             reeal_body = this->AutoIndexPage(conf, body);
             if(reeal_body.empty())
@@ -374,6 +390,15 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         }
         if(this->is_multy) // если тип данных multipart/form-data - надо убарть chunked (по RFC)
             this->is_chunked = false;
+    }
+    if(!this->full_log["ZAPROS"].compare(0,6,"DELETE")) // если delete
+    {
+        if(methods.find("DELETE") == std::string::npos) // если не разрешен метод = ошибка
+            return(405);
+        this->is_delete = true;
+        this->is_content_length = false;
+        this->is_chunked = false;
+        this->is_multy = false;
     }
     return 0;
 }

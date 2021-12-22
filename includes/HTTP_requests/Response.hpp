@@ -30,6 +30,7 @@ namespace ft
         bool is_chunked; // Content-length: chunked
         bool is_multy; // Content-type: multipary/*
         bool is_body;
+        bool is_delete; // Если метод DELETE
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
         Location* current_location;
 
