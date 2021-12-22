@@ -21,6 +21,7 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
 }
 ft::Response::Response()
 {
+    this->is_redir = false;
     this->full_log["Connection"] = "Keep-Alive";
     this->current_location = NULL;
     this->is_content_length = false;
@@ -33,6 +34,7 @@ ft::Response::Response()
 
 void ft::Response::clear()
 {
+    this->is_redir = false;
     this->full_log.clear();
     this->full_log["Connection"] = "Keep-Alive";
     this->current_location = NULL;
@@ -73,9 +75,18 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
         std::cout << "Cant open dirr" << std::endl;
         return "";
     }
+    else
+    {
+        if(*(full_log["Dirrectory"].end()-1) != '/')
+        {
+            full_log["Dirrectory"] += "/";
+            this->is_redir = true;
+        }
+    }
     req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
     while ((ent=readdir(dir)) != NULL) {
-
+        if(!strcmp(".", ent->d_name))
+            continue;
         req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
         req += "8080";
@@ -150,13 +161,15 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
-        this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
         std::string reeal_body;
         if((current_location->getAutoindex()))
         {
             reeal_body = this->AutoIndexPage(conf, body);
             if(reeal_body.empty())
                 return this->answer(404,fd,conf);
+            this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
+            if(this->is_redir)
+                return this->answer(301,fd,conf);
         }
         else
         {
@@ -233,7 +246,18 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
     }
-    if(i == 200)
+    else if(i == 301)
+    {
+        std::cout << "IM 301 " << std::endl;
+        body << "<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx/1.18.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n";
+        head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n";
+        std::cout << head << std::endl;
+        head += body.str();
+        send(fd, head.c_str(), head.size(), 0);
+        this->is_redir = false;
+    }
+    if(i == 200 || i == 301)
         return true;
     return false;
 }

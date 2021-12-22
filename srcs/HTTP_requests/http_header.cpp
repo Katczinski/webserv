@@ -23,8 +23,15 @@ bool check_url(ft::Response& req, ft::Config& conf)
     while(it !=  conf.getEndLocation())
     {
         real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
+        
         size_t auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
-        if((real_root + req.full_log["Dirrectory"]) == (*it).second.getRoot() || ((*it).second.getAutoindex() && \
+        if(req.full_log["Dirrectory"].length() > 1 &&  auto_index_check_length == std::string::npos &&  !(*it).first.compare(0, (*it).first.size()-1, req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size())))
+        {
+            req.is_redir = true;
+            req.full_log["Dirrectory"] += "/";
+            auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
+        }
+        if((real_root + req.full_log["Dirrectory"]) == (*it).second.getRoot() || ((*it).second.getAutoindex() &&
         (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length))) // проверка что обращение не по руту и смотрю автоиндекс переписать под индексы любой длинны
         {
             req.current_location = &(*it).second;
