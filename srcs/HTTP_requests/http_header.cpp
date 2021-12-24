@@ -23,27 +23,31 @@ bool check_url(ft::Response& req, ft::Config& conf)
     while(it !=  conf.getEndLocation())
     {
         real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
-
-        real_dir = req.full_log["Dirrectory"].substr(req.full_log["Dirrectory"].find_last_of("/"), req.full_log["Dirrectory"].size());
-        if((real_root + real_dir) == (*it).second.getRoot())
+        
+        size_t auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
+        if(req.full_log["Dirrectory"].length() > 1 &&  auto_index_check_length == std::string::npos &&  !(*it).first.compare(0, (*it).first.size()-1, req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size())))
         {
-            req.full_log["for_methods_location"] = req.full_log["Dirrectory"];
+            req.is_redir = true;
+            req.full_log["Dirrectory"] += "/";
+            auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
+        }
+        if((real_root + req.full_log["Dirrectory"]) == (*it).second.getRoot() || ((*it).second.getAutoindex() &&
+        (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length))) // проверка что обращение не по руту и смотрю автоиндекс переписать под индексы любой длинны
+        {
+            req.current_location = &(*it).second;
             if((real_root + req.full_log["Dirrectory"]).find("cgi") != std::string::npos)
                 return true;
             return false;
         }
         else
         {
+            real_root = conf.getRoot().substr(0, conf.getRoot().size() - 1);
             int i = 0;
             while (i < (*it).second.getIndex().size())
             {
-                if((real_root + real_dir) == (*it).second.getIndex()[i])
+                if((real_root + req.full_log["Dirrectory"]) == (*it).second.getIndex()[i])
                 {
-                    size_t i = req.full_log["Dirrectory"].find_last_of('/');
-                    req.full_log["for_methods_location"] = req.full_log["Dirrectory"].substr(0, i+1);
-                    i = req.full_log["for_methods_location"].find_first_of('/');
-                    if(i != std::string::npos && i == 0 && req.full_log["for_methods_location"].size() > 1)
-                        req.full_log["for_methods_location"].erase(req.full_log["for_methods_location"].begin() +i);
+                    req.current_location = &(*it).second;
                     return false;
                 }
                 i++;
@@ -115,8 +119,8 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(400, fd, conf));
     else if(check_url(req, conf)) // вот тут происходит чек location
         return(req.answer(404,fd, conf));
-    int i =  req.req_methods_settings((conf.getLocation().find(req.full_log["for_methods_location"]))->second.getMethods()); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
+    int i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
     if(i)
-        return(req.answer(i, fd, conf));    
+        return(req.answer(i, fd, conf));
     return true;
 }

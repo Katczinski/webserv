@@ -41,8 +41,8 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         return (1);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры, Диме сюда
-        {            
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры
+        {
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();
             return ret;
@@ -53,7 +53,8 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         all_connection[fd].full_buffer.clear(); // чистим пришедшее сообщение
     }
-    if(!all_connection[fd].full_log["Host"].empty() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked && !all_connection[fd].is_multy) // Ответ на get
+    if(!all_connection[fd].full_log["Host"].empty() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked &&
+        !all_connection[fd].is_multy && !all_connection[fd].is_delete) // Ответ на get
     {
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
         {
@@ -74,6 +75,15 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 
         return (ans);
     }
+    else if (all_connection[fd].is_delete)
+    {
+        if (!remove((config.getRoot() + all_connection[fd].full_log["Dirrectory"]).c_str()))
+            all_connection[fd].answer(204,fd, config);
+        else
+            all_connection[fd].answer(404,fd, config);
+        all_connection[fd].full_buffer.clear();
+        all_connection[fd].clear();
+    }
     else if(all_connection[fd].is_content_length) // если есть длинна тела и запрос POST
     {
         size_t j = 0;
@@ -91,7 +101,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             if(all_connection[fd].is_multy) // если загрузка
             {
-                if(!all_connection[fd].post_request(config))
+                if(!all_connection[fd].post_download_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)

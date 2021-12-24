@@ -11,22 +11,47 @@
 #include <sstream>
 #include "Config.hpp"
 #include <dirent.h>
-
+#include "Location.hpp"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 namespace ft
 {
+    class Location;
     class Config;
     class Response
     {
     private:
-
+       
     public:
         std::string full_buffer; // это полный текст всех хэдеров, он меняется очень много раз
-        std::map<std::string, std::string> full_log; // фул лог, смотри конструктор по умолчанию
+        std::map<std::string, std::string> full_log; // фул лог, тут хэдеры
         bool is_content_length; // если есть Content-length и нет chunked
         bool is_chunked; // Content-length: chunked
         bool is_multy; // Content-type: multipary/*
         bool is_body;
+        bool is_redir;
+        bool is_delete; // Если метод DELETE
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
+        Location* current_location;
+
+        // get/set
+        // void setFullBuffer(std::string& str,  bool clear);
+        // std::string const getFullBuffer() const;
+        // void setFullLog(std::string& key, std::string& val, bool append);
+        // std::map<std::string, std::string> const getFullLog() const;
+        // void setIsContentLength(bool set);
+        // bool const getIsContentLength() const;
+        // void setIsChunked(bool set);
+        // bool const getIsChunked() const;
+        // void setIsMulty(bool set);
+        // bool const getIsMulty() const;
+        // void setIsBody(bool set);
+        // bool const getIsBody() const;
+        // void setIsAutoIndex(bool set);
+        // bool const getIsAutoIndex() const;
+        // void setBodyLength(size_t length);
+        // size_t const getBodyLength() const;
         // методы
         Response();
         ~Response();
@@ -37,7 +62,7 @@ namespace ft
         bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
         std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body); // неработающий автоиндекс
-        bool post_request(ft::Config& config);
+        bool post_download_request(ft::Config& config);
         std::string status(int code); // в аргумент передается код ошибки, возвращается название ошибки
     };
     template<typename T>
