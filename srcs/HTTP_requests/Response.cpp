@@ -198,13 +198,13 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         std::cout << head << std::endl;
         head += reeal_body;
         size_t how = 0;
-
-        while(!head.empty())
-        {
             how = send(fd, head.c_str(), head.size(), 0);
-            if(how > 0)
-                head.erase(0, how);
-        }
+
+        // while(!head.empty())
+        // {
+            // if(how > 0)
+                // head.erase(0, how);
+        // }
     }
     else if(i == 505)
     {

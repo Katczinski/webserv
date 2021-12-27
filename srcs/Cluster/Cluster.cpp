@@ -18,10 +18,10 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 {
     std::vector<char> buf1(4000000, 0);
     size_t ret = recv(fd, &buf1[0], buf1.size(), 0);
-    struct pollfd   pfd;
-    pfd.fd = fd;
-    pfd.events = POLLOUT;
-    poll(static_cast<struct pollfd*>(&pfd), 1, -1);
+    // struct pollfd   pfd;
+    // pfd.fd = fd;
+    // pfd.events = POLLOUT;
+    // poll(static_cast<struct pollfd*>(&pfd), 1, -1);
     if(ret <= 0)
         return 0;
     size_t i = 0;
@@ -70,8 +70,8 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         size_t ans = ((all_connection[fd].full_log["Connection"].find("close") != std::string::npos) ? 0 : 1);
         all_connection[fd].full_buffer.clear();
         
-        if (pfd.revents & POLLOUT)
-            std::cout << "HERE\n";
+        // if (pfd.revents & POLLOUT)
+            // std::cout << "HERE\n";
 
         return (ans);
     }
