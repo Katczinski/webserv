@@ -17,11 +17,11 @@ ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
     std::vector<char> buf1(4000000, 0);
-    size_t ret = recv(fd, &buf1[0], buf1.size(), 0);
-    if(ret <= 0)
+    size_t ret = recv(fd, &buf1[0], buf1.size(), 0); // читаем в buf1 ret байт, память просто алоцирована, size() всегда 4000000, поэтому берем все по ret
+    if(ret <= 0) // ошибки/закончилось чтение
         return 0;
     size_t i = 0;
-    while(i < ret && all_connection[fd].full_log["Host"].empty() || (i < ret && all_connection[fd].is_chunked))
+    while(i < ret && all_connection[fd].full_log["Host"].empty() || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
     {
         if(buf1[0] == '\r' && all_connection[fd].full_buffer.empty() && !all_connection[fd].is_chunked)
             i++;
@@ -37,7 +37,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         return (1);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
-        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры
+        if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры, в случаем ошибки уходим в if и чистим все
         {
             all_connection[fd].clear();
             all_connection[fd].full_buffer.clear();
@@ -47,18 +47,18 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             all_connection[fd].full_log["Body"] += buf1[i++];
         }
-        all_connection[fd].full_buffer.clear(); // чистим пришедшее сообщение
+        all_connection[fd].full_buffer.clear(); // чистим пришедшее сообщение из буфера
     }
     if(!all_connection[fd].full_log["Host"].empty() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked &&
         !all_connection[fd].is_multy && !all_connection[fd].is_delete) // Ответ на get
     {
-        if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
+        if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
         {
             ft::CGI cgi(all_connection[fd], config);
             cgi.execute(all_connection[fd], fd);
             // send(fd, response.c_str(), response.length(), 0);
         }
-        else
+        else // любой другой запрос с нормальный полем Host
             all_connection[fd].answer(200, fd, config);
         all_connection[fd].full_log.clear();
         if(!all_connection[fd].full_buffer.empty())
@@ -70,7 +70,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 
         return (ans);
     }
-    else if (all_connection[fd].is_delete)
+    else if (all_connection[fd].is_delete) // если удалить что-нибудь
     {
         if (!remove((config.getRoot() + all_connection[fd].full_log["Dirrectory"]).c_str()))
             all_connection[fd].answer(204,fd, config);
@@ -87,19 +87,19 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             all_connection[fd].full_log["Body"] += buf1[j];
             ++j;
         }
-        if(all_connection[fd].full_log["Body"].size() > all_connection[fd].body_length) // если длинна тела выше, чем заявлена
+        if(all_connection[fd].full_log["Body"].size() > all_connection[fd].body_length) // если длинна тела выше, чем заявлена, то записываем все по длинне, остальное оставляем в буфере на следующий запрос
         {
             all_connection[fd].full_buffer = all_connection[fd].full_log["Body"].substr((all_connection[fd].full_log["Body"].size() - all_connection[fd].body_length), all_connection[fd].full_log["Body"].size());
             all_connection[fd].full_log["Body"] = all_connection[fd].full_log["Body"].substr(0, all_connection[fd].body_length);
         }
         if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length) // выполняем действия с body
         {
-            if(all_connection[fd].is_multy) // если загрузка
+            if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной
             {
                 if(!all_connection[fd].post_download_request(config))
                     all_connection[fd].answer(400,fd, config);
             }
-            if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos)
+            if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
             {
                 ft::CGI cgi(all_connection[fd], config);
                 cgi.execute(all_connection[fd], fd);
@@ -241,7 +241,7 @@ void        ft::Cluster::run()
         for (int i = 0; i < _size; i++)
         {  
             //check if event is registered
-            if (_connected[i].revents & POLLIN || _connected[i].revents & POLLOUT)
+            if (_connected[i].revents & POLLIN || _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
             {
                 //check if it's registered on the one of the listening sockets
                 int l = is_listening(_connected[i].fd);
@@ -255,7 +255,7 @@ void        ft::Cluster::run()
                 else
                 {
                     //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
-                    if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd]))
+                    if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd])) // вот тут парсер
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
                         config_map.erase(_connected[i].fd);
@@ -264,7 +264,7 @@ void        ft::Cluster::run()
                     }
                 }
             }
-			if(all_connection[_connected[i].fd].is_body_left)
+			if(all_connection[_connected[i].fd].is_body_left) // если ему есть что ответить дополнительно, то что он не успел ответить за первый send
 			{
 				int how = 0;
 				int fd = _connected[i].fd;

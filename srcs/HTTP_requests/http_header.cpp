@@ -25,6 +25,7 @@ bool check_url(ft::Response& req, ft::Config& conf)
         real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
         
         size_t auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
+        // првоерка на то, если ли такая дирректория и что не пришло только  /
         if(req.full_log["Dirrectory"].length() > 1 &&  auto_index_check_length == std::string::npos &&  !(*it).first.compare(0, (*it).first.size()-1, req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size())))
         {
             req.is_redir = true;
@@ -39,7 +40,7 @@ bool check_url(ft::Response& req, ft::Config& conf)
                 return true;
             return false;
         }
-        else
+        else // обратились на индексовый файл в Location'е который прописан, например localhost:8080/index.html
         {
             real_root = conf.getRoot().substr(0, conf.getRoot().size() - 1);
             int i = 0;
