@@ -161,7 +161,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
-        if((current_location->getAutoindex()))
+        if((current_location->getAutoindex())) // если автоиндекс
         {
             this->AutoIndexPage(conf);
             if(body.str().empty())
@@ -170,10 +170,10 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
             if(this->is_redir)
                 return this->answer(301,fd,conf);
         }
-        else
+        else // если не автоиндекс
         {
             int i = 0;
-            while(i < conf.getIndex().size())
+            while(i < conf.getIndex().size()) // ищем страничку с индексом и открываем ее
             {
                 std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
                 if(input.is_open())
@@ -183,10 +183,11 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
                 }
                 i++;
             }
-            if(i == conf.getIndex().size())
+            if(i == conf.getIndex().size()) // если такого индекса не оказалось в папке
                 return this->answer(403,fd,conf);
         }
         // }
+        // стандартная бошка ответа
         head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
@@ -194,7 +195,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
         std::cout << head << std::endl;
-        head += body.str();
+        head += body.str(); // все пихаем в одну кучу
         int how = 1;
         // struct pollfd   pfd;
     	// pfd.fd = fd;
@@ -202,13 +203,13 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     	// poll(static_cast<struct pollfd*>(&pfd), 1, -1);
 		// while(how != head.size() &&  how && how != -1)
 		// {
-		how = (send(fd, head.c_str(), head.size(), 0));
-		if(how < head.size())
+		how = (send(fd, head.c_str(), head.size(), 0)); // Отправляем и смотрим сколько отправилось
+		if(how < head.size()) // если не все, то последующие отправки будут в Cluster.cpp
 		{
             is_body_left = true;
             body.str(head.substr(how, head.size()));
         }
-        else
+        else // если все - чистим
         {
             body.str("");
             body.clear();
