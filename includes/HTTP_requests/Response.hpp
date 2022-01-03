@@ -33,7 +33,9 @@ namespace ft
         bool is_redir;
         bool is_delete; // Если метод DELETE
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
-        Location* current_location;
+        bool is_body_left;
+		Location* current_location;
+    	std::ostringstream body; 
 
         // get/set
         // void setFullBuffer(std::string& str,  bool clear);
@@ -61,7 +63,7 @@ namespace ft
         bool answer(int i, int fd,  ft::Config& conf); // тут куются ответы, скорее всего переделаю
         bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
-        std::string AutoIndexPage(ft::Config& conf, std::ostringstream& body); // неработающий автоиндекс
+        void AutoIndexPage(ft::Config& conf); // неработающий автоиндекс
         bool post_download_request(ft::Config& config);
         std::string status(int code); // в аргумент передается код ошибки, возвращается название ошибки
     };

@@ -18,10 +18,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 {
     std::vector<char> buf1(4000000, 0);
     size_t ret = recv(fd, &buf1[0], buf1.size(), 0);
-    // struct pollfd   pfd;
-    // pfd.fd = fd;
-    // pfd.events = POLLOUT;
-    // poll(static_cast<struct pollfd*>(&pfd), 1, -1);
     if(ret <= 0)
         return 0;
     size_t i = 0;
@@ -70,7 +66,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         size_t ans = ((all_connection[fd].full_log["Connection"].find("close") != std::string::npos) ? 0 : 1);
         all_connection[fd].full_buffer.clear();
         
-        // if (pfd.revents & POLLOUT)
             // std::cout << "HERE\n";
 
         return (ans);
@@ -246,7 +241,7 @@ void        ft::Cluster::run()
         for (int i = 0; i < _size; i++)
         {  
             //check if event is registered
-            if (_connected[i].revents & POLLIN)
+            if (_connected[i].revents & POLLIN || _connected[i].revents & POLLOUT)
             {
                 //check if it's registered on the one of the listening sockets
                 int l = is_listening(_connected[i].fd);
@@ -269,6 +264,26 @@ void        ft::Cluster::run()
                     }
                 }
             }
+			if(all_connection[_connected[i].fd].is_body_left)
+			{
+				int how = 0;
+				int fd = _connected[i].fd;
+				std::string telo = all_connection[fd].body.str();
+				how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
+				if(how <= all_connection[fd].body.str().size() && how  != -1)
+				{
+					telo.erase(0, how);
+				}
+				if(!all_connection[fd].body.str().length())
+				{
+					all_connection[fd].is_body_left = false;
+                    all_connection[fd].full_buffer.clear();
+                    all_connection[fd].body.clear();
+                    all_connection[fd].clear();
+				}
+				all_connection[fd].body.str(telo);
+				std::cout << "HOW in cluster " << how << " IS " << all_connection[fd].is_body_left << " empty " << all_connection[fd].body.str().length()<< std::endl;
+			}
         }
     }
 }
