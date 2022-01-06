@@ -21,7 +21,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if(ret <= 0) // ошибки/закончилось чтение
         return 0;
     size_t i = 0;
-    while(i < ret && all_connection[fd].full_log["Host"].empty() || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
+    while((i < ret && all_connection[fd].full_log["Host"].empty()) || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
     {
         if(buf1[0] == '\r' && all_connection[fd].full_buffer.empty() && !all_connection[fd].is_chunked)
             i++;
