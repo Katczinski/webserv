@@ -17,9 +17,11 @@ ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
     std::vector<char> buf1(4000000, 0);
-    size_t ret = recv(fd, &buf1[0], buf1.size(), 0); // читаем в buf1 ret байт, память просто алоцирована, size() всегда 4000000, поэтому берем все по ret
-    if(ret <= 0) // ошибки/закончилось чтение
+    size_t ret = recv(fd, &buf1[0], buf1.size(), 0);
+    if(ret <= 0)
         return 0;
+	// else if(ret == 0)
+		// return 1;
     size_t i = 0;
     while((i < ret && all_connection[fd].full_log["Host"].empty()) || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
     {
@@ -235,13 +237,20 @@ void        ft::Cluster::run()
     std::map<int, ft::Config*>       config_map;
     for (;;)
     {
-        if ((poll(_connected, _size, 2)) <= 0)
-            continue ;
+		int aga = poll(_connected, _size, 2);
+        if (aga < 0)
+        {
+			std::cout << "POLL " << std::endl;
+			sleep(2);
+			continue;
+		}
+        if (aga == 0)
+			continue;
         //loop through all the connections
         for (int i = 0; i < _size; i++)
         {  
             //check if event is registered
-            if (_connected[i].revents & POLLIN || _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
+            if (_connected[i].revents & POLLIN && !all_connection[_connected[i].fd].is_body_left) //|| _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
             {
                 //check if it's registered on the one of the listening sockets
                 int l = is_listening(_connected[i].fd);
@@ -254,7 +263,7 @@ void        ft::Cluster::run()
                 }
                 else
                 {
-                    //config_map[_connected[i].fd].getHost() - ключ = фд, валью = конфиг
+                    //config_map[_connected[i].fd].getHost() - ключ =a фд, валью = конфиг
                     if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd])) // вот тут парсер
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed\n";
@@ -264,26 +273,55 @@ void        ft::Cluster::run()
                     }
                 }
             }
-			if(all_connection[_connected[i].fd].is_body_left) // если ему есть что ответить дополнительно, то что он не успел ответить за первый send
+			if(all_connection[_connected[i].fd].is_body_left)
 			{
 				int how = 0;
+				struct pollfd   pfd;
 				int fd = _connected[i].fd;
+    			pfd.fd = fd;
+    			pfd.events = POLLOUT;
+    			poll(static_cast<struct pollfd*>(&pfd), 1, -1);
+				// _connected[i].events = POLLOUT;
+				signal(SIGPIPE, SIG_IGN);
+    			// pfd.fd = fd;
+    			// poll(static_cast<struct pollfd*>(&pfd), 1, -1);
 				std::string telo = all_connection[fd].body.str();
+				while(!telo.empty())
+				{
+				std::cout << "ВЫЛЕТ " << std::endl;
+
 				how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
-				if(how <= all_connection[fd].body.str().size() && how  != -1)
-				{
+				std::cout << "ВЫЛЕТ 2" << std::endl;
+
+					if(how < 0)
+					{
+						std::cout << "HOW == " << how << std::endl;
+						// config_map.erase(_connected[i].fd);
+						// close(_connected[i].fd);
+                		// erase_poll(i);
+						break;
+					}
+					// if(how <= all_connection[fd].body.str().size())
+					// {
 					telo.erase(0, how);
+					// if(!all_connection[fd].body.str().length())
+					// {
+					// 	all_connection[fd].is_body_left = false;
+					// }
+					// all_connection[fd].body.str(telo);
+				std::cout << "HOW in cluster " << how << " IS " << all_connection[fd].is_body_left << " empty " << telo.length()<< std::endl;
 				}
-				if(!all_connection[fd].body.str().length())
-				{
-					all_connection[fd].is_body_left = false;
-                    all_connection[fd].full_buffer.clear();
-                    all_connection[fd].body.clear();
-                    all_connection[fd].clear();
-				}
-				all_connection[fd].body.str(telo);
-				std::cout << "HOW in cluster " << how << " IS " << all_connection[fd].is_body_left << " empty " << all_connection[fd].body.str().length()<< std::endl;
+				std::cout << "BREAK " << std::endl;
+				all_connection[_connected[i].fd].is_body_left = false;
+				_connected[i].events = POLLIN;
+				all_connection[_connected[i].fd].body.str("");
+				all_connection[_connected[i].fd].body.str().clear();
+				all_connection[_connected[i].fd].clear();
+				config_map.erase(_connected[i].fd);
+				close(_connected[i].fd);
+                erase_poll(i);
 			}
+
         }
     }
 }

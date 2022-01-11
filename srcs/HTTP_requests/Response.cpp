@@ -90,7 +90,7 @@ void ft::Response::AutoIndexPage(ft::Config& conf)
             continue;
         req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
-        req += "8080";
+        req += conf.getPort();
         req += "/";
         req += dir_nn;
         req += ent->d_name;
@@ -161,8 +161,10 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
-        if((current_location->getAutoindex())) // если автоиндекс
+        if((current_location->getAutoindex()))
         {
+			this->body.str("");
+			this->body.str().clear();
             this->AutoIndexPage(conf);
             if(body.str().empty())
                 return this->answer(404,fd,conf);
@@ -195,28 +197,29 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
         std::cout << head << std::endl;
-        head += body.str(); // все пихаем в одну кучу
-        int how = 1;
+        head += body.str();
+		// head += "\r\n";
+        // long how = 1;
         // struct pollfd   pfd;
     	// pfd.fd = fd;
     	// pfd.events = POLLOUT;
     	// poll(static_cast<struct pollfd*>(&pfd), 1, -1);
 		// while(how != head.size() &&  how && how != -1)
 		// {
-		how = (send(fd, head.c_str(), head.size(), 0)); // Отправляем и смотрим сколько отправилось
-		if(how < head.size()) // если не все, то последующие отправки будут в Cluster.cpp
-		{
-            is_body_left = true;
-            body.str(head.substr(how, head.size()));
-        }
-        else // если все - чистим
-        {
-            body.str("");
-            body.clear();
-        }
+			// how = (send(fd, head.c_str(), head.size(), 0));
+		// if(how < 0)
+		// {
+			// std::cout << "Временно ошибка " << std::endl;
+			// return 1;
+		// }
+		// if(how < head.size())
+		is_body_left = true;
+		body.str(head);
+		// body.str(head.substr(how, head.size()));
 			// head.erase(0, how);
 			// std::cout << "how " << how <<std::endl;		}
-		std::cout << "HOW " << how <<  std::endl;
+		// std::cout << "HOW " << how <<  std::endl;
+		std::cout << "BODY LEFT " << body.str().size() << std::endl;
         // pfd.events = POLLIN;
 		// while(!head.empty())
         // {
