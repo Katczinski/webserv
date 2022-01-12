@@ -1,21 +1,30 @@
 <?php
-$env_array = getenv();
-
+// echo "HTTP/1.1 200 OK\r\n";
+// header("HTTP/1.1. 200 OK");
+// echo "Content-type: text/html\r\n\r\n";
+// echo "Transfer-Encoding: chunked\r\n\r\n";
+// echo "Location: http://example.com\r\n\r\n";
+// phpinfo();
+// if (headers_sent())
+//     echo "header sent";
 // else
-//     echo $POST;
+//     echo "header not sent";
+
+// header("\r\n\r\n");
 //Print all environment variable names with values
-$array = "";
-if ($env_array['REQUEST_METHOD'] == 'GET')
+$array;
+if ($_SERVER['REQUEST_METHOD'] == 'GET')
 {
+    parse_str($_SERVER['QUERY_STRING'], $array);
     echo "<h3>The list of environment variables with values are :</h3>";
-    if (empty($_POST))
-        echo "_POST is empty <br />";
-    foreach ($env_array as $key=>$value)
+    foreach ($_SERVER as $key=>$value)
     {
-        echo "$key => $value <br />";
-        if ($key == 'QUERY_STRING'){
-            parse_str($value, $array);
-        }
+        if (is_array($value))
+            foreach ($value as $_key=>$_value)
+                echo "$key [$_key] => $_value <br />";
+        else
+            echo "$key => $value <br />";
+        
     }
 }
 else

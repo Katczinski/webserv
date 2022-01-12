@@ -30,7 +30,9 @@ ft::CGI::CGI(ft::Response& req, ft::Config& conf)
     init_env(req);
     _argv = (char**)malloc(sizeof(char*) * 3);
     _argv[0] = strdup((*conf.getLocation().find("cgi-bin/")).second.getCgiPath().c_str());
-    _argv[1] = strdup((std::string(std::getenv("PWD")) + "/srcs/www" + _env["SCRIPT_NAME"]).c_str());
+    // _argv[0] = strdup((std::string(std::getenv("PWD")) + "/ubuntu_cgi_tester").c_str());
+    // std::cout << _argv[0] << std::endl;
+    _argv[1] = strdup(_env["SCRIPT_FILENAME"].c_str());
     _argv[2] = NULL;
 }
 
@@ -49,10 +51,31 @@ ft::CGI::~CGI() {
 
 void    ft::CGI::formHeader(std::string& header)
 {
-    header.insert(0, "HTTP/1.1 200 OK\r\n\
+    // size_t dcrlf;
+    // if ((dcrlf = header.find("\r\n\r\n")) == std::string::npos)
+        header.insert(0, "HTTP/1.1 200 OK\r\n\
 Content-type: text/html\r\n\
 Transfer-Encoding: chunked\r\n\
-Connection: keep-alive\r\n\r\n");    
+Connection: keep-alive\r\n\r\n");
+    // else
+    // {
+    //     size_t pos;
+    //     if ((pos = header.find("Transfer-Encoding: chunked")) == std::string::npos ||
+    //         pos > dcrlf)
+    //         header.insert(dcrlf, "\r\nTransfer-Encoding: chunked");
+    //     dcrlf = header.find("\r\n\r\n");
+    //     if ((pos = header.find("Content-type:")) == std::string::npos ||
+    //         pos > dcrlf)
+    //         header.insert(dcrlf, "\r\nContent-type: text/html");
+    //     dcrlf = header.find("\r\n\r\n");
+    //     if ((pos = header.find("Connection:")) == std::string::npos ||
+    //         pos > dcrlf)
+    //         header.insert(dcrlf, "\r\nConnection: keep-alive");
+    //     dcrlf = header.find("\r\n\r\n");
+    //     if ((pos = header.find("HTTP/1.1")) == std::string::npos ||
+    //         pos > dcrlf)
+    //         header.insert(0, "HTTP/1.1 200 OK\r\n");
+    // }
     std::cout << header << std::endl;
 }
 
@@ -103,19 +126,22 @@ void            ft::CGI::init_env(ft::Response& req)
     _env["CONTENT_LENGTH"] = req.full_log["Content-Length"];
     _env["CONTENT_TYPE"] = req.full_log["Content-type"];
     _env["GATEWAY_INTERFACE"] = "CGI/1.1";
-    _env["PATH_INFO"] = getExt(req.full_log["Location"], '?');
-    _env["PATH_TRANSLATED"] = getExt(req.full_log["Location"], '?');
-    
+    _env["PATH_TRANSLATED"] = "";
     _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
     // _env["REMOTE_HOST"] = "";
     // _env["REMOTE_IDENT"] = "";
     // _env["REMOTE_USER"] = "";
     _env["REQUEST_METHOD"] = req.full_log["ZAPROS"];
-    _env["SCRIPT_NAME"] = req.full_log["Dirrectory"];
+    _env["SCRIPT_FILENAME"] = std::string(std::getenv("PWD")) + "/srcs/www" + req.full_log["Dirrectory"];
+    _env["PATH_INFO"] = _env["SCRIPT_FILENAME"];
+    
+    std::cout << _env["SCRIPT_FILENAME"] << std::endl;
     _env["SERVER_NAME"] = getHost(req.full_log["Host"]);
     _env["SERVER_PORT"] = getExt(req.full_log["Host"], ':');
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    _env["REDIRECT_STATUS"] = "200";
+    _env["SCRIPT_NAME"] = "/script.php";
     // _env["SERVER_SOFTWARE"] = "";
     _cenv = (char**)malloc(sizeof(char*) * (_env.size() + 1));
     int i = 0;
@@ -161,7 +187,7 @@ void             ft::CGI::execute(ft::Response& req, int fd)
         close(pipe_out[1]);
         //chdir here
         status = execve(_argv[0], _argv, _cenv);
-        // вернуть 500 ошибку
+        send(fd, "HTTP/1.1 500", 12, 0);
         std::cerr << "Execve failed\n" << strerror(errno) << std::endl;
         exit(status);
     }
@@ -172,7 +198,7 @@ void             ft::CGI::execute(ft::Response& req, int fd)
         close(pipe_out[1]);
 
         char        buf[201];
-        int         res = read(pipe_out[0], buf, 50);
+        int         res = read(pipe_out[0], buf, 200);
         buf[res] = '\0';
         std::string header(buf);
         std::string body;
@@ -180,10 +206,15 @@ void             ft::CGI::execute(ft::Response& req, int fd)
 
         formHeader(header);
         dcrlf = header.find("\r\n\r\n");
-        body = header.substr(dcrlf + 4);
-        header.erase(dcrlf + 4);
-
+        if (dcrlf != std::string::npos){
+            body = header.substr(dcrlf + 4);
+            header.erase(dcrlf + 4);
+        }
         send(fd, header.c_str(), header.length(), 0);
+        std::cout << "======================HEADER======================\n";
+        std::cout << header << std::endl;
+        std::cout << "=======================BODY=======================\n";
+        std::cout << body << std::endl;
         do 
         {
             std::string chunk;
