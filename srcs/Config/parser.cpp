@@ -137,7 +137,7 @@ int ft::checkCountBrackets(const v_vec_string& content) {
 }
 
 void ft::printErrParser(const v_string& line,  std::string message) {
-	std::string text = "in line: " YEL;
+	std::string text = " in line: " YEL;
 	for (v_const_iter_string iter = line.begin(); iter != line.end(); ++iter) {
 		text += *iter;
 		text += " ";
@@ -210,8 +210,8 @@ void ft::checkContent(const v_vec_string& content) {
 			printErrParser(*it, "bad config file, missing value");
 		} else if (it->front() ==  "host" && it->size() != 3) {
 			printErrParser(*it, "bad config file, missing value");
-		} else if (it->front() ==  "server_name" && it->size() != 3) {
-			printErrParser(*it, "bad config file, missing value");
+		} else if (it->front() ==  "server_name" && it->size() > 3) {
+			printErrParser(*it, "bad config file, incorrect value");
 		} else if (it->front() ==  "root" && it->size() != 3) {
 			printErrParser(*it, "bad config file, missing value");
 		} else if (it->front() ==  "index" && it->size() < 3) {
