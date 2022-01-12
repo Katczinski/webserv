@@ -1,6 +1,5 @@
 #include "Response.hpp"
 
-std::string indexxx = "off";
 ft::Response::~Response() {}
 ft::Response::Response(ft::Response const& other)
 {
@@ -24,6 +23,7 @@ ft::Response::Response()
     this->is_redir = false;
     this->full_log["Connection"] = "Keep-Alive";
     this->current_location = NULL;
+	this->is_body_left = false;
     this->is_content_length = false;
     this->is_chunked = false;
     this->is_multy = false;
@@ -44,7 +44,7 @@ void ft::Response::clear()
     this->is_delete = false;
     this->is_multy = false;
 }
-std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& body)
+void ft::Response::AutoIndexPage(ft::Config& conf)
 {
 
     std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
@@ -68,12 +68,13 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
             this->full_log["Content-Type"] = "video/mp4";
         std::ifstream input (dir_name.c_str());
         body << input.rdbuf();
-        return body.str();
+        return;
     }
     if(!dir)
     {
         std::cout << "Cant open dirr" << std::endl;
-        return "";
+        body.str("");
+		return;
     }
     else
     {
@@ -89,7 +90,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
             continue;
         req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
-        req += "8080";
+        req += conf.getPort();
         req += "/";
         req += dir_nn;
         req += ent->d_name;
@@ -105,7 +106,7 @@ std::string ft::Response::AutoIndexPage(ft::Config& conf, std::ostringstream& bo
     }
     req += "\r\n</body>";
     closedir(dir);
-    return req;
+    body.str(req);
 }
 
 bool ft::Response::answer(int i, int fd, ft::Config& conf)
@@ -113,7 +114,6 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     time_t now = time(0);
     std::string time = ctime(&now);
     std::string head;
-    std::ostringstream body; 
     if(i == 404)
     {
         if (!is_delete)
@@ -161,20 +161,21 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
-        std::string reeal_body;
         if((current_location->getAutoindex()))
         {
-            reeal_body = this->AutoIndexPage(conf, body);
-            if(reeal_body.empty())
+			this->body.str("");
+			this->body.str().clear();
+            this->AutoIndexPage(conf);
+            if(body.str().empty())
                 return this->answer(404,fd,conf);
             this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
             if(this->is_redir)
                 return this->answer(301,fd,conf);
         }
-        else
+        else // если не автоиндекс
         {
             int i = 0;
-            while(i < conf.getIndex().size())
+            while(i < conf.getIndex().size()) // ищем страничку с индексом и открываем ее
             {
                 std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
                 if(input.is_open())
@@ -184,27 +185,47 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
                 }
                 i++;
             }
-            if(i == conf.getIndex().size())
+            if(i == conf.getIndex().size()) // если такого индекса не оказалось в папке
                 return this->answer(403,fd,conf);
-            reeal_body = body.str();
         }
         // }
+        // стандартная бошка ответа
         head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(reeal_body.size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
+        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
         // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
         std::cout << head << std::endl;
-        head += reeal_body;
-        size_t how = 0;
-
-        while(!head.empty())
-        {
-            how = send(fd, head.c_str(), head.size(), 0);
-            if(how > 0)
-                head.erase(0, how);
-        }
+        head += body.str();
+		// head += "\r\n";
+        // long how = 1;
+        // struct pollfd   pfd;
+    	// pfd.fd = fd;
+    	// pfd.events = POLLOUT;
+    	// poll(static_cast<struct pollfd*>(&pfd), 1, -1);
+		// while(how != head.size() &&  how && how != -1)
+		// {
+			// how = (send(fd, head.c_str(), head.size(), 0));
+		// if(how < 0)
+		// {
+			// std::cout << "Временно ошибка " << std::endl;
+			// return 1;
+		// }
+		// if(how < head.size())
+		is_body_left = true;
+		body.str(head);
+		// body.str(head.substr(how, head.size()));
+			// head.erase(0, how);
+			// std::cout << "how " << how <<std::endl;		}
+		// std::cout << "HOW " << how <<  std::endl;
+		std::cout << "BODY LEFT " << body.str().size() << std::endl;
+        // pfd.events = POLLIN;
+		// while(!head.empty())
+        // {
+            // if(how > 0)
+                // head.erase(0, how);
+        // }
     }
     else if(i == 505)
     {

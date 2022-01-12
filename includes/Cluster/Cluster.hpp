@@ -29,6 +29,11 @@ namespace ft
             void                        run();
             int                         receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config);
             int                         is_listening(int fd);
+
+            class ProcessError : public std::exception
+            {
+                virtual const char*         what() const throw() { return ("Process error"); }
+            };
     };
 }
 
