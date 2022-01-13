@@ -1,5 +1,20 @@
 <!DOCTYPE html>
 <html>
+<script>
+	if ( window.history.replaceState ) {
+		window.history.replaceState( null, null, window.location.href );
+	}
+</script>
+	<head>
+		<meta charset="utf-8">
+		<title>Отправка файла на сервер</title>
+	   </head>
+	   <body>
+		<form enctype="multipart/form-data" method="post" >
+		 <p><input type="file" name="f">
+		 <input type="submit" value="Отправить" href="#"></p>
+		</form>
+	   </body>
 <head>
 <title>Welcome to Webserver!</title>
 
@@ -117,4 +132,28 @@ working.</p>
 	}
 	</script>
 </body>
+</html><html>
+  <head>
+    <link rel="stylesheet" type="text/css">
+    <!-- <script src="js/intro.js"></script> -->
+    <meta charset="UTF-8">
+  </head>
+
+  <body>
+    <div class='intro_div'>
+		<form method="POST" onsubmit="return setAction(this)">
+            Имя: <input id="nameForm" type="text" name="user">
+            <!-- Пароль: <input type="password" name="password"> -->
+            <input type="submit" value="OK">
+        </form>
+		<script>
+				function setAction(form){
+					form.action = "cgi-bin/script.php";
+				}
+		</script>
+    </div>
+    <!-- <script>document.getElementById('input_login').value = load_login();</script> -->
+  </body>
 </html>
+
+

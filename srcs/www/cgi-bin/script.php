@@ -33,6 +33,7 @@ else
         parse_str($line, $array);
     }   
 }
+
 if (array_key_exists('user', $array)){
     if ($array['user'] == 'echiles')
         echo "<h1 align='center'>zdarova Leha</h1>";

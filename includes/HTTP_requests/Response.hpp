@@ -36,7 +36,7 @@ namespace ft
         bool is_body_left;
 		Location* current_location;
     	std::ostringstream body; 
-
+		size_t range;
         // get/set
         // void setFullBuffer(std::string& str,  bool clear);
         // std::string const getFullBuffer() const;

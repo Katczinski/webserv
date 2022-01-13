@@ -29,6 +29,7 @@ ft::Response::Response()
     this->is_multy = false;
     this->is_delete = false;
     this->body_length = 0;
+	this->range = 0;
 }
 
 
@@ -161,6 +162,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
+        this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
         if((current_location->getAutoindex()))
         {
 			this->body.str("");
@@ -175,29 +177,57 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         else // если не автоиндекс
         {
             int i = 0;
-            while(i < conf.getIndex().size()) // ищем страничку с индексом и открываем ее
+			
+            while(i < current_location->getIndex().size()) // ищем страничку с индексом и открываем ее
             {
-                std::ifstream input (conf.getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
+				std::cout << "HERE "<< current_location->getIndex()[0] << "I = " << i << std::endl;
+                std::ifstream input (current_location->getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
                 if(input.is_open())
                 {
+					body.str("");
+					body.str().clear();
+					body.clear();
                     body << input.rdbuf();
+					input.close();
                     break;
                 }
                 i++;
             }
-            if(i == conf.getIndex().size()) // если такого индекса не оказалось в папке
-                return this->answer(403,fd,conf);
+            // if(i == conf.getIndex().size()) // если такого индекса не оказалось в папке
+                // return this->answer(403,fd,conf);
         }
         // }
         // стандартная бошка ответа
-        head = "HTTP/1.1 200 " + status(200) + "\r\nLocation: " +this->full_log["Location"]+"\r\nContent-Type: " + this->full_log["Content-Type"] +"\r\nDate: "\
+		// if(body.str().size() > 5000)
+		// 	head = "HTTP/1.1 206 " + status(206);
+        // else
+			head = "HTTP/1.1 200 " + status(200);
+		head += "\r\nLocation: " +this->full_log["Location"];
+		head += "\r\nContent-Type: ";
+		// if(body.str().size() > 5000)
+			// head += "multipart/byteranges; boundary=WebServer11_==13_01_2022_aga";
+		// else
+			head += this->full_log["Content-Type"];
+		head +="\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
         // if(!this->prev_dirrectory.empty())
         //     head += "Refer:  http://localhost:8080/error_pages";
         // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
         std::cout << head << std::endl;
-        head += body.str();
+		head += body.str();
+		is_body_left = true;
+		body.str(head);
+
+		// if(body.str().size() <= 5000)
+		// {
+			// send(fd, head.c_str(), head.size(), 0);
+			// head.clear();
+			// body.str("");
+			// body.str().clear();
+		// }
+		// else
+		// send(fd, head.c_str(), head.size(), 0);
 		// head += "\r\n";
         // long how = 1;
         // struct pollfd   pfd;
@@ -213,8 +243,6 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
 			// return 1;
 		// }
 		// if(how < head.size())
-		is_body_left = true;
-		body.str(head);
 		// body.str(head.substr(how, head.size()));
 			// head.erase(0, how);
 			// std::cout << "how " << how <<std::endl;		}
@@ -261,8 +289,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         std::ifstream input(conf.getErrPages(500).c_str());
         body << input.rdbuf();
-        head = "HTTP/1.1 500 " + status(500) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+        head = "HTTP/1.1 504 Gateway Timeout\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nConnection: Keep-Alive\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
@@ -270,6 +297,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 301)
     {
         std::cout << "IM 301 " << std::endl;
+		this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
         body << "<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx/1.18.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n";
         head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n";
@@ -386,7 +414,7 @@ bool ft::Response::general_header_check(std::string str, int fd, ft::Config& con
         else if(!header[0].compare(0,6,"DELETE"))
             this->full_log["ZAPROS"] = header[0];
         else
-            i = 400;
+            i = 405;
         if(header[1][0] != '/')
             i = 400;
         if(header[2].compare(0, 8, "HTTP/1.0") && header[2].compare(0, 8, "HTTP/1.1"))
@@ -457,6 +485,7 @@ std::string ft::Response::status(int code) {
     status[200] = "OK"; // "Успешно". Запрос успешно обработан. Что значит "успешно", зависит от метода HTTP
     status[202] = "Accepted"; // "Принято". Запрос принят, но ещё не обработан. Это предназначено для случаев,
                              // когда запрос обрабатывается другим процессом или сервером, либо для пакетной обработки.
+	status[206] = "Partial Content";
     status[204] = "No Content"; // "Нет содержимого". Нет содержимого для ответа на запрос, например при методе DELETE
     status[301] = "Moved Permanently"; // "Перемещён на постоянной основе". Этот код ответа значит,
                                        // что URI запрашиваемого ресурса был изменён. Возможно, новый URI будет предоставлен в ответе.

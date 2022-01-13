@@ -17,11 +17,16 @@ ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
 {
     std::vector<char> buf1(4000000, 0);
-    size_t ret = recv(fd, &buf1[0], buf1.size(), 0);
-    if(ret <= 0)
-        return 0;
-	// else if(ret == 0)
-		// return 1;
+    ssize_t ret = recv(fd, &buf1[0], buf1.size(), 0);
+	std::cout << "RET " << ret << std::endl;
+
+    if(ret < 0)
+    {
+		all_connection[fd].answer(500,fd,config);
+		return 0;
+	}
+	else if(ret == 0)
+		return 0;
     size_t i = 0;
     while((i < ret && all_connection[fd].full_log["Host"].empty()) || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
     {
@@ -35,6 +40,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 break;
         }
     }
+	std::cout << "XBNF> " << "\n\n\n";
     if(!all_connection[fd].full_buffer.empty() && !all_connection[fd].general_header_check(all_connection[fd].full_buffer.substr(0, 2100), fd, config)) // смотрим general header, max размер URL 2048
         return (1);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
@@ -107,7 +113,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 cgi.execute(all_connection[fd], fd);
             }
             else
-                all_connection[fd].answer(200,fd, config); // временный ответ-затычка
+                all_connection[fd].answer(301,fd, config); // временный ответ-затычка
             size_t ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
             all_connection[fd].clear();
             return(ans);
@@ -235,6 +241,7 @@ void        ft::Cluster::run()
 {
     std::map<size_t, ft::Response>  all_connection;
     std::map<int, ft::Config*>       config_map;
+	signal(SIGPIPE, SIG_IGN);
     for (;;)
     {
 		int aga = poll(_connected, _size, 2);
@@ -249,6 +256,7 @@ void        ft::Cluster::run()
             //check if event is registered
             if (_connected[i].revents & POLLIN && !all_connection[_connected[i].fd].is_body_left) //|| _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
             {
+				std::cout << "IM HERE " << std::endl;
                 //check if it's registered on the one of the listening sockets
                 int l = is_listening(_connected[i].fd);
                 if (l >= 0)
@@ -268,58 +276,61 @@ void        ft::Cluster::run()
                         close(_connected[i].fd);
                         erase_poll(i);
                     }
+					// close(_connected[i].fd);
                 }
             }
-            else if (_connected[i].revents & POLLERR)
-            {
-                std::cout << "Connection " << _connected[i].fd << " closed by server\n";
-                config_map.erase(_connected[i].fd);
-                close(_connected[i].fd);
-                erase_poll(i);
-            }
-			if(all_connection.count(_connected[i].fd) && all_connection[_connected[i].fd].is_body_left)
-			{
+			if(all_connection[_connected[i].fd].is_body_left)
+{
 				int how = 0;
 				struct pollfd   pfd;
-				int fd = _connected[i].fd;
-    			pfd.fd = fd;
-    			pfd.events = POLLOUT;
-    			poll(static_cast<struct pollfd*>(&pfd), 1, -1);
+				
 				// _connected[i].events = POLLOUT;
-				signal(SIGPIPE, SIG_IGN);
     			// pfd.fd = fd;
     			// poll(static_cast<struct pollfd*>(&pfd), 1, -1);
-				std::string telo = all_connection[fd].body.str();
+				std::string telo = all_connection[_connected[i].fd].body.str();
 				while(!telo.empty())
 				{
+    			pfd.fd = _connected[i].fd;
+    			pfd.events = 0 | POLLOUT;
+    			how =  poll(&pfd, 1, -1);
+				if(how < 0)
+				{
+					std::cout << "POLL UMRE \n\n";
+					break;
+				}
+				if(pfd.revents & POLLERR)
+				{
+					std::cout << "POLLER \n\n";
+					break;
+				}
 				std::cout << "ВЫЛЕТ " << std::endl;
-
 				how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
 				std::cout << "ВЫЛЕТ 2" << std::endl;
 
-					if(how < 0)
-					{
-						std::cout << "HOW == " << how << std::endl;
-						// config_map.erase(_connected[i].fd);
-						// close(_connected[i].fd);
-                		// erase_poll(i);
-						break;
-					}
-					// if(how <= all_connection[fd].body.str().size())
-					// {
-					telo.erase(0, how);
-					// if(!all_connection[fd].body.str().length())
-					// {
-					// 	all_connection[fd].is_body_left = false;
-					// }
-					// all_connection[fd].body.str(telo);
-				std::cout << "HOW in cluster " << how << " IS " << all_connection[fd].is_body_left << " empty " << telo.length()<< std::endl;
+				if(how < 0)
+				{
+					std::cout << "HOW == " << how << std::endl;
+					// config_map.erase(_connected[i].fd);
+					// close(_connected[i].fd);
+                	// erase_poll(i);
+					break;
+				}
+				// if(how <= all_connection[fd].body.str().size())
+				// {
+				telo.erase(0, how);
+				// if(!all_connection[fd].body.str().length())
+				// {
+				// 	all_connection[fd].is_body_left = false;
+				// }
+				// all_connection[fd].body.str(telo);
+				std::cout << "HOW in cluster " << how << " IS " << all_connection[_connected[i].fd].is_body_left << " empty " << telo.length()<< std::endl;
 				}
 				std::cout << "BREAK " << std::endl;
 				all_connection[_connected[i].fd].is_body_left = false;
 				_connected[i].events = POLLIN;
 				all_connection[_connected[i].fd].body.str("");
 				all_connection[_connected[i].fd].body.str().clear();
+				all_connection[_connected[i].fd].body.clear();
 				all_connection[_connected[i].fd].clear();
 				config_map.erase(_connected[i].fd);
 				close(_connected[i].fd);
