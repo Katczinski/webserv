@@ -29,38 +29,20 @@ namespace ft
         bool is_content_length; // если есть Content-length и нет chunked
         bool is_chunked; // Content-length: chunked
         bool is_multy; // Content-type: multipary/*
-        bool is_body;
-        bool is_redir;
+        bool is_redir; // если надо ответить 301
         bool is_delete; // Если метод DELETE
+        bool is_favicon; // если пришел фавикон
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
-        bool is_body_left;
-		Location* current_location;
-    	std::ostringstream body; 
-		size_t range;
-        // get/set
-        // void setFullBuffer(std::string& str,  bool clear);
-        // std::string const getFullBuffer() const;
-        // void setFullLog(std::string& key, std::string& val, bool append);
-        // std::map<std::string, std::string> const getFullLog() const;
-        // void setIsContentLength(bool set);
-        // bool const getIsContentLength() const;
-        // void setIsChunked(bool set);
-        // bool const getIsChunked() const;
-        // void setIsMulty(bool set);
-        // bool const getIsMulty() const;
-        // void setIsBody(bool set);
-        // bool const getIsBody() const;
-        // void setIsAutoIndex(bool set);
-        // bool const getIsAutoIndex() const;
-        // void setBodyLength(size_t length);
-        // size_t const getBodyLength() const;
+        bool is_body_left; // если сформирован body при 200 ответе
+		Location* current_location; // текущий Location из файла
+    	std::ostringstream body;  // body ответа
         // методы
         Response();
         ~Response();
         Response(Response const& other);
         Response& operator=(Response const& other); // конец Coplien формы
         void clear(); // очищает хедеры запроса текущего
-        bool answer(int i, int fd,  ft::Config& conf); // тут куются ответы, скорее всего переделаю
+        bool answer(int i, int fd,  ft::Config& conf); // тут куются ответы
         bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
         void AutoIndexPage(ft::Config& conf); // неработающий автоиндекс
@@ -75,7 +57,7 @@ namespace ft
     	return oss.str();
     }
     template<typename T>
-    size_t ft_atoi(T& str)
+    size_t ft_atoi(T& str) // строку в число
     {
         size_t i = 0;
         std::stringstream ss;
@@ -84,7 +66,7 @@ namespace ft
         return i;
     }
 }
-bool    http_header(ft::Response& req, std::string buf1, int fd,  ft::Config& conf);
-void    ft_split(std::string const &str, const char delim, std::vector<std::string> &out);
+bool    http_header(ft::Response& req, std::string buf1, int fd,  ft::Config& conf); // парс хедеров
+void    ft_split(std::string const &str, const char delim, std::vector<std::string> &out); // разделение по символу слов
 size_t  ft_hex_to_dec(std::string& str); // 16 -> 10
 #endif

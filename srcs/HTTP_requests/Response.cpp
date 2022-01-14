@@ -29,7 +29,7 @@ ft::Response::Response()
     this->is_multy = false;
     this->is_delete = false;
     this->body_length = 0;
-	this->range = 0;
+    this->is_favicon = false;
 }
 
 
@@ -44,19 +44,20 @@ void ft::Response::clear()
     this->is_chunked = false;
     this->is_delete = false;
     this->is_multy = false;
+    this->is_favicon = false;
 }
 void ft::Response::AutoIndexPage(ft::Config& conf)
 {
 
     std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
     std::string dir_name = conf.getRoot() + dir_nn; // откуда взять рут
-    // std::cout << "Dirrectory===========================================================\n" << dir_name << std::endl;
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
     struct stat dir_check;
     if(dir_nn.find(".") != std::string::npos)
     {
+        this->full_log["Content-Type"] = "application/octet-stream";
         if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
             this->full_log["Content-Type"] = "image/png";
         else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
@@ -67,6 +68,8 @@ void ft::Response::AutoIndexPage(ft::Config& conf)
             this->full_log["Content-Type"] = "image/gif";
         else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
             this->full_log["Content-Type"] = "video/mp4";
+        else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
+            this->full_log["Content-Type"] = "text/html";
         std::ifstream input (dir_name.c_str());
         body << input.rdbuf();
         return;
@@ -115,72 +118,33 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     time_t now = time(0);
     std::string time = ctime(&now);
     std::string head;
-    if(i == 404)
-    {
-        if (!is_delete)
-        {
-            std::ifstream input (conf.getErrPages(404).c_str());
-            body << input.rdbuf(); 
-            head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-            std::cout << head << std::endl;
-            head += body.str();
-            if(send(fd, head.c_str(), head.size(), 0) == -1)
-                this->full_log["Connection"] = "close";
-        }
-        else
-        {
-            head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time;
-            std::cout << head << std::endl;
-            send(fd, head.c_str(), head.size(), 0);
-        }
-    }
-    else if(i == 400)
-    {
-        std::ifstream input (conf.getErrPages(400).c_str());
-        body << input.rdbuf(); 
-        head = "HTTP/1.1 400 Bad request\r\nServer: WebServer/1.0\r\nDate: "+time+"Content-Type: text/html\r\nContent-Lenght: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        send(fd, head.c_str(), head.size(), 0);
-        this->full_log["Connection"] = "close";
-    }
-    else if(i == 405)
-    {
-        std::ifstream input (conf.getErrPages(405).c_str());
-        body << input.rdbuf(); 
-        head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        send(fd, head.c_str(), head.size(), 0);
-    }
-    else if(i == 204)
-    {
-        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
-        send(fd, head.c_str(), head.size(), 0);
-    }
-    else if(i == 200)
+    if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
         this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-        if((current_location->getAutoindex()))
+        if(is_favicon)
+        {
+            std::ifstream input ((conf.getRoot() + "favicon.ico").c_str());
+            body.str("");
+			body.str().clear();
+			body.clear();
+            body << input.rdbuf();
+            this->full_log["Content-Type"] = "image/x-icon";
+        }
+        else if((current_location->getAutoindex()))
         {
 			this->body.str("");
 			this->body.str().clear();
             this->AutoIndexPage(conf);
             if(body.str().empty())
-                return this->answer(404,fd,conf);
+                return (answer(400, fd, conf));
             this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-            if(this->is_redir)
-                return this->answer(301,fd,conf);
         }
         else // если не автоиндекс
         {
             int i = 0;
-			
             while(i < current_location->getIndex().size()) // ищем страничку с индексом и открываем ее
             {
-				std::cout << "HERE "<< current_location->getIndex()[0] << "I = " << i << std::endl;
                 std::ifstream input (current_location->getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
                 if(input.is_open())
                 {
@@ -193,122 +157,136 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
                 }
                 i++;
             }
-            // if(i == conf.getIndex().size()) // если такого индекса не оказалось в папке
-                // return this->answer(403,fd,conf);
+            if(i == current_location->getIndex().size()) // если такого индекса не оказалось в папке
+                return this->answer(403,fd,conf);
         }
-        // }
-        // стандартная бошка ответа
-		// if(body.str().size() > 5000)
-		// 	head = "HTTP/1.1 206 " + status(206);
-        // else
-			head = "HTTP/1.1 200 " + status(200);
+        if(this->is_redir)
+                return this->answer(301,fd,conf);
+		head = "HTTP/1.1 200 " + status(200);
 		head += "\r\nLocation: " +this->full_log["Location"];
 		head += "\r\nContent-Type: ";
-		// if(body.str().size() > 5000)
-			// head += "multipart/byteranges; boundary=WebServer11_==13_01_2022_aga";
-		// else
-			head += this->full_log["Content-Type"];
+		head += this->full_log["Content-Type"];
 		head +="\r\nDate: "\
         +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
-        // if(!this->prev_dirrectory.empty())
-        //     head += "Refer:  http://localhost:8080/error_pages";
-        // head += "Accept-Ranges: none";
         head += "\r\n\r\n";
         std::cout << head << std::endl;
 		head += body.str();
 		is_body_left = true;
 		body.str(head);
-
-		// if(body.str().size() <= 5000)
-		// {
-			// send(fd, head.c_str(), head.size(), 0);
-			// head.clear();
-			// body.str("");
-			// body.str().clear();
-		// }
-		// else
-		// send(fd, head.c_str(), head.size(), 0);
-		// head += "\r\n";
-        // long how = 1;
-        // struct pollfd   pfd;
-    	// pfd.fd = fd;
-    	// pfd.events = POLLOUT;
-    	// poll(static_cast<struct pollfd*>(&pfd), 1, -1);
-		// while(how != head.size() &&  how && how != -1)
-		// {
-			// how = (send(fd, head.c_str(), head.size(), 0));
-		// if(how < 0)
-		// {
-			// std::cout << "Временно ошибка " << std::endl;
-			// return 1;
-		// }
-		// if(how < head.size())
-		// body.str(head.substr(how, head.size()));
-			// head.erase(0, how);
-			// std::cout << "how " << how <<std::endl;		}
-		// std::cout << "HOW " << how <<  std::endl;
-		std::cout << "BODY LEFT " << body.str().size() << std::endl;
-        // pfd.events = POLLIN;
-		// while(!head.empty())
-        // {
-            // if(how > 0)
-                // head.erase(0, how);
-        // }
-    }
-    else if(i == 505)
-    {
-        std::ifstream input (conf.getErrPages(505).c_str());
-        body << input.rdbuf(); 
-        head = "HTTP/1.1 505 " + status(505) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        send(fd, head.c_str(), head.size(), 0);
-    }
-    else if(i == 403)
-    {
-        std::ifstream input (conf.getErrPages(403).c_str());
-        body << input.rdbuf();
-        head = "HTTP/1.1 403 " + status(403) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        send(fd, head.c_str(), head.size(), 0);
-    }
-    else if(i == 413)
-    {
-        std::ifstream input(conf.getErrPages(413).c_str());
-        body << input.rdbuf();
-        head = "HTTP/1.1 413 " + status(413) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        send(fd, head.c_str(), head.size(), 0);
-    }
-    else if(i == 500)
-    {
-        std::ifstream input(conf.getErrPages(500).c_str());
-        body << input.rdbuf();
-        head = "HTTP/1.1 504 Gateway Timeout\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nConnection: Keep-Alive\r\n\r\n";
-        std::cout << head << std::endl;
-        head += body.str();
-        send(fd, head.c_str(), head.size(), 0);
+        return true;
     }
     else if(i == 301)
     {
-        std::cout << "IM 301 " << std::endl;
 		this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-        body << "<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx/1.18.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n";
+        body.str("");
+		body.str().clear();
+		body.clear();
+        body.str("<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx/1.18.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n");
         head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
         this->is_redir = false;
-    }
-    if(i == 200 || i == 301)
         return true;
-    return false;
+    }
+    else 
+    {
+        std::ifstream input (conf.getErrPages(i).c_str());
+        body << input.rdbuf(); 
+        head = "HTTP/1.1 " + ft::to_string(i) +" "+ status(i) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: close\r\n\r\n";
+        std::cout << head << std::endl;
+        head += body.str();
+        int how = send(fd, head.c_str(), head.size(), 0);
+        std::cout << "HOWWW " << how << std::endl;
+        this->full_log["Connection"] = "close";
+        return false;
+    }
+    // if(i == 404)
+    // {
+    //     if (!is_delete)
+    //     {
+    //         std::ifstream input (conf.getErrPages(404).c_str());
+    //         body << input.rdbuf(); 
+    //         head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
+    //         std::cout << head << std::endl;
+    //         head += body.str();
+    //         if(send(fd, head.c_str(), head.size(), 0) == -1)
+    //             this->full_log["Connection"] = "close";
+    //     }
+    //     else
+    //     {
+    //         head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time;
+    //         std::cout << head << std::endl;
+    //         send(fd, head.c_str(), head.size(), 0);
+    //     }
+    // }
+    // else if(i == 400)
+    // {
+
+    // }
+    // else if(i == 405)
+    // {
+    //     std::ifstream input (conf.getErrPages(405).c_str());
+    //     body << input.rdbuf(); 
+    //     head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
+    //     std::cout << head << std::endl;
+    //     head += body.str();
+    //     send(fd, head.c_str(), head.size(), 0);
+    // }
+    // else if(i == 204)
+    // {
+    //     head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
+    //     send(fd, head.c_str(), head.size(), 0);
+    // }
+    // else if(i == 200)
+    // {
+      
+    // }
+    // else if(i == 505)
+    // {
+    //     std::ifstream input (conf.getErrPages(505).c_str());
+    //     body << input.rdbuf(); 
+    //     head = "HTTP/1.1 505 " + status(505) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+    //     std::cout << head << std::endl;
+    //     head += body.str();
+    //     send(fd, head.c_str(), head.size(), 0);
+    // }
+    // else if(i == 403)
+    // {
+    //     std::ifstream input (conf.getErrPages(403).c_str());
+    //     body << input.rdbuf();
+    //     head = "HTTP/1.1 403 " + status(403) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+    //     std::cout << head << std::endl;
+    //     head += body.str();
+    //     send(fd, head.c_str(), head.size(), 0);
+    // }
+    // else if(i == 413)
+    // {
+    //     std::ifstream input(conf.getErrPages(413).c_str());
+    //     body << input.rdbuf();
+    //     head = "HTTP/1.1 413 " + status(413) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
+    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
+    //     std::cout << head << std::endl;
+    //     head += body.str();
+    //     send(fd, head.c_str(), head.size(), 0);
+    // }
+    // else if(i == 500)
+    // {
+    //     std::ifstream input(conf.getErrPages(500).c_str());
+    //     body << input.rdbuf();
+    //     head = "HTTP/1.1 504 Gateway Timeout\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nConnection: Keep-Alive\r\n\r\n";
+    //     std::cout << head << std::endl;
+    //     head += body.str();
+    //     send(fd, head.c_str(), head.size(), 0);
+    // }
+    // else if(i == 301)
+    // {
+
+    // }
 }
 
 bool ft::Response::post_download_request(ft::Config& config)
@@ -524,80 +502,3 @@ size_t  ft_hex_to_dec(std::string& str)
     ss >> x;
     return(x);
 }
-
-
-
-// set/get
-
-// void ft::Response::setFullBuffer(std::string& str, bool clear)
-// {
-//     if(clear)
-//         this->full_buffer = str;
-//     else
-//         this->full_buffer += str;
-// }
-// std::string const ft::Response::getFullBuffer() const
-// {
-//     return this->full_buffer;
-// }
-// void ft::Response::setFullLog(std::string& key, std::string& val, bool append)
-// {
-//     if(append)
-//         this->full_log[key] += val;
-//     else
-//         this->full_log[key] = val;
-// }
-// std::map<std::string, std::string> const ft::Response::getFullLog() const
-// {
-//     return this->full_log;
-// }
-// void ft::Response::setIsContentLength(bool set)
-// {
-//     this->is_content_length = set;
-// }
-// bool const ft::Response::getIsContentLength() const
-// {
-//     return this->is_content_length;
-// }
-// void ft::Response::setIsChunked(bool set)
-// {
-//     this->is_chunked = set;
-// }
-// bool const ft::Response::getIsChunked() const
-// {
-//     return this->is_chunked;
-// }
-// void ft::Response::setIsMulty(bool set)
-// {
-//     this->is_multy = set;
-// }
-// bool const ft::Response::getIsMulty() const
-// {
-//     return this->is_multy;
-// }
-// void ft::Response::setIsBody(bool set)
-// {
-//     this->is_body = set;
-// }
-// bool const ft::Response::getIsBody() const
-// {
-//     return this->is_body;
-// }
-// void ft::Response::setIsAutoIndex(bool set)
-// {
-//     this->is_auto_in = set;
-// }
-// bool const ft::Response::getIsAutoIndex() const 
-// {
-//     return this->is_auto_in;
-// }
-// void ft::Response::setBodyLength(size_t length)
-// {
-//     this->body_length = length;
-// }
-// size_t const ft::Response::getBodyLength() const
-// {
-//     return this->body_length;
-// }
-
-// end

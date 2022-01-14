@@ -12,43 +12,42 @@ bool check_url(ft::Response& req, ft::Config& conf)
     std::string real_root;
     std::string real_dir;
     int         qs;
-    if ((qs = req.full_log["Dirrectory"].find("?")) != std::string::npos)
+
+    if ((qs = req.full_log["Dirrectory"].find("?")) != std::string::npos) // если есть query string
     {
         req.full_log["Query_string"] = req.full_log["Dirrectory"].substr(qs + 1, req.full_log["Dirrectory"].length());
         req.full_log["Dirrectory"].erase(qs, req.full_log["Dirrectory"].length());
     }
     else
         req.full_log["Query_string"] = "";
-    std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
-    while(it !=  conf.getEndLocation())
+    if(!req.full_log["Dirrectory"].compare("/favicon.ico")) // если пришел запрос на favicon (маленькая картинка сайта перед адресом)
     {
-        // real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
-	// std::cout << "Dirrectory ==========\n\n\n" << req.full_log["Dirrectory"] << "||| " << it->first << "\n";
-        
-        size_t auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
+        req.is_favicon = true;
+        return false;
+    }
+    std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
+    while(it !=  conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
+    {        
+        size_t auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1); // находим первое вхождение / после 1 символа, нужно для автоиндекса
         // првоерка на то, если ли такая дирректория и что не пришло только  /
-        // if(req.full_log["Dirrectory"].length() > 1 &&  auto_index_check_length == std::string::npos &&  !(*it).first.compare(0, (*it).first.size()-1, req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size())))
-        // {
-            // req.is_redir = true;
-            // req.full_log["Dirrectory"] += "/";
-            // auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
-        // }
-		// std::cout << it->first << " ||||| " << req.full_log["Dirrectory"] << "\n\n\n\n===============";
-        if(it->first == ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) || ((*it).second.getAutoindex() &&
-         (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length)))
-		// if((real_root == (*it).second.getRoot()) || ((*it).second.getAutoindex() &&
-        // (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length))) // проверка что обращение не по руту и смотрю автоиндекс переписать
+        if(req.full_log["Dirrectory"].length() > 1 &&  auto_index_check_length == std::string::npos &&  !(*it).first.compare(0, (*it).first.size()-1, req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()))) // если обращение идет по Location, но в конце нет /  = редирект
         {
-			// std::cout << "FIRST " << (*it).first << "SECOND " << (*it).second.getRoot() << std::endl;
+            req.is_redir = true;
+            req.full_log["Dirrectory"] += "/";
+            auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
+        }
+        std::cout << "PARS " << it->first << " MYNE " << ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) << std::endl;
+        if(it->first == ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) || ((*it).second.getAutoindex() &&\
+         (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length))) // если обращение пришло по Location или автоиндекс
+        {
             req.current_location = &(*it).second;
-			// std::cout << "INDEX =========\n\n\n" << req.current_location->getIndex()[0] << std::endl;
-            if((real_root + req.full_log["Dirrectory"]).find("cgi") != std::string::npos)
+            if((req.full_log["Dirrectory"]).find("cgi") != std::string::npos)
                 return true;
             return false;
         }
         else // обратились на индексовый файл в Location'е который прописан, например localhost:8080/index.html
         {
-            real_root = conf.getRoot().substr(0, conf.getRoot().size() - 1);
+            real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);// conf.getRoot().substr(0, conf.getRoot().size() - 1);
             int i = 0;
             while (i < (*it).second.getIndex().size())
             {
@@ -126,8 +125,11 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(400, fd, conf));
     else if(check_url(req, conf)) // вот тут происходит чек location
         return(req.answer(404,fd, conf));
-    int i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
-    if(i)
-        return(req.answer(i, fd, conf));
+    if(!req.is_favicon)
+    {
+        int i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
+        if(i)
+            return(req.answer(i, fd, conf));
+    }
     return true;
 }
