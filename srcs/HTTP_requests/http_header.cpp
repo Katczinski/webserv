@@ -11,6 +11,7 @@ bool check_url(ft::Response& req, ft::Config& conf)
     bool is_file = false;
     std::string real_root;
     std::string real_dir;
+    size_t auto_index_check_length;
     int         qs;
 
     if ((qs = req.full_log["Dirrectory"].find("?")) != std::string::npos) // если есть query string
@@ -28,7 +29,7 @@ bool check_url(ft::Response& req, ft::Config& conf)
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it !=  conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
     {        
-        size_t auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1); // находим первое вхождение / после 1 символа, нужно для автоиндекса
+        auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1); // находим первое вхождение / после 1 символа, нужно для автоиндекса
         // првоерка на то, если ли такая дирректория и что не пришло только  /
         if(req.full_log["Dirrectory"].length() > 1 &&  auto_index_check_length == std::string::npos &&  !(*it).first.compare(0, (*it).first.size()-1, req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()))) // если обращение идет по Location, но в конце нет /  = редирект
         {
@@ -36,7 +37,7 @@ bool check_url(ft::Response& req, ft::Config& conf)
             req.full_log["Dirrectory"] += "/";
             auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
         }
-        std::cout << "PARS " << it->first << " MYNE " << ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) << std::endl;
+        // std::cout << "PARS " << it->first << " MYNE " << ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) << std::endl;
         if(it->first == ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) || ((*it).second.getAutoindex() &&\
          (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length))) // если обращение пришло по Location или автоиндекс
         {
@@ -49,14 +50,25 @@ bool check_url(ft::Response& req, ft::Config& conf)
         {
             real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);// conf.getRoot().substr(0, conf.getRoot().size() - 1);
             int i = 0;
-            while (i < (*it).second.getIndex().size())
+            int n = req.full_log["Dirrectory"].find_first_of('/', 1);
+            // std::cout << "  DIR " << req.full_log["Dirrectory"].substr(1, n) << std::endl;
+            // std::cout << "ROOT " << (*it).first.size() << " DIRR " << req.full_log["Dirrectory"].substr(1, n).size() << std::endl;
+            // std::cout << "ROOT " << (*it).first << " DIRR " << req.full_log["Dirrectory"].substr(1, n) << std::endl;
+
+
+            if(!req.full_log["Dirrectory"].substr(1, n).compare((*it).first))
             {
-                if((real_root + req.full_log["Dirrectory"]) == (*it).second.getIndex()[i])
+                std::cout << "YEST " << std::endl;
+                while (i < (*it).second.getIndex().size())
                 {
-                    req.current_location = &(*it).second;
-                    return false;
+                    // std::cout << "МОЙ ИНДЕКС " << real_root + req.full_log["Dirrectory"].substr(n, req.full_log["Dirrectory"].size()) << " НЕ МОЙ " << (*it).second.getIndex()[i] << std::endl;
+                    if((real_root + req.full_log["Dirrectory"].substr(n, req.full_log["Dirrectory"].size())) == (*it).second.getIndex()[i])
+                    {
+                        req.current_location = &(*it).second;
+                        return false;
+                    }
+                    i++;
                 }
-                i++;
             }
         }
         it++;
@@ -120,8 +132,7 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }
-
-    if(!req.full_log["Host"].size()) // проверка был ли хост в принципе
+    if(!req.full_log["Host"].size()) // проверка был ли хост в принципе №№ ПРОВЕРКА ХОСТА СЕРВЕР_ИМЯ
         return(req.answer(400, fd, conf));
     else if(check_url(req, conf)) // вот тут происходит чек location
         return(req.answer(404,fd, conf));

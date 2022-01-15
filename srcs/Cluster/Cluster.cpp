@@ -24,7 +24,10 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 		return 0;
 	}
 	else if(ret == 0)
-		return 0;
+	{
+		all_connection[fd].answer(408,fd,config);
+        return 0;
+    }
     size_t i = 0;
     while((i < ret && all_connection[fd].full_log["Host"].empty()) || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
     {
@@ -70,9 +73,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
         size_t ans = ((all_connection[fd].full_log["Connection"].find("close") != std::string::npos) ? 0 : 1);
         all_connection[fd].full_buffer.clear();
-        
-            // std::cout << "HERE\n";
-
         return (ans);
     }
     else if (all_connection[fd].is_delete) // если удалить что-нибудь
@@ -310,6 +310,7 @@ void        ft::Cluster::run()
 				all_connection[_connected[i].fd].body.str().clear();
 				all_connection[_connected[i].fd].body.clear();
 				all_connection[_connected[i].fd].clear();
+				all_connection[_connected[i].fd].full_buffer.clear();
 			}
 
         }

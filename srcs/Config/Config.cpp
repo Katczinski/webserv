@@ -189,7 +189,7 @@ void ft::Config::setIndex(const v_string& line) {
 	}
 }
 
-void ft::Config::initErrPages(void) {
+void ft::Config::initErrPages(void) { // ЕРОРЫ
 	char dir[1024];
 	getcwd(dir, 1024);
 	std::string root = dir;
@@ -200,6 +200,9 @@ void ft::Config::initErrPages(void) {
 	_error_pages[405] = root + "/srcs/www/default_pages/405.html";
 	_error_pages[500] = root + "/srcs/www/default_pages/500.html";
 	_error_pages[505] = root + "/srcs/www/default_pages/505.html";
+	_error_pages[408] = root + "/srcs/www/default_pages/408.html";
+	// _error_pages[411] = root + "/srcs/www/default_pages/411.html";
+	_error_pages[413] = root + "/srcs/www/default_pages/413.html";
 }
 
 void ft::Config::setErrPages(const v_string& line) {

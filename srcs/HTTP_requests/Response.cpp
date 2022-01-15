@@ -193,7 +193,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else 
     {
         std::ifstream input (conf.getErrPages(i).c_str());
-        body << input.rdbuf(); 
+        body << input.rdbuf();
         head = "HTTP/1.1 " + ft::to_string(i) +" "+ status(i) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: close\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
@@ -433,8 +433,11 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
             return(400);
         this->body_length =  ft::ft_atoi(this->full_log["Content-Length"]); // полуучаем длинну контента
         if(!this->body_length) // если == 0, то убираем флаг на длинну контента
+        {
             this->is_content_length = false;
-        if(!current_location->getMaxBody().empty() && (ft::ft_atoi(current_location->getMaxBody()) < this->body_length))
+            return (411);
+        }
+        if(!this->is_chunked && !current_location->getMaxBody().empty() && (ft::ft_atoi(current_location->getMaxBody()) < this->body_length))
             return (413);
         if(this->is_chunked && !this->is_multy) // если есть Transfer-Encoding: chunked, то длинна контента игнорируется
         {
