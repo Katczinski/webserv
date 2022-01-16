@@ -190,6 +190,12 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         this->is_redir = false;
         return true;
     }
+    else if(i == 204)
+    {
+        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
+        send(fd, head.c_str(), head.size(), 0);
+        return true;
+    }
     else 
     {
         std::ifstream input (conf.getErrPages(i).c_str());
