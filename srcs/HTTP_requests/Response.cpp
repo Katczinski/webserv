@@ -198,7 +198,6 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         std::cout << head << std::endl;
         head += body.str();
         int how = send(fd, head.c_str(), head.size(), 0);
-        std::cout << "HOWWW " << how << std::endl;
         this->full_log["Connection"] = "close";
         return false;
     }
