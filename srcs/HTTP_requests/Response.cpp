@@ -29,7 +29,10 @@ ft::Response::Response()
     this->is_multy = false;
     this->is_delete = false;
     this->body_length = 0;
-    this->is_favicon = false;
+    this->is_file_large = false;
+    this->file_size = 0;
+    this->range_begin = 0;
+    this->range_end = 0;
 }
 
 
@@ -44,9 +47,14 @@ void ft::Response::clear()
     this->is_chunked = false;
     this->is_delete = false;
     this->is_multy = false;
-    this->is_favicon = false;
+    this->is_file_large = false;
+    this->path_large_file.clear();
+    input.close();
+    this->file_size = 0;
+    this->range_begin = 0;
+    this->range_end = 0;
 }
-void ft::Response::AutoIndexPage(ft::Config& conf)
+bool ft::Response::AutoIndexPage(ft::Config& conf)
 {
 
     std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
@@ -70,15 +78,27 @@ void ft::Response::AutoIndexPage(ft::Config& conf)
             this->full_log["Content-Type"] = "video/mp4";
         else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
             this->full_log["Content-Type"] = "text/html";
-        std::ifstream input (dir_name.c_str());
-        body << input.rdbuf();
-        return;
+        // else if(this->full_log["Dirrectory"].find(".mkv") != std::string::npos)
+            // this->full_log["Content-Type"] = "video/x-matroska";
+        input.open(dir_name.c_str());
+        input.seekg(0, std::ios::end);
+        file_size = input.tellg();
+        input.seekg(0, std::ios::beg);
+        input.seekg(range_begin);
+        if(file_size < 100000000)
+        {
+            body << input.rdbuf();
+            input.close();
+        }
+        else
+            is_file_large = true;
+        return true;
     }
     if(!dir)
     {
         std::cout << "Cant open dirr" << std::endl;
         body.str("");
-		return;
+		return false;
     }
     else
     {
@@ -111,6 +131,7 @@ void ft::Response::AutoIndexPage(ft::Config& conf)
     req += "\r\n</body>";
     closedir(dir);
     body.str(req);
+    return true;
 }
 
 bool ft::Response::answer(int i, int fd, ft::Config& conf)
@@ -122,21 +143,11 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     {
         this->full_log["Content-Type"] = "text/html";
         this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-        if(is_favicon)
-        {
-            std::ifstream input ((conf.getRoot() + "favicon.ico").c_str());
-            body.str("");
-			body.str().clear();
-			body.clear();
-            body << input.rdbuf();
-            this->full_log["Content-Type"] = "image/x-icon";
-        }
-        else if((current_location->getAutoindex()))
+        if((current_location->getAutoindex()))
         {
 			this->body.str("");
 			this->body.str().clear();
-            this->AutoIndexPage(conf);
-            if(body.str().empty())
+            if(!this->AutoIndexPage(conf))
                 return (answer(400, fd, conf));
             this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
         }
@@ -162,14 +173,26 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         }
         if(this->is_redir)
                 return this->answer(301,fd,conf);
-		head = "HTTP/1.1 200 " + status(200);
+        if(full_log["Range"].size())
+            head = "HTTP/1.1 206 " + status(206);
+        else
+		    head = "HTTP/1.1 200 " + status(200);
 		head += "\r\nLocation: " +this->full_log["Location"];
 		head += "\r\nContent-Type: ";
 		head += this->full_log["Content-Type"];
-		head +="\r\nDate: "\
-        +time+"Server: WebServer/1.0\r\nContent-Length: " + (ft::to_string(body.str().size()))+"\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
+        if(full_log["Range"].size())
+            head += "\r\nContent-Range: bytes "+ ft::to_string(range_begin)+ "-" + ft::to_string(file_size - 1) +"/"+ft::to_string(file_size);
+		else
+            head += "\r\nAccept-Ranges: bytes";
+        head +="\r\nDate: "\
+        +time+"Server: WebServer/1.0\r\nContent-Length: ";
+        if(is_file_large)
+            head += ft::to_string(file_size - range_begin);
+        else
+            head += (ft::to_string(body.str().size()));
+        head += "\r\nConnection: " +this->full_log["Connection"]; //+"\r\n";
         head += "\r\n\r\n";
-        std::cout << head << std::endl;
+        std::cout << head;
 		head += body.str();
 		is_body_left = true;
 		body.str(head);
@@ -346,7 +369,7 @@ bool ft::Response::post_download_request(ft::Config& config)
             {
                 if(!buffer.compare(("--"+this->full_log["boundary"]+'\r')))
                 {
-                    std::ofstream nope((config.getRoot() + filename).c_str(), std::ios_base::app);
+                    std::ofstream nope((config.getRoot() + "dowlands/"+ filename).c_str(), std::ios_base::app);
                     nope << real_body;
                     nope.close();
                     is_bound = true;

@@ -34,8 +34,14 @@ namespace ft
         bool is_favicon; // если пришел фавикон
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
         bool is_body_left; // если сформирован body при 200 ответе
+        bool is_file_large; // файл слишком большой
+        std::string path_large_file; // путь до файла большого
 		Location* current_location; // текущий Location из файла
+        std::ifstream      input; // для больших файлов читать 
     	std::ostringstream body;  // body ответа
+        long file_size;
+        long range_begin;
+        long range_end;
         // методы
         Response();
         ~Response();
@@ -45,7 +51,7 @@ namespace ft
         bool answer(int i, int fd,  ft::Config& conf); // тут куются ответы
         bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
-        void AutoIndexPage(ft::Config& conf); // неработающий автоиндекс
+        bool AutoIndexPage(ft::Config& conf); // неработающий автоиндекс
         bool post_download_request(ft::Config& config);
         std::string status(int code); // в аргумент передается код ошибки, возвращается название ошибки
     };
@@ -57,9 +63,9 @@ namespace ft
     	return oss.str();
     }
     template<typename T>
-    size_t ft_atoi(T& str) // строку в число
+    long ft_atoi(T& str) // строку в число
     {
-        size_t i = 0;
+        long i = 0;
         std::stringstream ss;
         ss << str;
         ss >> i;

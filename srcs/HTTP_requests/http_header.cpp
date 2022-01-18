@@ -9,10 +9,10 @@
 int check_url(ft::Response& req, ft::Config& conf)
 {
     bool is_file = false;
-    std::string real_root;
-    std::string real_dir;
-    size_t auto_index_check_length;
-    int         qs;
+    std::string     real_root;
+    std::string     real_dir;
+    size_t          auto_index_check_length;
+    int             qs;
 
     if ((qs = req.full_log["Dirrectory"].find("?")) != std::string::npos) // если есть query string
     {
@@ -21,11 +21,6 @@ int check_url(ft::Response& req, ft::Config& conf)
     }
     else
         req.full_log["Query_string"] = "";
-    if(!req.full_log["Dirrectory"].compare("/favicon.ico")) // если пришел запрос на favicon (маленькая картинка сайта перед адресом)
-    {
-        req.is_favicon = true;
-        return 0;
-    }
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it !=  conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
     {        
@@ -131,6 +126,22 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
             if(req.full_log["Content-Length"] == "")
                 req.full_log["Content-Length"] = buffer.substr((buffer[15] == ' ') ?  16 : 15);
         }
+        else if(!buffer.compare(0, 6, "Range:"))
+        {
+            req.full_log["Range"] = buffer.substr(buffer.find_first_of('=')+1, buffer.size() - 1);
+            // std::cout << "========================\n\n" << req.full_log["Range"] << "\n\n========================\n\n";
+            // std::cout << "========================\n\n" << buffer << "\n\n========================\n\n";
+            if( req.full_log["Range"][0] == '-')
+                req.range_begin = 0;
+            else
+                req.range_begin = ft::ft_atoi(req.full_log["Range"]);
+            std::cout << req.full_log["Range"].find_first_of('-') << " " << req.full_log["Range"].size() -1 << std::endl;
+            std::string temp = req.full_log["Range"].substr(req.full_log["Range"].find_first_of('-'), req.full_log["Range"].size());
+            req.range_end = ft::ft_atoi(temp);
+            if(!req.range_end)
+                req.range_end = -1;
+            // std::cout << "\n\n================RANGE BEGIN " << req.range_begin << " RANGE END " << req.range_end << "====================\n\n" << std::endl;
+        }
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }
@@ -139,11 +150,8 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
     int i = check_url(req, conf);
     if(i) // вот тут происходит чек location
         return(req.answer(i,fd, conf));
-    if(!req.is_favicon)
-    {
-        i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
-        if(i)
-            return(req.answer(i, fd, conf));
-    }
+    i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
+    if(i)
+        return(req.answer(i, fd, conf));
     return true;
 }
