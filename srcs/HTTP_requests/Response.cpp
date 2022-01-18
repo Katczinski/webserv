@@ -219,6 +219,13 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         send(fd, head.c_str(), head.size(), 0);
         return true;
     }
+    else if(i == 500)
+    {
+        head = "HTTP/1.1 " + ft::to_string(i) +" "+ status(i) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        std::cout << head << std::endl;
+        send(fd, head.c_str(), head.size(), 0);
+        return false;
+    }
     else 
     {
         std::ifstream input (conf.getErrPages(i).c_str());
@@ -226,7 +233,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         head = "HTTP/1.1 " + ft::to_string(i) +" "+ status(i) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: close\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
-        int how = send(fd, head.c_str(), head.size(), 0);
+        send(fd, head.c_str(), head.size(), 0);
         this->full_log["Connection"] = "close";
         return false;
     }

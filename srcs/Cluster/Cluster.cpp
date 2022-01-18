@@ -21,7 +21,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if(ret < 0)
     {
 		all_connection[fd].answer(500,fd,config);
-		return 1;
+		return 0;
 	}
 	else if(ret == 0)
 	{
@@ -74,11 +74,10 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             all_connection[fd].answer(200, fd, config);
         if(!all_connection[fd].full_buffer.empty())
             http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
-        size_t ans = ((all_connection[fd].full_log["Connection"].find("close") != std::string::npos) ? 0 : 1);
         all_connection[fd].full_buffer.clear();
         if(!all_connection[fd].is_body_left)
             all_connection[fd].full_log.clear();
-        return (ans);
+        return (1);
     }
     else if (all_connection[fd].is_delete) // если удалить что-нибудь
     {
@@ -246,7 +245,7 @@ void        ft::Cluster::run()
     std::vector<char> buffer(40000000);
     for (;;)
     {
-        if ((poll(_connected, _size, -1)) == -1)
+        if ((poll(_connected, _size, 5000)) == -1)
         {
 			std::cerr << "POLL RETURNED ERROR" << std::endl;
 			throw ProcessError();
@@ -257,7 +256,7 @@ void        ft::Cluster::run()
             //check if event is registered
             if (/*!all_connection[_connected[i].fd].is_body_left && !all_connection[_connected[i].fd].is_file_large &&*/ _connected[i].revents & POLLIN) //|| _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
             {
-                std::cout << "YA TUT " << std::endl;
+                // std::cout << "YA TUT " << std::endl;
                 //check if it's registered on the one of the listening sockets
                 int l = is_listening(_connected[i].fd);
                 if (l >= 0)
@@ -282,14 +281,14 @@ void        ft::Cluster::run()
             }
 			if(all_connection[_connected[i].fd].is_body_left && _connected[i].revents & POLLOUT)
             {
-                int l = is_listening(_connected[i].fd);
-                if (l >= 0)
-                {
-                    int new_fd = _servers[l].newConnection();
-                    push_poll(new_fd);
-                    config_map[new_fd] = &_configs[l];
-                    std::cout << "New connection on FD " << new_fd << std::endl;
-                }
+                // int l = is_listening(_connected[i].fd);
+                // if (l >= 0)
+                // {
+                    // int new_fd = _servers[l].newConnection();
+                    // push_poll(new_fd);
+                    // config_map[new_fd] = &_configs[l];
+                    // std::cout << "New connection on FD " << new_fd << std::endl;
+                // }
                 int how = 0;
 				struct pollfd   pfd;
 				std::string telo;
@@ -312,7 +311,7 @@ void        ft::Cluster::run()
                 }
     			pfd.fd = _connected[i].fd;
     			pfd.events = 0 | POLLOUT;
-    			how =  poll(&pfd, 1, -1);
+    			how =  poll(&pfd, 1, 5000);
 				if(how == 0)
 				{
 					std::cout << "TIMEOUT  CONNECTION FD: " << _connected[i].fd << std::endl;
@@ -329,7 +328,7 @@ void        ft::Cluster::run()
 				    all_connection[_connected[i].fd].clear();
 				    all_connection[_connected[i].fd].full_buffer.clear();
 				    all_connection[_connected[i].fd].input.close();
-                    all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
+                    // all_connection[_connected[i].fd].answer(500, _connected[i].fd, _configs[0]);
 				    config_map.erase(_connected[i].fd);
 				    close(_connected[i].fd);
                     erase_poll(i);
@@ -346,7 +345,7 @@ void        ft::Cluster::run()
 				    all_connection[_connected[i].fd].is_file_large = false;
                     std::cout << "SEND ERROR " << std::endl;
                     // if(how < 0 )
-		                // all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
+		                // all_connection[_connected[i].fd].answer(500, _connected[i].fd, _configs[0]);
 				    // config_map.erase(_connected[i].fd);
 				    // close(_connected[i].fd);
                     // erase_poll(i);
@@ -367,9 +366,14 @@ void        ft::Cluster::run()
 				    all_connection[_connected[i].fd].input.close();
                     all_connection[_connected[i].fd].clear();
 				    all_connection[_connected[i].fd].full_buffer.clear();
-                    config_map.erase(_connected[i].fd);
-				    close(_connected[i].fd);
-                    erase_poll(i);
+                    size_t ans = ((all_connection[_connected[i].fd].full_log["Connection"].find("close") != std::string::npos) ? 0 : 1);
+                    if(!ans)
+                    {
+                        std::cout << "Connection " << _connected[i].fd << " closed by host\n";
+                        config_map.erase(_connected[i].fd);
+				        close(_connected[i].fd);
+                        erase_poll(i);
+                    }
                 }
 				all_connection[_connected[i].fd].body.str("");
 				all_connection[_connected[i].fd].body.str().clear();
