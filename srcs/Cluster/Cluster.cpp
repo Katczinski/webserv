@@ -310,57 +310,61 @@ void        ft::Cluster::run()
                         all_connection[_connected[i].fd].is_file_large = false;
 
                 }
-    			pfd.fd = _connected[i].fd;
-    			pfd.events = 0 | POLLOUT;
-    			how =  poll(&pfd, 1, -1);
-				if(how == 0)
-				{
-					std::cout << "TIMEOUT  CONNECTION FD: " << _connected[i].fd << std::endl;
-					break;
-				}
-				if(pfd.revents & POLLERR)
-				{
-					std::cout << "OSHIBKA POLA: " << _connected[i].fd << std::endl;
-                    _connected[i].events = POLLIN;
-				    all_connection[_connected[i].fd].is_body_left = false;
-				    all_connection[_connected[i].fd].body.str("");
-				    all_connection[_connected[i].fd].body.str().clear();
-				    all_connection[_connected[i].fd].body.clear();
-				    all_connection[_connected[i].fd].clear();
-				    all_connection[_connected[i].fd].full_buffer.clear();
-				    all_connection[_connected[i].fd].input.close();
-                    all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
-				    config_map.erase(_connected[i].fd);
-				    close(_connected[i].fd);
-                    erase_poll(i);
-                    //кинуть 500
-				}
-				how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
-				if(how <= 0)
-				{
-                    // if(all_connection[_connected[i].fd].send_err)
-                    // {
-                        // all_connection[_connected[i].fd].body.str(telo);
-                        // all_connection[_connected[i].fd].send_err = false;
-                    // }
-				    all_connection[_connected[i].fd].is_file_large = false;
-                    std::cout << "SEND ERROR " << std::endl;
-                    // if(how < 0 )
-		                // all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
-				    // config_map.erase(_connected[i].fd);
-				    // close(_connected[i].fd);
-                    // erase_poll(i);
-				}
-                else
+                while(!telo.empty())
                 {
-				    telo.erase(0, how);
-                    if(!all_connection[_connected[i].fd].body.str().empty())
+                    pfd.fd = _connected[i].fd;
+                    pfd.events = 0 | POLLOUT;
+                    how =  poll(&pfd, 1, -1);
+                    if(how == 0)
                     {
+                        std::cout << "TIMEOUT  CONNECTION FD: " << _connected[i].fd << std::endl;
+                        break;
+                    }
+                    if(pfd.revents & POLLERR)
+                    {
+                        std::cout << "OSHIBKA POLA: " << _connected[i].fd << std::endl;
+                        _connected[i].events = POLLIN;
+                        all_connection[_connected[i].fd].is_body_left = false;
                         all_connection[_connected[i].fd].body.str("");
                         all_connection[_connected[i].fd].body.str().clear();
+                        all_connection[_connected[i].fd].body.clear();
+                        all_connection[_connected[i].fd].clear();
+                        all_connection[_connected[i].fd].full_buffer.clear();
+                        all_connection[_connected[i].fd].input.close();
+                        all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
+                        config_map.erase(_connected[i].fd);
+                        close(_connected[i].fd);
+                        erase_poll(i);
+                        //кинуть 500
                     }
-                    std::cout << "HOW  " << how << std::endl;
-				}
+                    how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
+                    if(how <= 0)
+                    {
+                        // if(all_connection[_connected[i].fd].send_err)
+                        // {
+                            // all_connection[_connected[i].fd].body.str(telo);
+                            // all_connection[_connected[i].fd].send_err = false;
+                        // }
+                        all_connection[_connected[i].fd].is_file_large = false;
+                        std::cout << "SEND ERROR " << std::endl;
+                        // if(how < 0 )
+                            // all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
+                        // config_map.erase(_connected[i].fd);
+                        // close(_connected[i].fd);
+                        // erase_poll(i);
+                        break;
+                    }
+                    else
+                    {
+                        telo.erase(0, how);
+                        if(!all_connection[_connected[i].fd].body.str().empty())
+                        {
+                            all_connection[_connected[i].fd].body.str("");
+                            all_connection[_connected[i].fd].body.str().clear();
+                        }
+                        std::cout << "HOW  " << how << std::endl;
+                    }
+                }
                 if(!all_connection[_connected[i].fd].is_file_large)
                 {
                     all_connection[_connected[i].fd].is_body_left = false;
@@ -374,7 +378,7 @@ void        ft::Cluster::run()
 				all_connection[_connected[i].fd].body.str("");
 				all_connection[_connected[i].fd].body.str().clear();
 				all_connection[_connected[i].fd].body.clear();
-                }
+            }
         }
     }
 }
