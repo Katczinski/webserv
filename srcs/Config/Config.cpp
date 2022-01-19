@@ -201,7 +201,6 @@ void ft::Config::initErrPages(void) { // ЕРОРЫ
 	_error_pages[500] = root + "/srcs/www/default_pages/500.html";
 	_error_pages[505] = root + "/srcs/www/default_pages/505.html";
 	_error_pages[408] = root + "/srcs/www/default_pages/408.html";
-	// _error_pages[411] = root + "/srcs/www/default_pages/411.html";
 	_error_pages[413] = root + "/srcs/www/default_pages/413.html";
 }
 

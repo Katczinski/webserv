@@ -46,15 +46,11 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
     }
     if(!all_connection[fd].full_buffer.empty() && !all_connection[fd].general_header_check(all_connection[fd].full_buffer.substr(0, 2100), fd, config)) // смотрим general header, max размер URL 2048
-        return (1);
+        return (0);
     if(all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].is_content_length && !all_connection[fd].is_chunked)
     {
         if(!http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config)) // пармис хэдеры, в случаем ошибки уходим в if и чистим все
-        {
-            all_connection[fd].clear();
-            all_connection[fd].full_buffer.clear();
-            return ret;
-        }
+            return 0;
         while (i < ret) // если есть body - записываем
         {
             all_connection[fd].full_log["Body"] += buf1[i++];
@@ -64,29 +60,25 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     if(!all_connection[fd].full_log["Host"].empty() &&  !all_connection[fd].is_content_length && !all_connection[fd].is_chunked &&
         !all_connection[fd].is_multy && !all_connection[fd].is_delete) // Ответ на get
     {
+        bool ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
         {
             ft::CGI cgi(all_connection[fd], config);
             cgi.execute(all_connection[fd], fd);
             // send(fd, response.c_str(), response.length(), 0);
+            all_connection[fd].full_buffer.clear();
+            all_connection[fd].full_log.clear();
         }
         else // любой другой запрос с нормальный полем Host
-            all_connection[fd].answer(200, fd, config);
-        if(!all_connection[fd].full_buffer.empty())
-            http_header(all_connection[fd], all_connection[fd].full_buffer, fd, config);
-        all_connection[fd].full_buffer.clear();
-        if(!all_connection[fd].is_body_left)
-            all_connection[fd].full_log.clear();
-        return (1);
+            return (all_connection[fd].answer(200, fd, config));
+        return(ans);
     }
     else if (all_connection[fd].is_delete) // если удалить что-нибудь
     {
         if (!remove((config.getRoot() + all_connection[fd].full_log["Dirrectory"]).c_str()))
-            all_connection[fd].answer(204,fd, config);
+            return(all_connection[fd].answer(204,fd, config));
         else
-            all_connection[fd].answer(404,fd, config);
-        all_connection[fd].full_buffer.clear();
-        all_connection[fd].clear();
+            return(all_connection[fd].answer(404,fd, config));
     }
     else if(all_connection[fd].is_content_length) // если есть длинна тела и запрос POST
     {
@@ -106,18 +98,18 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной
             {
                 if(!all_connection[fd].post_download_request(config))
-                    all_connection[fd].answer(400,fd, config);
+                    return(all_connection[fd].answer(400,fd, config));
             }
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
             {
                 ft::CGI cgi(all_connection[fd], config);
                 cgi.execute(all_connection[fd], fd);
+                bool ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
+                all_connection[fd].clear();
+                return(ans);
             }
             else
-                all_connection[fd].answer(301,fd, config); // временный ответ-затычка
-            size_t ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
-            all_connection[fd].clear();
-            return(ans);
+                return(all_connection[fd].answer(301,fd, config)); // по директиве нормального интернета, полсе POST = 301
         }
     }
     else if(all_connection[fd].is_chunked) // протестил не всё
@@ -137,12 +129,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         if(all_connection[fd].full_buffer.find("0\r\n\r\n") != std::string::npos || 
         (all_connection[fd].full_buffer.find("\r\n\r\n") != std::string::npos && !all_connection[fd].body_length)) // чекам на конец или двойной пропуск
-        {
-            all_connection[fd].answer(200,fd,config); // ответ заглушка
-            all_connection[fd].full_buffer.clear();
-            all_connection[fd].clear();
-            return ret;
-        }
+            return all_connection[fd].answer(200,fd,config);
         else if(all_connection[fd].body_length) // записываем BODY по RFC ограничивая Content-leght'ом
         {
             if(all_connection[fd].full_buffer.size() > all_connection[fd].body_length)
@@ -161,7 +148,6 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             }
         }
     }
-
     return(ret);
 }
 
@@ -254,9 +240,8 @@ void        ft::Cluster::run()
         for (int i = 0; i < _size; i++)
         {  
             //check if event is registered
-            if (/*!all_connection[_connected[i].fd].is_body_left && !all_connection[_connected[i].fd].is_file_large &&*/ _connected[i].revents & POLLIN) //|| _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
+            if (_connected[i].revents & POLLIN) //|| _connected[i].revents & POLLOUT) // смотрю если ли чтение/запись, я чет забыл почему именно так оставил, хотя ответ снизу
             {
-                // std::cout << "YA TUT " << std::endl;
                 //check if it's registered on the one of the listening sockets
                 int l = is_listening(_connected[i].fd);
                 if (l >= 0)
@@ -276,19 +261,10 @@ void        ft::Cluster::run()
                         close(_connected[i].fd);
                         erase_poll(i);
                     }
-					// close(_connected[i].fd);
                 }
             }
             if(all_connection[_connected[i].fd].is_body_left && _connected[i].revents & POLLOUT)
             {
-                // int l = is_listening(_connected[i].fd);
-                // if (l >= 0)
-                // {
-                    // int new_fd = _servers[l].newConnection();
-                    // push_poll(new_fd);
-                    // config_map[new_fd] = &_configs[l];
-                    // std::cout << "New connection on FD " << new_fd << std::endl;
-                // }
                 int how = 0;
 				struct pollfd   pfd;
 				std::string telo;
@@ -339,18 +315,8 @@ void        ft::Cluster::run()
 				    how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
 				    if(how <= 0)
 				    {
-                        // if(all_connection[_connected[i].fd].send_err)
-                        // {
-                            // all_connection[_connected[i].fd].body.str(telo);
-                            // all_connection[_connected[i].fd].send_err = false;
-                        // }
 				        all_connection[_connected[i].fd].is_file_large = false;
                         std::cout << "SEND ERROR " << std::endl;
-                        // if(how < 0 )
-		                    // all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
-				        // config_map.erase(_connected[i].fd);
-				        // close(_connected[i].fd);
-                        // erase_poll(i);
                         break;
 				    }
                     else
@@ -361,7 +327,6 @@ void        ft::Cluster::run()
                             all_connection[_connected[i].fd].body.str("");
                             all_connection[_connected[i].fd].body.str().clear();
                         }
-                        std::cout << "HOW  " << how << std::endl;
 				    }
                 }
                 if(!all_connection[_connected[i].fd].is_file_large)
@@ -370,7 +335,7 @@ void        ft::Cluster::run()
 
 				    all_connection[_connected[i].fd].input.close();
                     all_connection[_connected[i].fd].clear();
-                    bool ans = ((all_connection[_connected[i].fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
+                    bool ans = ((all_connection[_connected[i].fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0); // проверяем хэдер Connection: close
 				    all_connection[_connected[i].fd].full_buffer.clear();
                     if(!ans || how == -1)
                     {
