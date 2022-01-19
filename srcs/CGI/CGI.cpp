@@ -23,8 +23,6 @@ unsigned int    toDec(const std::string& number)
     std::stringstream ss;
     ss << number;
     ss >> std::hex >> x;
-    std::cout << "\n\n" << number;
-    std::cout << "\n\n" << x << "\n\n";
     return (x);
 }
 
@@ -99,6 +97,9 @@ std::string            ft::CGI::decode(std::string& path)
     while (token != std::string::npos)
     {
         //replace token with ASCII
+        //check if there are at least 2 symbols after %
+        if (path.length() < token + 2)
+            break ;
         char dec = toDec(path.substr(token + 1, 2));
         path.replace(token, 3, ft::to_string(dec));
         token = path.find("%");
