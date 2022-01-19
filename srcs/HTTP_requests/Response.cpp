@@ -214,7 +214,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     else if(i == 204)
     {
-        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
+        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time+"\r\n\r\n";
         send(fd, head.c_str(), head.size(), 0);
         ans = (full_log["Connection"].compare(0, 5, "close") ? true : false);
     }
