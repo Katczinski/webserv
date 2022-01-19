@@ -1,5 +1,4 @@
 #include "Response.hpp"
-
 ft::Response::~Response() {}
 ft::Response::Response(ft::Response const& other)
 {
@@ -55,15 +54,14 @@ void ft::Response::clear()
     this->range_end = 0;
 }
 bool ft::Response::AutoIndexPage(ft::Config& conf)
-{
-
+{   
     std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
     std::string dir_name = conf.getRoot() + dir_nn; // откуда взять рут
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
     struct stat dir_check;
-    if(dir_nn.find(".") != std::string::npos)
+    if(dir_nn.find('.') != std::string::npos)
     {
         this->full_log["Content-Type"] = "application/octet-stream";
         if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
@@ -78,13 +76,12 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
             this->full_log["Content-Type"] = "video/mp4";
         else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
             this->full_log["Content-Type"] = "text/html";
-        // else if(this->full_log["Dirrectory"].find(".mkv") != std::string::npos)
-            // this->full_log["Content-Type"] = "video/x-matroska";
-        input.open(dir_name.c_str());
+        input.open(dir_name.c_str(), std::ios::binary|std::ios::in);
         input.seekg(0, std::ios::end);
         file_size = input.tellg();
         input.seekg(0, std::ios::beg);
-        input.seekg(range_begin);
+        if(range_begin && range_begin < file_size && range_begin > 0)
+            input.seekg(range_begin);
         if(file_size < 100000000)
         {
             body << input.rdbuf();
@@ -92,6 +89,7 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
         }
         else
             is_file_large = true;
+        
         return true;
     }
     if(!dir)
@@ -108,11 +106,11 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
             this->is_redir = true;
         }
     }
-    req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n";
+    req = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html\">\r\n<title>" +this->full_log["Dirrectory"]+"</title>\r\n</head>\r\n<body>\r\n<h1> Index of " + full_log["Dirrectory"] +"</h1>\r\n<hr>";
     while ((ent=readdir(dir)) != NULL) {
         if(!strcmp(".", ent->d_name))
             continue;
-        req +="<body>\r\n<p><a href=\"http://" + conf.getHost();
+        req +="\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
         req += conf.getPort();
         req += "/";
@@ -128,7 +126,7 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
         req += ent->d_name;
         req += "</a></p>";
     }
-    req += "\r\n</body>";
+    req += "\r\n<hr></body>";
     closedir(dir);
     body.str(req);
     return true;
@@ -139,6 +137,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     time_t now = time(0);
     std::string time = ctime(&now);
     std::string head;
+    bool ans = false;
     if(i == 200)
     {
         this->full_log["Content-Type"] = "text/html";
@@ -204,27 +203,26 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         body.str("");
 		body.str().clear();
 		body.clear();
-        body.str("<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx/1.18.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n");
+        body.str("<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>WebServer/1.0 (Ubuntu recomended)</center>\r\n</body>\r\n</html>\r\n");
         head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n";
         std::cout << head << std::endl;
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
         this->is_redir = false;
-        return true;
+        ans = (full_log["Connection"].compare(0, 5, "close") ? true : false);
     }
     else if(i == 204)
     {
-        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
+        head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time+"\r\n\r\n";
         send(fd, head.c_str(), head.size(), 0);
-        return true;
+        ans = (full_log["Connection"].compare(0, 5, "close") ? true : false);
     }
     else if(i == 500)
     {
         head = "HTTP/1.1 " + ft::to_string(i) +" "+ status(i) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
-        return false;
     }
     else 
     {
@@ -234,94 +232,10 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         std::cout << head << std::endl;
         head += body.str();
         send(fd, head.c_str(), head.size(), 0);
-        this->full_log["Connection"] = "close";
-        return false;
     }
-    // if(i == 404)
-    // {
-    //     if (!is_delete)
-    //     {
-    //         std::ifstream input (conf.getErrPages(404).c_str());
-    //         body << input.rdbuf(); 
-    //         head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nConnection: "+this->full_log["Connection"]+"\r\n\r\n";
-    //         std::cout << head << std::endl;
-    //         head += body.str();
-    //         if(send(fd, head.c_str(), head.size(), 0) == -1)
-    //             this->full_log["Connection"] = "close";
-    //     }
-    //     else
-    //     {
-    //         head = "HTTP/1.1 404 " + status(404) + "\r\nDate: "+time;
-    //         std::cout << head << std::endl;
-    //         send(fd, head.c_str(), head.size(), 0);
-    //     }
-    // }
-    // else if(i == 400)
-    // {
-
-    // }
-    // else if(i == 405)
-    // {
-    //     std::ifstream input (conf.getErrPages(405).c_str());
-    //     body << input.rdbuf(); 
-    //     head = "HTTP/1.1 405 Method Not Allowed\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().size()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n\r\n";
-    //     std::cout << head << std::endl;
-    //     head += body.str();
-    //     send(fd, head.c_str(), head.size(), 0);
-    // }
-    // else if(i == 204)
-    // {
-    //     head = "HTTP/1.1 204 " + status(204) + "\r\nDate: "+time;
-    //     send(fd, head.c_str(), head.size(), 0);
-    // }
-    // else if(i == 200)
-    // {
-      
-    // }
-    // else if(i == 505)
-    // {
-    //     std::ifstream input (conf.getErrPages(505).c_str());
-    //     body << input.rdbuf(); 
-    //     head = "HTTP/1.1 505 " + status(505) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
-    //     std::cout << head << std::endl;
-    //     head += body.str();
-    //     send(fd, head.c_str(), head.size(), 0);
-    // }
-    // else if(i == 403)
-    // {
-    //     std::ifstream input (conf.getErrPages(403).c_str());
-    //     body << input.rdbuf();
-    //     head = "HTTP/1.1 403 " + status(403) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
-    //     std::cout << head << std::endl;
-    //     head += body.str();
-    //     send(fd, head.c_str(), head.size(), 0);
-    // }
-    // else if(i == 413)
-    // {
-    //     std::ifstream input(conf.getErrPages(413).c_str());
-    //     body << input.rdbuf();
-    //     head = "HTTP/1.1 413 " + status(413) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-    //     +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\n";
-    //     std::cout << head << std::endl;
-    //     head += body.str();
-    //     send(fd, head.c_str(), head.size(), 0);
-    // }
-    // else if(i == 500)
-    // {
-    //     std::ifstream input(conf.getErrPages(500).c_str());
-    //     body << input.rdbuf();
-    //     head = "HTTP/1.1 504 Gateway Timeout\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nConnection: Keep-Alive\r\n\r\n";
-    //     std::cout << head << std::endl;
-    //     head += body.str();
-    //     send(fd, head.c_str(), head.size(), 0);
-    // }
-    // else if(i == 301)
-    // {
-
-    // }
+    clear();
+    full_buffer.clear();
+    return (ans);
 }
 
 bool ft::Response::post_download_request(ft::Config& config)

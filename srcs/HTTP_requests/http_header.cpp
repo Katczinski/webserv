@@ -51,8 +51,6 @@ int check_url(ft::Response& req, ft::Config& conf)
             req.full_log["Dirrectory"] += "/";
             auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1);
         }
-        // std::cout << "LOCATION " << it->first << " MY DIRRECTORY " << ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) << std::endl;
-        // std::cout << "PARS " << it->first << " MYNE " << ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) << std::endl;
         if(it->first == ((req.full_log["Dirrectory"].length() > 1) ? req.full_log["Dirrectory"].substr(1, req.full_log["Dirrectory"].size()) : req.full_log["Dirrectory"]) || ((*it).second.getAutoindex() &&\
          (*it).first == req.full_log["Dirrectory"].substr(1, (auto_index_check_length == std::string::npos) ? 1 : auto_index_check_length))) // если обращение пришло по Location или автоиндекс
         {
@@ -68,16 +66,10 @@ int check_url(ft::Response& req, ft::Config& conf)
             real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);// conf.getRoot().substr(0, conf.getRoot().size() - 1);
             int i = 0;
             int n = req.full_log["Dirrectory"].find_last_of("/");
-            // std::cout << "  DIR " << req.full_log["Dirrectory"].substr(1, n) << std::endl;
-            // std::cout << "ROOT " << (*it).first.size() << " DIRR " << req.full_log["Dirrectory"].substr(1, n).size() << std::endl;
-            // std::cout << n << std::endl;
-            // std::cout << "ROOT " << (*it).first << " DIRR " << req.full_log["Dirrectory"].substr(n+1) << std::endl;
             if(!req.full_log["Dirrectory"].substr(1, n).compare((*it).first))
             {
-                // std::cout << "YEST " << std::endl;
                 while (i < (*it).second.getIndex().size())
                 {
-                    // std::cout << "МОЙ ИНДЕКС " << real_root + req.full_log["Dirrectory"].substr(n, req.full_log["Dirrectory"].size()) << " НЕ МОЙ " << (*it).second.getIndex()[i] << std::endl;
                     if((real_root + req.full_log["Dirrectory"].substr(n, req.full_log["Dirrectory"].size())) == (*it).second.getIndex()[i])
                     {
                         req.current_location = &(*it).second;
@@ -148,18 +140,14 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         else if(!buffer.compare(0, 6, "Range:"))
         {
             req.full_log["Range"] = buffer.substr(buffer.find_first_of('=')+1, buffer.size() - 1);
-            // std::cout << "========================\n\n" << req.full_log["Range"] << "\n\n========================\n\n";
-            // std::cout << "========================\n\n" << buffer << "\n\n========================\n\n";
             if( req.full_log["Range"][0] == '-')
                 req.range_begin = 0;
             else
                 req.range_begin = ft::ft_atoi(req.full_log["Range"]);
-            std::cout << req.full_log["Range"].find_first_of('-') << " " << req.full_log["Range"].size() -1 << std::endl;
             std::string temp = req.full_log["Range"].substr(req.full_log["Range"].find_first_of('-'), req.full_log["Range"].size());
             req.range_end = ft::ft_atoi(temp);
             if(!req.range_end)
                 req.range_end = -1;
-            // std::cout << "\n\n================RANGE BEGIN " << req.range_begin << " RANGE END " << req.range_end << "====================\n\n" << std::endl;
         }
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
