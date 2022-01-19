@@ -21,7 +21,7 @@ int check_url(ft::Response& req, ft::Config& conf)
     }
     else
         req.full_log["Query_string"] = "";
-    req.full_log["Path_info"] = "";
+    req.full_log["Path_info"] = ".";
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it != conf.getEndLocation())
     {
@@ -32,12 +32,13 @@ int check_url(ft::Response& req, ft::Config& conf)
             {
                 req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + it->second.getCgiExtension().length(), req.full_log["Dirrectory"].length());
                 req.full_log["Dirrectory"].erase(qs + it->second.getCgiExtension().length(), req.full_log["Dirrectory"].length());
+                if (req.full_log["Path_info"] == "/" || req.full_log["Path_info"] == "")
+                    req.full_log["Path_info"] = ".";
                 break ;
             }
         }
         it++;
     }
-    std::cout << req.full_log["Path_info"] << std::endl;
     it = conf.getBeginLocation();
 
     while(it != conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
