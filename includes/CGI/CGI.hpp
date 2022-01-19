@@ -28,7 +28,7 @@ namespace ft
             std::string                         _path;
             std::string                         getExt(const std::string& path, char delim);
             std::string                         getHost(const std::string& path);
-            // std::string                         decode(const std::string& path);
+            std::string                         decode(std::string& path);
 
         public:
             CGI(ft::Response& req, ft::Config& conf);

@@ -21,8 +21,10 @@ unsigned int    toDec(const std::string& number)
 {
     unsigned int x;   
     std::stringstream ss;
-    ss << std::hex << number;
-    ss >> x;
+    ss << number;
+    ss >> std::hex >> x;
+    std::cout << "\n\n" << number;
+    std::cout << "\n\n" << x << "\n\n";
     return (x);
 }
 
@@ -91,10 +93,18 @@ std::string     ft::CGI::getExt(const std::string& path, char delim)
         return (path.substr(res + 1, path.size()));
 }
 
-// std::string            ft::CGI::decode(const std::string& path)
-// {
-
-// }
+std::string            ft::CGI::decode(std::string& path)
+{
+    size_t token = path.find("%");
+    while (token != std::string::npos)
+    {
+        //replace token with ASCII
+        char dec = toDec(path.substr(token + 1, 2));
+        path.replace(token, 3, ft::to_string(dec));
+        token = path.find("%");
+    }
+    return (path);
+}
 
 std::string            ft::CGI::getHost(const std::string& path)
 {
@@ -119,10 +129,11 @@ void            ft::CGI::init_env(ft::Response& req)
     // _env["REMOTE_USER"] = "";
     _env["REQUEST_METHOD"] = req.full_log["ZAPROS"];
     _env["SCRIPT_FILENAME"] = std::string(std::getenv("PWD")) + "/srcs/www" + req.full_log["Dirrectory"];
-    _env["PATH_INFO"] = req.full_log["Path_info"];
+    _env["PATH_INFO"] = decode(req.full_log["Path_info"]);
     _env["PATH_TRANSLATED"] = std::string(std::getenv("PWD")) + _env["PATH_INFO"];
     
-    std::cout << _env["SCRIPT_FILENAME"] << std::endl;
+    std::cout << "===PATH_INFO===\n";
+    std::cout << _env["PATH_INFO"] << std::endl;
     _env["SERVER_NAME"] = getHost(req.full_log["Host"]);
     _env["SERVER_PORT"] = getExt(req.full_log["Host"], ':');
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
