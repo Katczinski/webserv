@@ -17,19 +17,21 @@ std::string     toHex(int number)
 }
 
 // Переводит из Hex в Dec
-char gethex(char ch) {
-	ch = upperchar(ch);
-	if ((ch >= '0') && (ch <= '9')) return (ch - '0');
-	if ((ch >= 'A') && (ch <= 'F')) return (ch - 'A' + 10);
-    else return (ch);
-};
+unsigned int    toDec(const std::string& number)
+{
+    unsigned int x;   
+    std::stringstream ss;
+    ss << std::hex << number;
+    ss >> x;
+    return (x);
+}
 
 ft::CGI::CGI(ft::Response& req, ft::Config& conf)
 {
     std::cout << "====================================================================================\n";
     init_env(req);
     _argv = (char**)malloc(sizeof(char*) * 3);
-    _argv[0] = strdup((*conf.getLocation().find("cgi-bin/")).second.getCgiPath().c_str());
+    _argv[0] = strdup(conf.getLocation().find("cgi-bin/")->second.getCgiPath().c_str());
     // _argv[0] = strdup((std::string(std::getenv("PWD")) + "/ubuntu_cgi_tester").c_str());
     // std::cout << _argv[0] << std::endl;
     _argv[1] = strdup(_env["SCRIPT_FILENAME"].c_str());
@@ -79,27 +81,6 @@ Connection: keep-alive\r\n\r\n");
     std::cout << header << std::endl;
 }
 
-void    ft::CGI::parseQString(const char *qstring)
-{
-    int                                 i = 0;
-    std::map<std::string, std::string>  ret;
-    while (qstring[i] != '?' && qstring[i] != '\0')
-        i++;
-    if (qstring[i] != '\0')
-        i++;
-    for (; qstring[i] != '\0'; i++)
-    {
-        std::string key;
-        std::string value;
-        while (qstring[i] != '=' && qstring[i] != '\0')
-            key += qstring[i++];
-        i++;
-        while (qstring[i] != '&' && qstring[i] != '\0')
-            value += qstring[i++];
-        _env[key] = value;
-    }
-}
-
 std::string     ft::CGI::getExt(const std::string& path, char delim)
 {
     size_t  res;
@@ -109,6 +90,11 @@ std::string     ft::CGI::getExt(const std::string& path, char delim)
     else
         return (path.substr(res + 1, path.size()));
 }
+
+// std::string            ft::CGI::decode(const std::string& path)
+// {
+
+// }
 
 std::string            ft::CGI::getHost(const std::string& path)
 {
@@ -122,11 +108,10 @@ std::string            ft::CGI::getHost(const std::string& path)
 
 void            ft::CGI::init_env(ft::Response& req)
 {
-    _env["AUTH_TYPE"] = "";
+    _env["AUTH_TYPE"] = "Basic";
     _env["CONTENT_LENGTH"] = req.full_log["Content-Length"];
     _env["CONTENT_TYPE"] = req.full_log["Content-type"];
     _env["GATEWAY_INTERFACE"] = "CGI/1.1";
-    _env["PATH_TRANSLATED"] = "";
     _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
     // _env["REMOTE_HOST"] = "";
@@ -134,14 +119,15 @@ void            ft::CGI::init_env(ft::Response& req)
     // _env["REMOTE_USER"] = "";
     _env["REQUEST_METHOD"] = req.full_log["ZAPROS"];
     _env["SCRIPT_FILENAME"] = std::string(std::getenv("PWD")) + "/srcs/www" + req.full_log["Dirrectory"];
-    _env["PATH_INFO"] = _env["SCRIPT_FILENAME"];
+    _env["PATH_INFO"] = req.full_log["Path_info"];
+    _env["PATH_TRANSLATED"] = std::string(std::getenv("PWD")) + _env["PATH_INFO"];
     
     std::cout << _env["SCRIPT_FILENAME"] << std::endl;
     _env["SERVER_NAME"] = getHost(req.full_log["Host"]);
     _env["SERVER_PORT"] = getExt(req.full_log["Host"], ':');
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
     _env["REDIRECT_STATUS"] = "200";
-    _env["SCRIPT_NAME"] = "/script.php";
+    // _env["SCRIPT_NAME"] = "/script.php";
     // _env["SERVER_SOFTWARE"] = "";
     _cenv = (char**)malloc(sizeof(char*) * (_env.size() + 1));
     int i = 0;

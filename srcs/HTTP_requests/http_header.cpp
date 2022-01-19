@@ -21,8 +21,26 @@ int check_url(ft::Response& req, ft::Config& conf)
     }
     else
         req.full_log["Query_string"] = "";
+    req.full_log["Path_info"] = "";
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
-    while(it !=  conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
+    while(it != conf.getEndLocation())
+    {
+        if (it->second.getCgiExtension() != "")
+        {
+            qs = req.full_log["Dirrectory"].find(it->second.getCgiExtension());
+            if (qs != std::string::npos)
+            {
+                req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + it->second.getCgiExtension().length(), req.full_log["Dirrectory"].length());
+                req.full_log["Dirrectory"].erase(qs + it->second.getCgiExtension().length(), req.full_log["Dirrectory"].length());
+                break ;
+            }
+        }
+        it++;
+    }
+    std::cout << req.full_log["Path_info"] << std::endl;
+    it = conf.getBeginLocation();
+
+    while(it != conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
     {        
         auto_index_check_length = req.full_log["Dirrectory"].find_first_of("/", 1); // находим первое вхождение / после 1 символа, нужно для автоиндекса
         // првоерка на то, если ли такая дирректория и что не пришло только  /

@@ -28,13 +28,14 @@ namespace ft
             std::string                         _path;
             std::string                         getExt(const std::string& path, char delim);
             std::string                         getHost(const std::string& path);
+            // std::string                         decode(const std::string& path);
+
         public:
             CGI(ft::Response& req, ft::Config& conf);
             ~CGI();
             void                                formHeader(std::string& header);
             void                                init_env(ft::Response& req);
             void                                CGI_read(long fd);
-            void                                parseQString(const char *qstring);
             void                                execute(ft::Response& req, int fd);
 
     };
