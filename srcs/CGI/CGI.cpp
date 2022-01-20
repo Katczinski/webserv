@@ -33,7 +33,6 @@ ft::CGI::CGI(ft::Response& req, ft::Config& conf)
     _argv = (char**)malloc(sizeof(char*) * 3);
     _argv[0] = strdup(conf.getLocation().find("cgi-bin/")->second.getCgiPath().c_str());
     // _argv[0] = strdup((std::string(std::getenv("PWD")) + "/ubuntu_cgi_tester").c_str());
-    // std::cout << _argv[0] << std::endl;
     _argv[1] = strdup(_env["SCRIPT_FILENAME"].c_str());
     _argv[2] = NULL;
 }
@@ -50,15 +49,49 @@ ft::CGI::~CGI() {
     free(_argv);
     _env.clear();
 }
+int     ft::CGI::countCookies(const std::string& str)
+{
+    int count = 1;
+    int i = 0;
+    while (str[i] != '\0')
+        if (str[i++] == '&')
+            count++;
+    return (count);
+}
+
+std::string ft::CGI::setCookie(const std::string& str)
+{
+    std::string ret = str;
+    size_t      pos;
+    while ((pos = ret.find("&")) != std::string::npos)
+    {
+        ret.replace(pos, 1, ";\r\nSet-cookie:");
+    }
+    return (ret);
+}
 
 void    ft::CGI::formHeader(std::string& header)
 {
-    // size_t dcrlf;
+    size_t dcrlf;
     // if ((dcrlf = header.find("\r\n\r\n")) == std::string::npos)
-        header.insert(0, "HTTP/1.1 200 OK\r\n\
-Content-type: text/html\r\n\
-Transfer-Encoding: chunked\r\n\
-Connection: keep-alive\r\n\r\n");
+    std::string local;
+    if (header.find("HTTP/1.1") == std::string::npos)
+        header.insert(0, "HTTP/1.1 200 OK\r\n");
+    if (header.find("Content-type:") == std::string::npos)
+        local += "Content-type: text/html\r\n";
+    local += "Transfer-Encoding: chunked\r\n";
+    if (_env.count("HTTP_COOKIE") && header.find("Set-cookie") == std::string::npos)
+        local += setCookie(_env["HTTP_COOKIE"]);
+    if (header.find("Connection:") == std::string::npos)
+        local += "Connection: keep-alive\r\n";
+    if ((dcrlf = header.find("\r\n\r\n")) == std::string::npos)
+    {
+        local += "\r\n\r\n";
+        dcrlf = header.find("\r\n") + 2;
+    }
+    else
+        local.insert(0, "\r\n");
+    header.insert(dcrlf, local);
     // else
     // {
     //     size_t pos;
@@ -81,16 +114,6 @@ Connection: keep-alive\r\n\r\n");
     std::cout << header << std::endl;
 }
 
-std::string     ft::CGI::getExt(const std::string& path, char delim)
-{
-    size_t  res;
-    res = path.find(delim);
-    if (res == std::string::npos)
-        return ("");
-    else
-        return (path.substr(res + 1, path.size()));
-}
-
 std::string            ft::CGI::decode(std::string& path)
 {
     size_t token = path.find("%");
@@ -106,11 +129,20 @@ std::string            ft::CGI::decode(std::string& path)
     }
     return (path);
 }
-
-std::string            ft::CGI::getHost(const std::string& path)
+std::string     ft::CGI::getAfter(const std::string& path, char delim)
 {
     size_t  res;
-    res = path.find(':');
+    res = path.find(delim);
+    if (res == std::string::npos)
+        return ("");
+    else
+        return (path.substr(res + 1, path.size()));
+}
+
+std::string            ft::CGI::getBefore(const std::string& path, char delim)
+{
+    size_t  res;
+    res = path.find(delim);
     if (res == std::string::npos)
         return ("");
     else
@@ -125,18 +157,15 @@ void            ft::CGI::init_env(ft::Response& req)
     _env["GATEWAY_INTERFACE"] = "CGI/1.1";
     _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
-    // _env["REMOTE_HOST"] = "";
-    // _env["REMOTE_IDENT"] = "";
-    // _env["REMOTE_USER"] = "";
     _env["REQUEST_METHOD"] = req.full_log["ZAPROS"];
     _env["SCRIPT_FILENAME"] = std::string(std::getenv("PWD")) + "/srcs/www" + req.full_log["Dirrectory"];
     _env["PATH_INFO"] = decode(req.full_log["Path_info"]);
     _env["PATH_TRANSLATED"] = std::string(std::getenv("PWD")) + _env["PATH_INFO"];
-    
-    std::cout << "===PATH_INFO===\n";
-    std::cout << _env["PATH_INFO"] << std::endl;
-    _env["SERVER_NAME"] = getHost(req.full_log["Host"]);
-    _env["SERVER_PORT"] = getExt(req.full_log["Host"], ':');
+    _env["HTTP_COOKIE"] = req.full_log["Cookie"];
+    // std::cout << "===PATH_INFO===\n";
+    // std::cout << _env["PATH_INFO"] << std::endl;
+    _env["SERVER_NAME"] = getBefore(req.full_log["Host"], ':');
+    _env["SERVER_PORT"] = getAfter(req.full_log["Host"], ':');
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
     _env["REDIRECT_STATUS"] = "200";
     // _env["SCRIPT_NAME"] = "/script.php";

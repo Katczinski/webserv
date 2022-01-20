@@ -1,22 +1,30 @@
 <!DOCTYPE html>
 <html>
-<script>
-	if ( window.history.replaceState ) {
-		window.history.replaceState( null, null, window.location.href );
-	}
-</script>
 	<head>
 		<meta charset="utf-8">
-		<title>Отправка файла на сервер</title>
-	   </head>
-	   <body>
-		<form enctype="multipart/form-data" method="post" >
-		 <p><input type="file" name="f">
-		 <input type="submit" value="Отправить" href="#"></p>
-		</form>
+		<script>
+			if ( window.history.replaceState ) {
+				window.history.replaceState( null, null, window.location.href );
+			}
+		</script>
+		
+		<body>
+		<div class="intro_div" >
+			<title>Отправка файла на сервер</title>
+			<form enctype="multipart/form-data" method="post" >
+		 		<p><input type="file" name="f">
+		 		<input type="submit" value="Отправить" href="#"></p>
+			</form>
+			</title>
+			<form method="POST" onsubmit="return setAction(this, document.getElementById('nameForm').value)">
+				Имя: <input id="nameForm" type="text" name="user">
+				<!-- Пароль: <input type="password" name="password"> -->
+				<input type="submit" value="OK">
+			</form>
+		</div>
+		</head>
 	   </body>
 <head>
-<title>Welcome to Webserver!</title>
 
 <style>
     body {
@@ -28,7 +36,7 @@
 </style>
 </head>
 <body>
-<h1>Welcome to Webserver!</h1>
+<h1 id="header"></h1>
 <p>If you see this page, the Webserver is successfully installed and
 working.</p>
 
@@ -140,18 +148,15 @@ working.</p>
   </head>
 
   <body>
-    <div class='intro_div'>
-		<form method="POST" onsubmit="return setAction(this)">
-            Имя: <input id="nameForm" type="text" name="user">
-            <!-- Пароль: <input type="password" name="password"> -->
-            <input type="submit" value="OK">
-        </form>
-		<script>
-				function setAction(form){
-					form.action = "cgi-bin/script.php";
-				}
-		</script>
-    </div>
+	<script>
+		function setAction(form, name){
+			form.action = "cgi-bin/script.php";
+			document.cookie = "user=" + name;
+		}
+		const value = `${document.cookie}`;
+		const parts = value.split("=");
+		document.getElementById("header").innerHTML = "Welcome " + (parts[parts.indexOf("user") + 1] ? parts[parts.indexOf("user") + 1] : "to webserver");
+	</script>
     <!-- <script>document.getElementById('input_login').value = load_login();</script> -->
   </body>
 </html>

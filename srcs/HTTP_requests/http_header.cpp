@@ -149,6 +149,9 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
             if(!req.range_end)
                 req.range_end = -1;
         }
+        else if(!buffer.compare(0,7, "Cookie:"))
+            req.full_log["Cookie"] = buffer.substr(8, buffer.size() - 1);
+
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }
