@@ -1,5 +1,29 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <link rel="stylesheet" type="text/css">
+    <!-- <script src="js/intro.js"></script> -->
+    <meta charset="UTF-8">
+  </head>
+
+  <body>
+    <div class='intro_div'>
+		<form method="POST" onsubmit="return setAction(this)">
+            Имя: <input id="nameForm" type="text" name="user">
+            <!-- Пароль: <input type="password" name="password"> -->
+			<p align="end">    <input type="submit" value="LOGIN">	</p>
+        </form>
+		<script>
+				function setAction(form){
+					form.action = "cgi-bin/script.php";
+				}
+		</script>
+    </div>
+    <!-- <script>document.getElementById('input_login').value = load_login();</script> -->
+  </body>
+</html>
+
+<html>
 <script>
 	if ( window.history.replaceState ) {
 		window.history.replaceState( null, null, window.location.href );
@@ -132,28 +156,6 @@ working.</p>
 	}
 	</script>
 </body>
-</html><html>
-  <head>
-    <link rel="stylesheet" type="text/css">
-    <!-- <script src="js/intro.js"></script> -->
-    <meta charset="UTF-8">
-  </head>
-
-  <body>
-    <div class='intro_div'>
-		<form method="POST" onsubmit="return setAction(this)">
-            Имя: <input id="nameForm" type="text" name="user">
-            <!-- Пароль: <input type="password" name="password"> -->
-            <input type="submit" value="OK">
-        </form>
-		<script>
-				function setAction(form){
-					form.action = "cgi-bin/script.php";
-				}
-		</script>
-    </div>
-    <!-- <script>document.getElementById('input_login').value = load_login();</script> -->
-  </body>
 </html>
 
 
