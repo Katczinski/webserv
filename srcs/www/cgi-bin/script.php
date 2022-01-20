@@ -33,6 +33,7 @@ else
         parse_str($line, $array);
     }   
 }
+
 if (array_key_exists('user', $array)){
     if ($array['user'] == 'echiles')
         echo "<h1 align='center'>zdarova Leha</h1>";
@@ -43,11 +44,29 @@ if (array_key_exists('user', $array)){
     else
         echo "<h1 align='center'>Vi kto takie? Ya vas ne zval</h1></br>
                 <h3 align='center'> Idite nahooy</h3>";
-    setcookie("user", $array['user']);
 }
 if (array_key_exists('color', $array)){
     echo "<body style=background:"; echo $array['color']; echo ">";
-    echo "</body>";
 }
+// echo "<!DOCTYPE html>
+// <html>
+// <head>
+//     <title>Login page</title>
+// </head>
+// <body>
+//     <div style = \"text-align : center ; \">
+//         <h1>Login page</h1>
+//         <form action=\"/cgi-bin/user_check.py\" method=\"get\">
+//             Registration number : <input type=\"number\" name=\"register_no\" min=\"1\" max=\"2000000000\">
+//             <br><br>
+//             Username : <input type=\"text\" name=\"username\">
+//             <br><br>
+//             Password : <input type=\"password\" name = \"password\">
+//             <br><br>
+//             <input type=\"submit\" value = \"Login\">
+//         </form>
+//     </div>
+// </body>
+// </html>";
 
 ?>
