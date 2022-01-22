@@ -31,7 +31,16 @@ ft::CGI::CGI(ft::Response& req, ft::Config& conf)
     std::cout << "====================================================================================\n";
     init_env(req);
     _argv = (char**)malloc(sizeof(char*) * 3);
-    _argv[0] = strdup(conf.getLocation().find("cgi-bin/")->second.getCgiPath().c_str());
+    std::string cgi_path;
+    std::vector<std::string> path_vec = conf.getLocation().find("cgi-bin/")->second.getCgiPath();
+    for (std::vector<std::string>::iterator it = path_vec.begin(); it != path_vec.end(); it++)
+    {
+        cgi_path = *it;
+        if (_env["SCRIPT_FILENAME"].find(".py") != std::string::npos && it->find("python") != std::string::npos ||
+            _env["SCRIPT_FILENAME"].find(".php") != std::string::npos && it->find("php") != std::string::npos)
+            break ;
+    }
+    _argv[0] = strdup(cgi_path.c_str());
     // _argv[0] = strdup((std::string(std::getenv("PWD")) + "/ubuntu_cgi_tester").c_str());
     _argv[1] = strdup(_env["SCRIPT_FILENAME"].c_str());
     _argv[2] = NULL;
