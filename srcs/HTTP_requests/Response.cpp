@@ -77,6 +77,8 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
         else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
             this->full_log["Content-Type"] = "text/html";
         input.open(dir_name.c_str(), std::ios::binary|std::ios::in);
+		if(!input.is_open())
+			return false;
         input.seekg(0, std::ios::end);
         file_size = input.tellg();
         input.seekg(0, std::ios::beg);
@@ -110,6 +112,13 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
     while ((ent=readdir(dir)) != NULL) {
         if(!strcmp(".", ent->d_name))
             continue;
+		if(strstr(ent->d_name, ".html") != NULL)
+		{
+			input.open((dir_name + ent->d_name).c_str());
+			body << input.rdbuf();
+		    closedir(dir);
+			return true;
+		}
         req +="\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
         req += conf.getPort();
