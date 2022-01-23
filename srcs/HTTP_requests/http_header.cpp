@@ -25,23 +25,31 @@ int check_url(ft::Response& req, ft::Config& conf)
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it != conf.getEndLocation())
     {
-        for (int i = 0; i < it->second.getCgiExtension().size(); i++)
+        int stop = 0;
+        if (req.full_log["Dirrectory"].find(it->first) != std::string::npos)
         {
-            std::string cgi_extension = it->second.getCgiExtension()[i];
-            if (cgi_extension != "")
+            for (int i = 0; i < it->second.getCgiExtension().size(); i++)
             {
-                qs = req.full_log["Dirrectory"].find(cgi_extension);
-                if (qs != std::string::npos)
+                std::string cgi_extension = it->second.getCgiExtension()[i];
+                std::cout << cgi_extension << std::endl;
+                if (cgi_extension != "")
                 {
-                    req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + cgi_extension.length(), req.full_log["Dirrectory"].length());
-                    req.full_log["Dirrectory"].erase(qs + cgi_extension.length(), req.full_log["Dirrectory"].length());
-                    if (req.full_log["Path_info"] == "/" || req.full_log["Path_info"] == "")
-                        req.full_log["Path_info"] = ".";
-                    break ;
+                    qs = req.full_log["Dirrectory"].find(cgi_extension);
+                    if (qs != std::string::npos)
+                    {
+                        req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + cgi_extension.length());
+                        req.full_log["Dirrectory"].erase(qs + cgi_extension.length());
+                        if (req.full_log["Path_info"] == "/" || req.full_log["Path_info"] == "")
+                            req.full_log["Path_info"] = ".";
+                        stop = 1;
+                        break ;
+                    }
                 }
+
             }
-            
         }
+        if (stop)
+            break ;
         it++;
     }
     it = conf.getBeginLocation();

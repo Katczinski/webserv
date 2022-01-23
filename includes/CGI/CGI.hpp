@@ -36,9 +36,9 @@ namespace ft
             CGI(ft::Response& req, ft::Config& conf);
             ~CGI();
             void                                formHeader(std::string& header);
-            void                                init_env(ft::Response& req);
+            void                                init_env(ft::Response& req, ft::Config& conf);
             void                                CGI_read(long fd);
-            void                                execute(ft::Response& req, int fd);
+            void                                execute(ft::Response& req, int fd, ft::Config& conf);
 
     };
 }
