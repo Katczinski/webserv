@@ -93,10 +93,10 @@ std::vector<std::string> const ft::Location::getMethods(void) const {
 	return this->_allowed_methods;
 }
 
-std::string const ft::Location::getCgiExtension(void) const {
+std::vector<std::string> const ft::Location::getCgiExtension(void) const {
 	return this->_cgi_extension;
 }
-std::string const ft::Location::getCgiPath(void) const {
+std::vector<std::string> const ft::Location::getCgiPath(void) const {
 	return this->_cgi_path;
 }
 
@@ -135,11 +135,21 @@ void ft::Location::setMethods(const v_string& line) {
 }
 
 void ft::Location::setCgiExtension(const v_string& line) {
-	_cgi_extension = line[1];
+	v_const_iter_string it = line.begin();
+	++it;
+	while (it != (line.end() - 1)) {
+		_cgi_extension.push_back(*it);
+		++it;
+	}
 }
 
 void ft::Location::setCgiPath(const v_string& line) {
-	_cgi_path = line[1];
+	v_const_iter_string it = line.begin();
+	++it;
+	while (it != (line.end() - 1)) {
+		_cgi_path.push_back(*it);
+		++it;
+	}
 }
 
 void ft::Location::setMaxBody(const v_string& line) {

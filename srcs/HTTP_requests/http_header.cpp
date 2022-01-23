@@ -21,23 +21,37 @@ int check_url(ft::Response& req, ft::Config& conf)
     }
     else
         req.full_log["Query_string"] = "";
-    req.full_log["Path_info"] = "";
+    req.full_log["Path_info"] = ".";
     std::map<std::string, ft::Location>::iterator it = conf.getBeginLocation();
     while(it != conf.getEndLocation())
     {
-        if (it->second.getCgiExtension() != "")
+        int stop = 0;
+        if (req.full_log["Dirrectory"].find(it->first) != std::string::npos)
         {
-            qs = req.full_log["Dirrectory"].find(it->second.getCgiExtension());
-            if (qs != std::string::npos)
+            for (int i = 0; i < it->second.getCgiExtension().size(); i++)
             {
-                req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + it->second.getCgiExtension().length(), req.full_log["Dirrectory"].length());
-                req.full_log["Dirrectory"].erase(qs + it->second.getCgiExtension().length(), req.full_log["Dirrectory"].length());
-                break ;
+                std::string cgi_extension = it->second.getCgiExtension()[i];
+                std::cout << cgi_extension << std::endl;
+                if (cgi_extension != "")
+                {
+                    qs = req.full_log["Dirrectory"].find(cgi_extension);
+                    if (qs != std::string::npos)
+                    {
+                        req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + cgi_extension.length());
+                        req.full_log["Dirrectory"].erase(qs + cgi_extension.length());
+                        if (req.full_log["Path_info"] == "/" || req.full_log["Path_info"] == "")
+                            req.full_log["Path_info"] = ".";
+                        stop = 1;
+                        break ;
+                    }
+                }
+
             }
         }
+        if (stop)
+            break ;
         it++;
     }
-    std::cout << req.full_log["Path_info"] << std::endl;
     it = conf.getBeginLocation();
 
     while(it != conf.getEndLocation()) // проверяем все Location'ы из конфиг файла
@@ -145,6 +159,9 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
                 req.range_begin = ft::ft_atoi(req.full_log["Range"]);
             std::string temp = req.full_log["Range"].substr(req.full_log["Range"].find_first_of('-'), req.full_log["Range"].size());
         }
+        else if(!buffer.compare(0,7, "Cookie:"))
+            req.full_log["Cookie"] = buffer.substr(8, buffer.size() - 1);
+
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }

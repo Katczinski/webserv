@@ -64,7 +64,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
         {
             ft::CGI cgi(all_connection[fd], config);
-            cgi.execute(all_connection[fd], fd);
+            cgi.execute(all_connection[fd], fd, config);
             // send(fd, response.c_str(), response.length(), 0);
             all_connection[fd].full_buffer.clear();
             all_connection[fd].full_log.clear();
@@ -103,7 +103,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
             {
                 ft::CGI cgi(all_connection[fd], config);
-                cgi.execute(all_connection[fd], fd);
+                cgi.execute(all_connection[fd], fd, config);
                 bool ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
                 all_connection[fd].clear();
                 return(ans);

@@ -224,9 +224,9 @@ void ft::checkContent(const v_vec_string& content) {
 			printErrParser(*it, "bad config file, missing value");
 		} else if (it->front() ==  "max_body_size" && it->size() != 3) {
 			printErrParser(*it, "bad config file, missing value");
-		} else if (it->front() ==  "cgi_extension" && it->size() != 3) {
+		} else if (it->front() ==  "cgi_extension" && it->size() < 3) {
 			printErrParser(*it, "bad config file, missing value");
-		} else if (it->front() ==  "cgi_path" && it->size() != 3) {
+		} else if (it->front() ==  "cgi_path" && it->size() < 3) {
 			printErrParser(*it, "bad config file, missing value");
 		} else if (it->front() ==  "autoindex" && it->size() != 3) {
 			printErrParser(*it, "bad config file, missing value");

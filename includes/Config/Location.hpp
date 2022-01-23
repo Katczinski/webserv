@@ -17,8 +17,8 @@ namespace ft
 		std::string							_root;
 		std::vector<std::string>			_index;
 		std::vector<std::string>			_allowed_methods;
-		std::string							_cgi_extension;
-		std::string							_cgi_path;
+		std::vector<std::string>			_cgi_extension;
+		std::vector<std::string>			_cgi_path;
 		std::string							_max_body;
 		bool								_autoindex;
 		typedef std::vector<std::string>::iterator 						v_iter_string;
@@ -37,8 +37,8 @@ namespace ft
 		std::string const getRoot(void) const;
 		std::vector<std::string> const getIndex(void) const;
 		std::vector<std::string> const getMethods(void) const;
-		std::string const getCgiExtension(void) const;
-		std::string const getCgiPath(void) const;
+		std::vector<std::string> const getCgiExtension(void) const;
+		std::vector<std::string> const getCgiPath(void) const;
 		std::string const getMaxBody(void) const;
 		bool const getAutoindex(void) const;
 

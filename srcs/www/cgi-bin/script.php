@@ -1,9 +1,9 @@
 <?php
 // echo "HTTP/1.1 200 OK\r\n";
-// header("HTTP/1.1. 200 OK");
 // echo "Content-type: text/html\r\n\r\n";
 // echo "Transfer-Encoding: chunked\r\n\r\n";
 // echo "Location: http://example.com\r\n\r\n";
+// echo "\r\n\r\n";
 // phpinfo();
 // if (headers_sent())
 //     echo "header sent";
@@ -48,5 +48,25 @@ if (array_key_exists('user', $array)){
 if (array_key_exists('color', $array)){
     echo "<body style=background:"; echo $array['color']; echo ">";
 }
+// echo "<!DOCTYPE html>
+// <html>
+// <head>
+//     <title>Login page</title>
+// </head>
+// <body>
+//     <div style = \"text-align : center ; \">
+//         <h1>Login page</h1>
+//         <form action=\"/cgi-bin/user_check.py\" method=\"get\">
+//             Registration number : <input type=\"number\" name=\"register_no\" min=\"1\" max=\"2000000000\">
+//             <br><br>
+//             Username : <input type=\"text\" name=\"username\">
+//             <br><br>
+//             Password : <input type=\"password\" name = \"password\">
+//             <br><br>
+//             <input type=\"submit\" value = \"Login\">
+//         </form>
+//     </div>
+// </body>
+// </html>";
 
 ?>

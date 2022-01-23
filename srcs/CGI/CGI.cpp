@@ -21,19 +21,26 @@ unsigned int    toDec(const std::string& number)
 {
     unsigned int x;   
     std::stringstream ss;
-    ss << std::hex << number;
-    ss >> x;
+    ss << number;
+    ss >> std::hex >> x;
     return (x);
 }
 
 ft::CGI::CGI(ft::Response& req, ft::Config& conf)
 {
-    std::cout << "====================================================================================\n";
-    init_env(req);
+    init_env(req, conf);
     _argv = (char**)malloc(sizeof(char*) * 3);
-    _argv[0] = strdup(conf.getLocation().find("cgi-bin/")->second.getCgiPath().c_str());
+    std::string cgi_path;
+    std::vector<std::string> path_vec = conf.getLocation().find("cgi-bin/")->second.getCgiPath();
+    for (std::vector<std::string>::iterator it = path_vec.begin(); it != path_vec.end(); it++)
+    {
+        cgi_path = *it;
+        if (_env["SCRIPT_FILENAME"].find(".py") != std::string::npos && it->find("python") != std::string::npos ||
+            _env["SCRIPT_FILENAME"].find(".php") != std::string::npos && it->find("php") != std::string::npos)
+            break ;
+    }
+    _argv[0] = strdup(cgi_path.c_str());
     // _argv[0] = strdup((std::string(std::getenv("PWD")) + "/ubuntu_cgi_tester").c_str());
-    // std::cout << _argv[0] << std::endl;
     _argv[1] = strdup(_env["SCRIPT_FILENAME"].c_str());
     _argv[2] = NULL;
 }
@@ -50,38 +57,66 @@ ft::CGI::~CGI() {
     free(_argv);
     _env.clear();
 }
+int     ft::CGI::countCookies(const std::string& str)
+{
+    int count = 1;
+    int i = 0;
+    while (str[i] != '\0')
+        if (str[i++] == '&')
+            count++;
+    return (count);
+}
+
+std::string ft::CGI::setCookie(const std::string& str)
+{
+    std::string ret = str;
+    size_t      pos;
+    while ((pos = ret.find("&")) != std::string::npos)
+    {
+        ret.replace(pos, 1, ";\r\nSet-cookie:");
+    }
+    return (ret);
+}
 
 void    ft::CGI::formHeader(std::string& header)
 {
-    // size_t dcrlf;
-    // if ((dcrlf = header.find("\r\n\r\n")) == std::string::npos)
-        header.insert(0, "HTTP/1.1 200 OK\r\n\
-Content-type: text/html\r\n\
-Transfer-Encoding: chunked\r\n\
-Connection: keep-alive\r\n\r\n");
-    // else
-    // {
-    //     size_t pos;
-    //     if ((pos = header.find("Transfer-Encoding: chunked")) == std::string::npos ||
-    //         pos > dcrlf)
-    //         header.insert(dcrlf, "\r\nTransfer-Encoding: chunked");
-    //     dcrlf = header.find("\r\n\r\n");
-    //     if ((pos = header.find("Content-type:")) == std::string::npos ||
-    //         pos > dcrlf)
-    //         header.insert(dcrlf, "\r\nContent-type: text/html");
-    //     dcrlf = header.find("\r\n\r\n");
-    //     if ((pos = header.find("Connection:")) == std::string::npos ||
-    //         pos > dcrlf)
-    //         header.insert(dcrlf, "\r\nConnection: keep-alive");
-    //     dcrlf = header.find("\r\n\r\n");
-    //     if ((pos = header.find("HTTP/1.1")) == std::string::npos ||
-    //         pos > dcrlf)
-    //         header.insert(0, "HTTP/1.1 200 OK\r\n");
-    // }
-    std::cout << header << std::endl;
+    size_t dcrlf;
+    std::string local;
+    if (header.find("HTTP/1.1") == std::string::npos)
+        header.insert(0, "HTTP/1.1 200 OK\r\n");
+    if (header.find("Content-type:") == std::string::npos)
+        local += "Content-type: text/html\r\n";
+    local += "Transfer-Encoding: chunked\r\n";
+    if (_env.count("HTTP_COOKIE") && header.find("Set-cookie") == std::string::npos)
+        local += setCookie(_env["HTTP_COOKIE"]);
+    if (header.find("Connection:") == std::string::npos)
+        local += "Connection: keep-alive\r\n";
+    if ((dcrlf = header.find("\r\n\r\n")) == std::string::npos)
+    {
+        local += "\r\n\r\n";
+        dcrlf = header.find("\r\n") + 2;
+    }
+    else
+        local.insert(0, "\r\n");
+    header.insert(dcrlf, local);
 }
 
-std::string     ft::CGI::getExt(const std::string& path, char delim)
+std::string            ft::CGI::decode(std::string& path)
+{
+    size_t token = path.find("%");
+    while (token != std::string::npos)
+    {
+        //replace token with ASCII
+        //check if there are at least 2 symbols after %
+        if (path.length() < token + 2)
+            break ;
+        char dec = toDec(path.substr(token + 1, 2));
+        path.replace(token, 3, ft::to_string(dec));
+        token = path.find("%");
+    }
+    return (path);
+}
+std::string     ft::CGI::getAfter(const std::string& path, char delim)
 {
     size_t  res;
     res = path.find(delim);
@@ -91,22 +126,17 @@ std::string     ft::CGI::getExt(const std::string& path, char delim)
         return (path.substr(res + 1, path.size()));
 }
 
-// std::string            ft::CGI::decode(const std::string& path)
-// {
-
-// }
-
-std::string            ft::CGI::getHost(const std::string& path)
+std::string            ft::CGI::getBefore(const std::string& path, char delim)
 {
     size_t  res;
-    res = path.find(':');
+    res = path.find(delim);
     if (res == std::string::npos)
         return ("");
     else
         return (path.substr(0, res));
 }
 
-void            ft::CGI::init_env(ft::Response& req)
+void            ft::CGI::init_env(ft::Response& req, ft::Config& conf)
 {
     _env["AUTH_TYPE"] = "Basic";
     _env["CONTENT_LENGTH"] = req.full_log["Content-Length"];
@@ -114,21 +144,16 @@ void            ft::CGI::init_env(ft::Response& req)
     _env["GATEWAY_INTERFACE"] = "CGI/1.1";
     _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
-    // _env["REMOTE_HOST"] = "";
-    // _env["REMOTE_IDENT"] = "";
-    // _env["REMOTE_USER"] = "";
     _env["REQUEST_METHOD"] = req.full_log["ZAPROS"];
-    _env["SCRIPT_FILENAME"] = std::string(std::getenv("PWD")) + "/srcs/www" + req.full_log["Dirrectory"];
-    _env["PATH_INFO"] = req.full_log["Path_info"];
-    _env["PATH_TRANSLATED"] = std::string(std::getenv("PWD")) + _env["PATH_INFO"];
-    
-    std::cout << _env["SCRIPT_FILENAME"] << std::endl;
-    _env["SERVER_NAME"] = getHost(req.full_log["Host"]);
-    _env["SERVER_PORT"] = getExt(req.full_log["Host"], ':');
+    _env["SCRIPT_FILENAME"] = conf.getRoot() + req.full_log["Dirrectory"].substr(1);
+    _env["PATH_INFO"] = decode(req.full_log["Path_info"]);
+    _env["PATH_TRANSLATED"] = conf.getRoot() + "/" + _env["PATH_INFO"];
+    _env["HTTP_COOKIE"] = req.full_log["Cookie"];
+    _env["SERVER_NAME"] = getBefore(req.full_log["Host"], ':');
+    _env["SERVER_PORT"] = getAfter(req.full_log["Host"], ':');
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
     _env["REDIRECT_STATUS"] = "200";
-    // _env["SCRIPT_NAME"] = "/script.php";
-    // _env["SERVER_SOFTWARE"] = "";
+
     _cenv = (char**)malloc(sizeof(char*) * (_env.size() + 1));
     int i = 0;
     for (std::map<std::string, std::string>::iterator it = _env.begin(); it != _env.end(); it++)
@@ -142,7 +167,7 @@ void            ft::CGI::init_env(ft::Response& req)
     // _env.clear();
 }
 
-void             ft::CGI::execute(ft::Response& req, int fd)
+void             ft::CGI::execute(ft::Response& req, int fd, ft::Config& conf)
 {
     pid_t   pid;
     int     pipe_in[2], pipe_out[2];
@@ -151,7 +176,7 @@ void             ft::CGI::execute(ft::Response& req, int fd)
     if (pipe(pipe_in) < 0)
     {
         std::cerr << "pipe failed\n";
-        //send something? i dunno
+        req.answer(500, fd, conf);
         return ;
     }
     if (pipe(pipe_out) < 0)
@@ -159,6 +184,7 @@ void             ft::CGI::execute(ft::Response& req, int fd)
         std::cerr << "pipe failed\n";
         close(pipe_in[0]);
         close(pipe_in[1]);
+        req.answer(500, fd, conf);
         return ;
     }
     pid = fork();
@@ -173,8 +199,7 @@ void             ft::CGI::execute(ft::Response& req, int fd)
         close(pipe_out[1]);
         //chdir here
         status = execve(_argv[0], _argv, _cenv);
-        send(fd, "HTTP/1.1 500", 12, 0);
-        std::cerr << "Execve failed\n" << strerror(errno) << std::endl;
+        req.answer(500, fd, conf);
         exit(status);
     }
     else if (pid > 0){
@@ -182,6 +207,12 @@ void             ft::CGI::execute(ft::Response& req, int fd)
         close(pipe_in[1]);
         waitpid(pid, &status, 0);
         close(pipe_out[1]);
+        if (status < 0)
+        {
+            close(pipe_out[0]);
+            close(pipe_in[0]);
+            return ;
+        }
 
         char        buf[201];
         int         res = read(pipe_out[0], buf, 200);
