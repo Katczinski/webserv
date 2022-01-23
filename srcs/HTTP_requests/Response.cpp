@@ -31,7 +31,6 @@ ft::Response::Response()
     this->is_file_large = false;
     this->file_size = 0;
     this->range_begin = 0;
-    this->range_end = 0;
 }
 
 
@@ -51,7 +50,6 @@ void ft::Response::clear()
     input.close();
     this->file_size = 0;
     this->range_begin = 0;
-    this->range_end = 0;
 }
 bool ft::Response::AutoIndexPage(ft::Config& conf)
 {   

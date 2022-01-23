@@ -62,7 +62,7 @@ int check_url(ft::Response& req, ft::Config& conf)
         {
             struct dirent *ent;
             struct stat dir_check;
-            real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);// conf.getRoot().substr(0, conf.getRoot().size() - 1);
+            real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
             int i = 0;
             int n = req.full_log["Dirrectory"].find_last_of("/");
             if(!req.full_log["Dirrectory"].substr(1, n).compare((*it).first))
@@ -144,9 +144,6 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
             else
                 req.range_begin = ft::ft_atoi(req.full_log["Range"]);
             std::string temp = req.full_log["Range"].substr(req.full_log["Range"].find_first_of('-'), req.full_log["Range"].size());
-            req.range_end = ft::ft_atoi(temp);
-            if(!req.range_end)
-                req.range_end = -1;
         }
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
@@ -156,7 +153,7 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
     int i = check_url(req, conf);
     if(i) // вот тут происходит чек location
         return(req.answer(i,fd, conf));
-    i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров, нам сюда
+    i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров
     if(i)
         return(req.answer(i, fd, conf));
     return true;
