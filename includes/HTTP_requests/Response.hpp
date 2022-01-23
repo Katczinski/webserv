@@ -19,11 +19,8 @@ namespace ft
 {
     class Location;
     class Config;
-    class Response
+    struct Response
     {
-    private:
-       
-    public:
         std::string full_buffer; // это полный текст всех хэдеров, он меняется очень много раз
         std::map<std::string, std::string> full_log; // фул лог, тут хэдеры
         bool is_content_length; // если есть Content-length и нет chunked
@@ -31,7 +28,6 @@ namespace ft
         bool is_multy; // Content-type: multipary/*
         bool is_redir; // если надо ответить 301
         bool is_delete; // Если метод DELETE
-        bool is_favicon; // если пришел фавикон
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
         bool is_body_left; // если сформирован body при 200 ответе
         bool is_file_large; // файл слишком большой

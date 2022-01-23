@@ -14,6 +14,15 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
         this->is_multy = other.is_multy;
         this->is_chunked = other.is_chunked;
         this->is_delete = other.is_delete;
+        this->body_length = other.body_length;
+        this->is_body_left = other.is_body_left;
+        this->is_file_large = other.is_file_large;
+        this->path_large_file = other.path_large_file;
+        this->current_location = other.current_location;
+        this->body.str(other.body.str());
+        this->file_size = other.file_size;
+        this->range_begin = other.range_begin;
+        this->is_redir = other.is_redir;
     }
     return *this;
 }
@@ -89,7 +98,6 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
         }
         else
             is_file_large = true;
-        
         return true;
     }
     if(!dir)
