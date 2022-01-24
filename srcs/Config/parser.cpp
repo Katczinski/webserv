@@ -11,6 +11,7 @@ ft::ParserException::~ParserException() throw() {}
 void ft::split(v_string& content, const std::string& line, char c) {
 	size_t size = line.size();
 	size_t start = 0;
+	(void)c;
 	size_t end;
 	while (start < size) {
 		// skip whitespace and find the beginning of a word
@@ -237,8 +238,6 @@ void ft::checkContent(const v_vec_string& content) {
 std::vector<ft::Config> ft::parser(char* path) {
 	std::vector<ft::Config>configs;
 	v_vec_string content;
-	size_t countPorts;
-
 	if (ft::readFile(content, path)) {
 		throw ft::ParserException(RED "Parser Error:" REST " could not open file");
 	}

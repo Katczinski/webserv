@@ -17,7 +17,7 @@
 
 namespace ft
 {
-    class Response;
+    struct Response;
     class CGI
     {
         private:

@@ -40,7 +40,7 @@ namespace ft
 		std::vector<std::string> const getCgiExtension(void) const;
 		std::vector<std::string> const getCgiPath(void) const;
 		std::string const getMaxBody(void) const;
-		bool const getAutoindex(void) const;
+		bool getAutoindex(void) const;
 
 		void setRoot(const v_string& line);
         void setIndex(const v_string& line);
