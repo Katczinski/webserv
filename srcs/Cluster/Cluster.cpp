@@ -75,7 +75,9 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     }
     else if (all_connection[fd].is_delete) // если удалить что-нибудь
     {
-        if (!remove((config.getRoot() + all_connection[fd].full_log["Dirrectory"]).c_str()))
+        int i = all_connection[fd].full_log["Dirrectory"].find_first_of("/", 1);
+        if (!remove((all_connection[fd].current_location->getRoot() + all_connection[fd].full_log["Dirrectory"].substr((i == std::string::npos) \
+        ? all_connection[fd].full_log["Dirrectory"].length() : i + 1, all_connection[fd].full_log["Dirrectory"].length())).c_str()))
             return(all_connection[fd].answer(204,fd, config));
         else
             return(all_connection[fd].answer(404,fd, config));

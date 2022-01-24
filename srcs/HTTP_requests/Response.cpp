@@ -62,8 +62,12 @@ void ft::Response::clear()
 }
 bool ft::Response::AutoIndexPage(ft::Config& conf)
 {   
+    std::string dir_name;
     std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
-    std::string dir_name = conf.getRoot() + dir_nn; // откуда взять рут
+    int i = dir_nn.find_first_of("/");
+    dir_name = current_location->getRoot();
+    if(i + 1 != dir_nn.length())
+        dir_name += dir_nn.substr(i + 1, dir_nn.length());
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
@@ -311,7 +315,7 @@ bool ft::Response::post_download_request(ft::Config& config)
             {
                 if(!buffer.compare(("--"+this->full_log["boundary"]+'\r')))
                 {
-                    std::ofstream nope((config.getRoot() + "dowlands/"+ filename).c_str(), std::ios_base::app);
+                    std::ofstream nope((config.getRoot() + "downloads/"+ filename).c_str(), std::ios_base::app);
                     nope << real_body;
                     nope.close();
                     is_bound = true;
@@ -319,7 +323,7 @@ bool ft::Response::post_download_request(ft::Config& config)
                 else if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
                 {
                     real_body.erase(real_body.end()-1);
-                    std::ofstream nope((config.getRoot() + "dowlands/"+ filename).c_str(), std::ios_base::app);
+                    std::ofstream nope((config.getRoot() + "downloads/"+ filename).c_str(), std::ios_base::app);
                     real_body.erase(real_body.end() - 1);
                     nope << real_body;
                     nope.close();
