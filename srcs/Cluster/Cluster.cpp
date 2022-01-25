@@ -110,7 +110,8 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 return(ans);
             }
             else
-                return(all_connection[fd].answer(301,fd, config)); // по директиве нормального интернета, полсе POST = 301
+                return 1;
+                // return(all_connection[fd].answer(301,fd, config)); // по директиве нормального интернета, полсе POST = 301
         }
     }
     else if(all_connection[fd].is_chunked) // протестил не всё
@@ -264,7 +265,7 @@ void        ft::Cluster::run()
                     }
                 }
             }
-            if(all_connection[_connected[i].fd].is_body_left && _connected[i].revents & POLLOUT)
+            if((all_connection[_connected[i].fd].is_body_left && _connected[i].revents & POLLOUT) || (all_connection[_connected[i].fd].is_body_left && all_connection[_connected[i].fd].is_dowland))
             {
                 int how = 0;
 				struct pollfd   pfd;
@@ -286,10 +287,23 @@ void        ft::Cluster::run()
                         all_connection[_connected[i].fd].is_file_large = false;
 
                 }
+                int fd;
+                if(all_connection[_connected[i].fd].is_dowland)
+                {
+                    fd = open(all_connection[_connected[i].fd].path_large_file.c_str(), O_CREAT | O_WRONLY, S_IREAD | S_IWRITE);
+                    if(fd == -1)
+                    {
+                        all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
+                        all_connection[_connected[i].fd].is_file_large = false;
+                        telo.clear();
+                    }
+                }
+                else
+                    fd = _connected[i].fd;
                 while(!telo.empty())
                 {
-    			    pfd.fd = _connected[i].fd;
-    			    pfd.events = 0 | POLLOUT;
+                    pfd.fd = fd;
+    			    pfd.events = 0 | POLLOUT | POLLIN;
     			    how =  poll(&pfd, 1, -1);
 				    if(how == 0)
 				    {
@@ -304,7 +318,7 @@ void        ft::Cluster::run()
                         how = -1;
                         break;
 				    }
-				    how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
+				    how = write(fd, telo.c_str(), telo.size());
 				    if(how <= 0)
 				    {
 				        all_connection[_connected[i].fd].is_file_large = false;
@@ -312,19 +326,20 @@ void        ft::Cluster::run()
                         break;
 				    }
                     else
-                    {
-				        telo.erase(0, how);
+				    {
+                        telo.erase(0, how);
                         if(!all_connection[_connected[i].fd].body.str().empty())
                         {
                             all_connection[_connected[i].fd].body.str("");
                             all_connection[_connected[i].fd].body.str().clear();
                         }
-				    }
+                    }
                 }
-                if(!all_connection[_connected[i].fd].is_file_large)
+                if(!all_connection[_connected[i].fd].is_file_large || all_connection[_connected[i].fd].is_dowland)
                 {
+                    if(all_connection[_connected[i].fd].is_dowland)
+                        all_connection[_connected[i].fd].answer(301, _connected[i].fd, *config_map[_connected[i].fd]);
                     all_connection[_connected[i].fd].is_body_left = false;
-
 				    all_connection[_connected[i].fd].input.close();
                     all_connection[_connected[i].fd].clear();
                     bool ans = ((all_connection[_connected[i].fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0); // проверяем хэдер Connection: close
