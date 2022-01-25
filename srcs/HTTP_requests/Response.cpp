@@ -14,6 +14,15 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
         this->is_multy = other.is_multy;
         this->is_chunked = other.is_chunked;
         this->is_delete = other.is_delete;
+        this->body_length = other.body_length;
+        this->is_body_left = other.is_body_left;
+        this->is_file_large = other.is_file_large;
+        this->path_large_file = other.path_large_file;
+        this->current_location = other.current_location;
+        this->body.str(other.body.str());
+        this->file_size = other.file_size;
+        this->range_begin = other.range_begin;
+        this->is_redir = other.is_redir;
     }
     return *this;
 }
@@ -31,7 +40,6 @@ ft::Response::Response()
     this->is_file_large = false;
     this->file_size = 0;
     this->range_begin = 0;
-    this->range_end = 0;
 }
 
 
@@ -51,17 +59,16 @@ void ft::Response::clear()
     input.close();
     this->file_size = 0;
     this->range_begin = 0;
-    this->range_end = 0;
 }
 bool ft::Response::AutoIndexPage(ft::Config& conf)
 {   
-    std::string dir_nn = this->full_log["Dirrectory"].substr(1, this->full_log["Dirrectory"].length());
-    std::string dir_name = conf.getRoot() + dir_nn; // откуда взять рут
+    std::string dir_name = current_location->getRoot() + this->full_log["Auto-Index"];
+    std::string dir_index = full_log["Dirrectory"].substr(1, full_log["Dirrectory"].length() - 1);
     std::string req;
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
     struct stat dir_check;
-    if(dir_nn.find('.') != std::string::npos)
+    if(full_log["Auto-Index"].find('.') != std::string::npos)
     {
         this->full_log["Content-Type"] = "application/octet-stream";
         if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
@@ -91,7 +98,6 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
         }
         else
             is_file_large = true;
-        
         return true;
     }
     if(!dir)
@@ -122,15 +128,20 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
         req +="\r\n<p><a href=\"http://" + conf.getHost();
         req += ":";
         req += conf.getPort();
-        req += "/";
-        req += dir_nn;
-        req += ent->d_name;
-        std::string str = dir_name;
-        str += ent->d_name;
-        if(!stat(str.c_str(), &dir_check))
+        if(strstr("..", ent->d_name) && full_log["Auto-Index"].empty())
+            req += full_log["Dirrectory"];
+        else
         {
-            if(S_ISDIR(dir_check.st_mode)){req += "/";}
-        }// проверка на дирректорию, если она = добавляем / в конце
+            req += "/";
+            req += dir_index;
+            req += ent->d_name;
+            std::string str = dir_name;
+            str += ent->d_name;
+            if(!stat(str.c_str(), &dir_check))
+            {
+                if(S_ISDIR(dir_check.st_mode)){req += "/";}
+            }// проверка на дирректорию, если она = добавляем / в конце
+        }
         req += "\">";
         req += ent->d_name;
         req += "</a></p>";
@@ -161,7 +172,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
         }
         else // если не автоиндекс
         {
-            int i = 0;
+            size_t i = 0;
             while(i < current_location->getIndex().size()) // ищем страничку с индексом и открываем ее
             {
                 std::ifstream input (current_location->getIndex()[i].c_str());// проверять, если буфер == 0, то попробовать следующий, выкинуть 403
@@ -247,7 +258,7 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     return (ans);
 }
 
-bool ft::Response::post_download_request(ft::Config& config)
+int ft::Response::post_download_request(ft::Config& config)
 {
     std::string buffer;
     std::string real_body;
@@ -305,15 +316,13 @@ bool ft::Response::post_download_request(ft::Config& config)
             {
                 if(!buffer.compare(("--"+this->full_log["boundary"]+'\r')))
                 {
-                    std::ofstream nope((config.getRoot() + "dowlands/"+ filename).c_str(), std::ios_base::app);
-                    nope << real_body;
-                    nope.close();
                     is_bound = true;
                 }
                 else if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
                 {
-                    real_body.erase(real_body.end()-1);
-                    std::ofstream nope((config.getRoot() + "dowlands/"+ filename).c_str(), std::ios_base::app);
+                    std::ofstream nope((config.getRoot() + "downloads/"+ filename).c_str(), std::ios_base::app);
+                    if(!nope.is_open())
+                        return 500;
                     real_body.erase(real_body.end() - 1);
                     nope << real_body;
                     nope.close();
@@ -324,9 +333,9 @@ bool ft::Response::post_download_request(ft::Config& config)
             }
         for_split++;
         }
-        return true;
+        return 0;
     }
-    return false;
+    return 400;
 }
 
 bool ft::Response::general_header_check(std::string str, int fd, ft::Config& conf)
@@ -395,7 +404,7 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
             this->is_content_length = false;
             return (411);
         }
-        if(!this->is_chunked && !current_location->getMaxBody().empty() && (ft::ft_atoi(current_location->getMaxBody()) < this->body_length))
+        if(!this->is_chunked && !current_location->getMaxBody().empty() && (ft::ft_atoi(current_location->getMaxBody()) < static_cast<long>(this->body_length)))
             return (413);
         if(this->is_chunked && !this->is_multy) // если есть Transfer-Encoding: chunked, то длинна контента игнорируется
         {

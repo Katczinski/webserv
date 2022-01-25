@@ -7,8 +7,8 @@ ft::Location::Location() : _root(), _index(), _allowed_methods(), _cgi_extension
 							_cgi_path(), _max_body(), _autoindex(false) {}
 
 ft::Location::Location(v_iter_v_string& it, v_vec_string& content, std::string server_root) : _root(), _index(),
-																			_allowed_methods(), _cgi_path(),
-																			_cgi_extension(), _max_body(), _autoindex(false) {
+																			_allowed_methods(), _cgi_extension(), _cgi_path(),
+																			 _max_body(), _autoindex(false) {
 	// flag = checkk duplicate autoindex
 	bool flag = false;
 	for (; it != content.end() && it->front() != "}"; ++it) {
@@ -104,7 +104,7 @@ std::string const ft::Location::getMaxBody(void) const {
 	return this->_max_body;
 }
 
-bool const ft::Location::getAutoindex(void) const {
+bool ft::Location::getAutoindex(void) const {
 	return this->_autoindex;
 }
 

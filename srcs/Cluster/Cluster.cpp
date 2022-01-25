@@ -32,7 +32,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         return 1;
     }
-    size_t i = 0;
+    ssize_t i = 0;
     while((i < ret && all_connection[fd].full_log["Host"].empty()) || (i < ret && all_connection[fd].is_chunked)) // записываем если нет хэдеров
     {
         if(buf1[0] == '\r' && all_connection[fd].full_buffer.empty() && !all_connection[fd].is_chunked)
@@ -75,14 +75,14 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
     }
     else if (all_connection[fd].is_delete) // если удалить что-нибудь
     {
-        if (!remove((config.getRoot() + all_connection[fd].full_log["Dirrectory"]).c_str()))
+        if (!remove((all_connection[fd].current_location->getRoot() + all_connection[fd].full_log["Auto-Index"]).c_str()))
             return(all_connection[fd].answer(204,fd, config));
         else
             return(all_connection[fd].answer(404,fd, config));
     }
     else if(all_connection[fd].is_content_length) // если есть длинна тела и запрос POST
     {
-        size_t j = 0;
+        ssize_t j = 0;
         while (i == 0 &&  j < ret) // записываем body, если он приходит частями
         {
             all_connection[fd].full_log["Body"] += buf1[j];
@@ -97,8 +97,9 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         {
             if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной
             {
-                if(!all_connection[fd].post_download_request(config))
-                    return(all_connection[fd].answer(400,fd, config));
+                int i = all_connection[fd].post_download_request(config);
+                if(i)
+                    return(all_connection[fd].answer(i,fd, config));
             }
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
             {
@@ -153,7 +154,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
 
 int         ft::Cluster::is_listening(int fd)
 {
-    for (int i = 0; i < _servers.size(); i++)
+    for (size_t i = 0; i < _servers.size(); i++)
     {
         if (fd == _servers[i].getServer())
             return (i);
@@ -256,7 +257,7 @@ void        ft::Cluster::run()
                     //config_map[_connected[i].fd].getHost() - ключ =a фд, валью = конфиг
                     if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd])) // вот тут парсер
                     {
-                        std::cout << "Connection " << _connected[i].fd << " closed by host\n";
+                        std::cout << "Connection " << _connected[i].fd << " closed by host" << std::endl;
                         config_map.erase(_connected[i].fd);
                         close(_connected[i].fd);
                         erase_poll(i);
@@ -298,19 +299,10 @@ void        ft::Cluster::run()
 				    if(pfd.revents & POLLERR)
 				    {
 				    	std::cout << "OSHIBKA POLA: " << _connected[i].fd << std::endl;
-                        _connected[i].events = POLLIN;
-				        all_connection[_connected[i].fd].is_body_left = false;
-				        all_connection[_connected[i].fd].body.str("");
-				        all_connection[_connected[i].fd].body.str().clear();
-				        all_connection[_connected[i].fd].body.clear();
-				        all_connection[_connected[i].fd].clear();
-				        all_connection[_connected[i].fd].full_buffer.clear();
-				        all_connection[_connected[i].fd].input.close();
+				        all_connection[_connected[i].fd].is_file_large = false;
                         all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
-				        config_map.erase(_connected[i].fd);
-				        close(_connected[i].fd);
-                        erase_poll(i);
-                        //кинуть 500 или не надо
+                        how = -1;
+                        break;
 				    }
 				    how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
 				    if(how <= 0)

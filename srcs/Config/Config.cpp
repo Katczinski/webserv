@@ -216,7 +216,7 @@ void ft::Config::setErrPages(const v_string& line) {
 
 void ft::Config::setLocation(v_iter_v_string& it, v_vec_string& content, std::string server_root) {
 	std::string key = *(it->begin() + 1);
-	ft:Location newLocation(it, content, server_root);
+	ft::Location newLocation(it, content, server_root);
 	_locations.insert(std::make_pair(key, newLocation));
 }
 

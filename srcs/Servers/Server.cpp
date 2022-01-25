@@ -31,7 +31,7 @@ int ft::Server::newConnection()
     return (-1);
 }
 
-const int            ft::Server::getServer() const
+int            ft::Server::getServer() const
 {
     return (_server);
 }

@@ -19,11 +19,8 @@ namespace ft
 {
     class Location;
     class Config;
-    class Response
+    struct Response
     {
-    private:
-       
-    public:
         std::string full_buffer; // это полный текст всех хэдеров, он меняется очень много раз
         std::map<std::string, std::string> full_log; // фул лог, тут хэдеры
         bool is_content_length; // если есть Content-length и нет chunked
@@ -31,7 +28,6 @@ namespace ft
         bool is_multy; // Content-type: multipary/*
         bool is_redir; // если надо ответить 301
         bool is_delete; // Если метод DELETE
-        bool is_favicon; // если пришел фавикон
         size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
         bool is_body_left; // если сформирован body при 200 ответе
         bool is_file_large; // файл слишком большой
@@ -39,9 +35,8 @@ namespace ft
 		Location* current_location; // текущий Location из файла
         std::ifstream      input; // для больших файлов читать 
     	std::ostringstream body;  // body ответа
-        long file_size;
-        long range_begin;
-        long range_end;
+        long file_size; // полный размер большшого файла
+        long range_begin; // если пришел запрос с Accept-range: от - до, в основном все присылается от - до конца
         // методы
         Response();
         ~Response();
@@ -51,8 +46,8 @@ namespace ft
         bool answer(int i, int fd,  ft::Config& conf); // тут куются ответы
         bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
-        bool AutoIndexPage(ft::Config& conf); // неработающий автоиндекс
-        bool post_download_request(ft::Config& config);
+        bool AutoIndexPage(ft::Config& conf); // автоиндекс
+        int post_download_request(ft::Config& config); // загрузка на сервер
         std::string status(int code); // в аргумент передается код ошибки, возвращается название ошибки
     };
     template<typename T>

@@ -34,7 +34,7 @@ INC			= -Iincludes/Sockets\
 			 
 CC			= clang++
 
-FLAGS		= -std=c++98
+FLAGS		= -std=c++98 -Wall -Wextra -Werror
 
 all:		$(NAME)
 

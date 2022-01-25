@@ -35,8 +35,8 @@ ft::CGI::CGI(ft::Response& req, ft::Config& conf)
     for (std::vector<std::string>::iterator it = path_vec.begin(); it != path_vec.end(); it++)
     {
         cgi_path = *it;
-        if (_env["SCRIPT_FILENAME"].find(".py") != std::string::npos && it->find("python") != std::string::npos ||
-            _env["SCRIPT_FILENAME"].find(".php") != std::string::npos && it->find("php") != std::string::npos)
+        if ((_env["SCRIPT_FILENAME"].find(".py") != std::string::npos && it->find("python") != std::string::npos) ||
+            (_env["SCRIPT_FILENAME"].find(".php") != std::string::npos && it->find("php") != std::string::npos))
             break ;
     }
     _argv[0] = strdup(cgi_path.c_str());

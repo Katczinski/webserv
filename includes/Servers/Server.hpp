@@ -28,7 +28,7 @@ namespace ft
             Server(std::string ip, std::string port);
             int                             newConnection();
             void                            closeConnection(int client_index);
-            const int                       getServer() const;
+            int                       getServer() const;
             std::vector<pollfd>             getPollFds();
             ft::Socket                      getSocket();
 
