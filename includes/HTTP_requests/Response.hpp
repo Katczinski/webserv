@@ -38,6 +38,9 @@ namespace ft
     	std::ostringstream body;  // body ответа
         long file_size; // полный размер большшого файла
         long range_begin; // если пришел запрос с Accept-range: от - до, в основном все присылается от - до конца
+        //поток 
+        int download_error;
+        std::string dowland_body;
         // методы
         Response();
         ~Response();
@@ -48,7 +51,7 @@ namespace ft
         bool general_header_check(std::string str, int fd, ft::Config& conf); // проверка главного хэдера
         int req_methods_settings(std::vector<std::string> str); // проверка на то, какой метод пришел и что я могу с этим сделать
         bool AutoIndexPage(ft::Config& conf); // автоиндекс
-        int post_download_request(ft::Config& config); // загрузка на сервер
+        void* post_download_request(); // загрузка на сервер
         std::string status(int code); // в аргумент передается код ошибки, возвращается название ошибки
     };
     template<typename T>

@@ -1,6 +1,6 @@
 #include "Cluster.hpp"
 #include "Response.hpp"
-
+#include <pthread.h>
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 ft::Cluster::~Cluster() {}
 ft::Cluster::Cluster(const ft::Cluster& other) { *this = other; }
@@ -12,6 +12,11 @@ ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
     _size = other._size;
     _capacity = other._capacity;
     return *this;
+}
+
+void* thread_for_dowland(void* response)
+{
+    return ((ft::Response*)response)->post_download_request();
 }
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
@@ -95,11 +100,11 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length) // выполняем действия с body
         {
-            if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной
+            if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной, уходим в поток потому что я не знаю как по человечячи это реализовать без провиса сервера
             {
-                int i = all_connection[fd].post_download_request(config);
-                if(i)
-                    return(all_connection[fd].answer(i,fd, config));
+                pthread_t tid;
+                pthread_create(&tid, NULL,&thread_for_dowland, &all_connection[fd]);
+                pthread_detach(tid);
             }
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
             {
@@ -271,7 +276,17 @@ void        ft::Cluster::run()
 				struct pollfd   pfd;
 				std::string telo;
                 long count = 0;
-                if(!all_connection[_connected[i].fd].body.str().empty())
+                if(all_connection[_connected[i].fd].is_dowland && all_connection[_connected[i].fd].download_error)
+                {
+                    all_connection[_connected[i].fd].answer(all_connection[_connected[i].fd].download_error, _connected[i].fd, *config_map[_connected[i].fd]);
+                    continue;
+                }
+                if(all_connection[_connected[i].fd].is_dowland)
+                {
+                    telo = all_connection[_connected[i].fd].dowland_body;
+                    all_connection[_connected[i].fd].path_large_file = config_map[_connected[i].fd]->getRoot() +all_connection[_connected[i].fd].path_large_file;
+                }
+                else if(!all_connection[_connected[i].fd].body.str().empty())
                     telo = all_connection[_connected[i].fd].body.str();
                 if(all_connection[_connected[i].fd].is_file_large)
                 {
@@ -293,6 +308,7 @@ void        ft::Cluster::run()
                     fd = open(all_connection[_connected[i].fd].path_large_file.c_str(), O_CREAT | O_WRONLY, S_IREAD | S_IWRITE);
                     if(fd == -1)
                     {
+                    std::cout << "ОШИБКУ ТУТ " << std::endl;
                         all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
                         all_connection[_connected[i].fd].is_file_large = false;
                         telo.clear();

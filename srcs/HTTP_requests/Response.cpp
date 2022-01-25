@@ -24,6 +24,7 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
         this->range_begin = other.range_begin;
         this->is_redir = other.is_redir;
         this->is_dowland = other.is_dowland;
+        this->download_error = other.download_error;
     }
     return *this;
 }
@@ -42,6 +43,7 @@ ft::Response::Response()
     this->file_size = 0;
     this->range_begin = 0;
     this->is_dowland = false;
+    this->download_error = 0;
 }
 
 
@@ -62,6 +64,8 @@ void ft::Response::clear()
     this->file_size = 0;
     this->range_begin = 0;
     this->is_dowland = false;
+    this->download_error = 0;
+    this->dowland_body.clear();
 }
 bool ft::Response::AutoIndexPage(ft::Config& conf)
 {   
@@ -262,10 +266,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     return (ans);
 }
 
-int ft::Response::post_download_request(ft::Config& config)
+void* ft::Response::post_download_request()
 {
     std::string buffer;
-    std::string real_body;
     std::string filename;
     bool is_bound = false;
     bool is_body = false;
@@ -324,21 +327,22 @@ int ft::Response::post_download_request(ft::Config& config)
                 }
                 else if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
                 {
-                    path_large_file = config.getRoot() + "downloads/"+ filename;
+                    path_large_file = "downloads/"+ filename;
                     is_dowland = true;
                     is_body_left = true;
-                    real_body.erase(real_body.end() - 1);
-                    body.str(real_body);
+                    dowland_body.erase(dowland_body.end() - 1);
+                    body.str(dowland_body);
                     break;
                 }
                 else
-                    real_body += (buffer + "\n");
+                    dowland_body += (buffer + "\n");
             }
         for_split++;
         }
         return 0;
     }
-    return 400;
+    download_error = 400;
+    return 0;
 }
 
 bool ft::Response::general_header_check(std::string str, int fd, ft::Config& conf)
