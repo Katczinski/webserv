@@ -3,13 +3,42 @@
 import cgi, cgitb
 import os
 import sqlite3
+import fileinput
+try:
+    from urllib.parse import parse_qs
+except ImportError:
+     from urlparse import parse_qs
+
 
 cgitb.enable()
+form = ""
+if os.getenv('REQUEST_METHOD') == "POST":
+    for line in fileinput.input():
+        form += line
+    form = parse_qs(form)
+    if 'register_no' in form:
+        register_no = form['register_no'][0]
+    else:
+        register_no = "none"
+    username = form['username'][0]
+    passwd = form['password'][0]
+elif os.getenv('REQUEST_METHOD') == "GET":
+    form = cgi.FieldStorage()
+    if 'register_no' in form:
+        register_no = form['register_no'].value
+    else:
+        register_no = "none"
+    if 'username' in form:
+        username = form['username'].value
+    else:
+        username = "none"
+    if 'password' in form:
+        passwd = form['password'].value
+    else:
+        passwd = "none"
 
-form = cgi.FieldStorage()
-register_no = form.getvalue('register_no')
-username = form.getvalue('username')
-passwd = form.getvalue('password')
+
+
 
 print("Content-type:text/html\r\n\r\n")
 print("<html>")
@@ -18,7 +47,6 @@ print("</head>")
 print("<body>")
 print('<div style = "text-align:center ; "')
 print("<h1><b>Login page</b></h1>")
-
 ## making a connection to the sqlite3 database
 ## Note : If you get an error while connecting to the d, try giving the absolute path to the db file
 ## eg : /path/cgi-bin/user_base.db
@@ -50,7 +78,7 @@ print("<br><br>")
     
 # else:
 print("<p>Welcome<b>", username ,"</b>. Good to have you back")
-print("<br><p>Your account details</p>")
+print("<br><p>Your account details:</p>")
 print("<p><b>Register number : </b>", register_no, " </p>")
 print("<p><b>Username : </b> " , username, "</p>")
 print("</div>")

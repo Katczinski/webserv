@@ -36,6 +36,11 @@ int check_url(ft::Response& req, ft::Config& conf)
                     qs = req.full_log["Dirrectory"].find(cgi_extension);
                     if (qs != std::string::npos)
                     {
+                        if (req.full_log["Dirrectory"].substr(qs + cgi_extension.length())[0] != '/')
+                        {
+                            stop = 1;
+                            break ;
+                        }
                         req.full_log["Path_info"] = req.full_log["Dirrectory"].substr(qs + cgi_extension.length());
                         req.full_log["Dirrectory"].erase(qs + cgi_extension.length());
                         if (req.full_log["Path_info"] == "/" || req.full_log["Path_info"] == "")
