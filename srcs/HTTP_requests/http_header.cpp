@@ -11,7 +11,7 @@ int check_url(ft::Response& req, ft::Config& conf)
     std::string     real_root;
     std::string     real_dir;
     int             check_loc = 0;
-    size_t             qs = req.full_log["Dirrectory"].find("?");
+    size_t          qs = req.full_log["Dirrectory"].find("?");
 
     if (qs != std::string::npos) // если есть query string
     {
@@ -30,7 +30,6 @@ int check_url(ft::Response& req, ft::Config& conf)
             for (size_t i = 0; i < it->second.getCgiExtension().size(); i++)
             {
                 std::string cgi_extension = it->second.getCgiExtension()[i];
-                std::cout << cgi_extension << std::endl;
                 if (cgi_extension != "")
                 {
                     qs = req.full_log["Dirrectory"].find(cgi_extension);
