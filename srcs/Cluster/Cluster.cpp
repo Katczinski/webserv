@@ -1,6 +1,6 @@
 #include "Cluster.hpp"
 #include "Response.hpp"
-
+#include <pthread.h>
 ft::Cluster::Cluster() : _connected(NULL), _size(0), _capacity(0) {}
 ft::Cluster::~Cluster() {}
 ft::Cluster::Cluster(const ft::Cluster& other) { *this = other; }
@@ -12,6 +12,11 @@ ft::Cluster&            ft::Cluster::operator=(const ft::Cluster& other)
     _size = other._size;
     _capacity = other._capacity;
     return *this;
+}
+
+void* thread_for_dowland(void* response)
+{
+    return ((ft::Response*)response)->post_download_request();
 }
 
 int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_connection, ft::Config& config)
@@ -95,11 +100,11 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         }
         if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length) // выполняем действия с body
         {
-            if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной
+            if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной, уходим в поток потому что я не знаю как по человечячи это реализовать без провиса сервера
             {
-                int i = all_connection[fd].post_download_request(config);
-                if(i)
-                    return(all_connection[fd].answer(i,fd, config));
+                pthread_t tid;
+                pthread_create(&tid, NULL,&thread_for_dowland, &all_connection[fd]);
+                pthread_detach(tid);
             }
             if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
             {
@@ -110,7 +115,8 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
                 return(ans);
             }
             else
-                return(all_connection[fd].answer(301,fd, config)); // по директиве нормального интернета, полсе POST = 301
+                return 1;
+                // return(all_connection[fd].answer(301,fd, config)); // по директиве нормального интернета, полсе POST = 301
         }
     }
     else if(all_connection[fd].is_chunked) // протестил не всё
@@ -264,13 +270,23 @@ void        ft::Cluster::run()
                     }
                 }
             }
-            if(all_connection[_connected[i].fd].is_body_left && _connected[i].revents & POLLOUT)
+            if((all_connection[_connected[i].fd].is_body_left && _connected[i].revents & POLLOUT) || (all_connection[_connected[i].fd].is_body_left && all_connection[_connected[i].fd].is_dowland))
             {
                 int how = 0;
 				struct pollfd   pfd;
 				std::string telo;
                 long count = 0;
-                if(!all_connection[_connected[i].fd].body.str().empty())
+                if(all_connection[_connected[i].fd].is_dowland && all_connection[_connected[i].fd].download_error)
+                {
+                    all_connection[_connected[i].fd].answer(all_connection[_connected[i].fd].download_error, _connected[i].fd, *config_map[_connected[i].fd]);
+                    continue;
+                }
+                if(all_connection[_connected[i].fd].is_dowland)
+                {
+                    telo = all_connection[_connected[i].fd].dowland_body;
+                    all_connection[_connected[i].fd].path_large_file = config_map[_connected[i].fd]->getRoot() +all_connection[_connected[i].fd].path_large_file;
+                }
+                else if(!all_connection[_connected[i].fd].body.str().empty())
                     telo = all_connection[_connected[i].fd].body.str();
                 if(all_connection[_connected[i].fd].is_file_large)
                 {
@@ -286,10 +302,24 @@ void        ft::Cluster::run()
                         all_connection[_connected[i].fd].is_file_large = false;
 
                 }
+                int fd;
+                if(all_connection[_connected[i].fd].is_dowland)
+                {
+                    fd = open(all_connection[_connected[i].fd].path_large_file.c_str(), O_CREAT | O_WRONLY, S_IREAD | S_IWRITE);
+                    if(fd == -1)
+                    {
+                    std::cout << "ОШИБКУ ТУТ " << std::endl;
+                        all_connection[_connected[i].fd].answer(500, _connected[i].fd, *config_map[_connected[i].fd]);
+                        all_connection[_connected[i].fd].is_file_large = false;
+                        telo.clear();
+                    }
+                }
+                else
+                    fd = _connected[i].fd;
                 while(!telo.empty())
                 {
-    			    pfd.fd = _connected[i].fd;
-    			    pfd.events = 0 | POLLOUT;
+                    pfd.fd = fd;
+    			    pfd.events = 0 | POLLOUT | POLLIN;
     			    how =  poll(&pfd, 1, -1);
 				    if(how == 0)
 				    {
@@ -304,7 +334,7 @@ void        ft::Cluster::run()
                         how = -1;
                         break;
 				    }
-				    how = send(_connected[i].fd, telo.c_str(), telo.size(), 0);
+				    how = write(fd, telo.c_str(), telo.size());
 				    if(how <= 0)
 				    {
 				        all_connection[_connected[i].fd].is_file_large = false;
@@ -312,19 +342,20 @@ void        ft::Cluster::run()
                         break;
 				    }
                     else
-                    {
-				        telo.erase(0, how);
+				    {
+                        telo.erase(0, how);
                         if(!all_connection[_connected[i].fd].body.str().empty())
                         {
                             all_connection[_connected[i].fd].body.str("");
                             all_connection[_connected[i].fd].body.str().clear();
                         }
-				    }
+                    }
                 }
-                if(!all_connection[_connected[i].fd].is_file_large)
+                if(!all_connection[_connected[i].fd].is_file_large || all_connection[_connected[i].fd].is_dowland)
                 {
+                    if(all_connection[_connected[i].fd].is_dowland)
+                        all_connection[_connected[i].fd].answer(301, _connected[i].fd, *config_map[_connected[i].fd]);
                     all_connection[_connected[i].fd].is_body_left = false;
-
 				    all_connection[_connected[i].fd].input.close();
                     all_connection[_connected[i].fd].clear();
                     bool ans = ((all_connection[_connected[i].fd].full_log["Connection"].compare(0, 5, "close")) ? 1 : 0); // проверяем хэдер Connection: close

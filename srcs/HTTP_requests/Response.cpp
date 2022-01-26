@@ -23,6 +23,8 @@ ft::Response& ft::Response::operator=(ft::Response const& other)
         this->file_size = other.file_size;
         this->range_begin = other.range_begin;
         this->is_redir = other.is_redir;
+        this->is_dowland = other.is_dowland;
+        this->download_error = other.download_error;
     }
     return *this;
 }
@@ -40,6 +42,8 @@ ft::Response::Response()
     this->is_file_large = false;
     this->file_size = 0;
     this->range_begin = 0;
+    this->is_dowland = false;
+    this->download_error = 0;
 }
 
 
@@ -59,6 +63,9 @@ void ft::Response::clear()
     input.close();
     this->file_size = 0;
     this->range_begin = 0;
+    this->is_dowland = false;
+    this->download_error = 0;
+    this->dowland_body.clear();
 }
 bool ft::Response::AutoIndexPage(ft::Config& conf)
 {   
@@ -220,17 +227,18 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 301)
     {
 		this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-        body.str("");
-		body.str().clear();
-		body.clear();
-        body.str("<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>WebServer/1.0 (Ubuntu recomended)</center>\r\n</body>\r\n</html>\r\n");
-        head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: "+(ft::to_string(body.str().length()))+"\r\nAllow: GET, POST" + "\r\nConnection: "\
-        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n";
+        // body.str("");
+		// body.str().clear();
+		// body.clear();
+        // body.str();
+        head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: 190\r\nAllow: GET, POST" + "\r\nConnection: "\
+        +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>WebServer/1.0 (Ubuntu recomended)</center>\r\n</body>\r\n</html>\r\n";
         std::cout << head << std::endl;
-        head += body.str();
         send(fd, head.c_str(), head.size(), 0);
         this->is_redir = false;
         ans = (full_log["Connection"].compare(0, 5, "close") ? true : false);
+        if(is_dowland)
+            return true;
     }
     else if(i == 204)
     {
@@ -258,10 +266,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     return (ans);
 }
 
-int ft::Response::post_download_request(ft::Config& config)
+void* ft::Response::post_download_request()
 {
     std::string buffer;
-    std::string real_body;
     std::string filename;
     bool is_bound = false;
     bool is_body = false;
@@ -320,22 +327,22 @@ int ft::Response::post_download_request(ft::Config& config)
                 }
                 else if(!buffer.compare(("--"+this->full_log["boundary"])+"--\r"))
                 {
-                    std::ofstream nope((config.getRoot() + "downloads/"+ filename).c_str(), std::ios_base::app);
-                    if(!nope.is_open())
-                        return 500;
-                    real_body.erase(real_body.end() - 1);
-                    nope << real_body;
-                    nope.close();
+                    path_large_file = "downloads/"+ filename;
+                    is_dowland = true;
+                    is_body_left = true;
+                    dowland_body.erase(dowland_body.end() - 1);
+                    body.str(dowland_body);
                     break;
                 }
                 else
-                    real_body += (buffer + "\n");
+                    dowland_body += (buffer + "\n");
             }
         for_split++;
         }
         return 0;
     }
-    return 400;
+    download_error = 400;
+    return 0;
 }
 
 bool ft::Response::general_header_check(std::string str, int fd, ft::Config& conf)
