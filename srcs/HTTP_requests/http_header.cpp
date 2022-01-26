@@ -183,6 +183,9 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         return(req.answer(i,fd, conf));
     i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров
     if(i)
+    {
+        std::cout << "IM HERE " << i << std::endl;
         return(req.answer(i, fd, conf));
+    }
     return true;
 }

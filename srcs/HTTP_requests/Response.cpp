@@ -227,18 +227,12 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 301)
     {
 		this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-        // body.str("");
-		// body.str().clear();
-		// body.clear();
-        // body.str();
         head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: 190\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>WebServer/1.0 (Ubuntu recomended)</center>\r\n</body>\r\n</html>\r\n";
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         this->is_redir = false;
         ans = (full_log["Connection"].compare(0, 5, "close") ? true : false);
-        if(is_dowland)
-            return true;
     }
     else if(i == 204)
     {
@@ -263,6 +257,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     clear();
     full_buffer.clear();
+    body.str("");
+    body.clear();
+    body.str().clear();
     return (ans);
 }
 
@@ -277,7 +274,7 @@ void* ft::Response::post_download_request()
     size_t for_split = 0;
     if(this->full_log["Body"].find("--"+this->full_log["boundary"]) != std::string::npos &&  this->full_log["Body"].find("--"+this->full_log["boundary"]+"--") != std::string::npos)
     {
-        while(for_split < this->body_length)
+        while(for_split < static_cast<size_t>(body_length))
         {
             buffer.clear();
             while(this->full_log["Body"][for_split] != '\n')
@@ -451,7 +448,7 @@ std::string ft::Response::status(int code) {
     status[404] = "Not Found"; // "Не найден". Сервер не может найти запрашиваемый ресурс.
     status[405] = "Method Not Allowed"; // "Метод не разрешён". Метод не может быть использован, потому что не указан в конфиге. Методы GET и HEAD всегда разрешены
     status[408] = "Request Timeout"; // Он означает, что сервер хотел бы отключить это неиспользуемое соединение
-    status[413] = "Request Entity Too Large"; // Размер запроса превышает лимит, объявленный сервером. Сервер может закрыть соединение, вернув заголовок Retry-After
+    status[413] = "Payload Too Large "; // Размер запроса превышает лимит, объявленный сервером. Сервер может закрыть соединение, вернув заголовок Retry-After
     status[500] = "Internal Server Error"; // "Внутренняя ошибка сервера". Сервер столкнулся с ситуацией, которую он не знает как обработать.
     status[501] = "Not Implemented"; // "Не выполнено". Метод запроса не поддерживается сервером и не может быть обработан. Исключение GET и HEAD
     status[505] = "HTTP Version Not Supported"; // "HTTP-версия не поддерживается". HTTP-версия, используемая в запросе, не поддерживается сервером.

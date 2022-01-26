@@ -93,12 +93,12 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             all_connection[fd].full_log["Body"] += buf1[j];
             ++j;
         }
-        if(all_connection[fd].full_log["Body"].size() > all_connection[fd].body_length) // если длинна тела выше, чем заявлена, то записываем все по длинне, остальное оставляем в буфере на следующий запрос
+        if(all_connection[fd].full_log["Body"].size() > static_cast<size_t>(all_connection[fd].body_length)) // если длинна тела выше, чем заявлена, то записываем все по длинне, остальное оставляем в буфере на следующий запрос
         {
             all_connection[fd].full_buffer = all_connection[fd].full_log["Body"].substr((all_connection[fd].full_log["Body"].size() - all_connection[fd].body_length), all_connection[fd].full_log["Body"].size());
             all_connection[fd].full_log["Body"] = all_connection[fd].full_log["Body"].substr(0, all_connection[fd].body_length);
         }
-        if(all_connection[fd].full_log["Body"].size() == all_connection[fd].body_length) // выполняем действия с body
+        if(all_connection[fd].full_log["Body"].size() == static_cast<size_t>(all_connection[fd].body_length)) // выполняем действия с body
         {
             if(all_connection[fd].is_multy) // если загрузка файла на сервер через кнопку на главной, уходим в поток потому что я не знаю как по человечячи это реализовать без провиса сервера
             {
@@ -139,7 +139,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             return all_connection[fd].answer(200,fd,config);
         else if(all_connection[fd].body_length) // записываем BODY по RFC ограничивая Content-leght'ом
         {
-            if(all_connection[fd].full_buffer.size() > all_connection[fd].body_length)
+            if(all_connection[fd].full_buffer.size() > static_cast<size_t>(all_connection[fd].body_length))
             {
                 all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer.substr(0, all_connection[fd].body_length);
                 all_connection[fd].body_length = 0;
@@ -148,7 +148,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
             else
             {
                 all_connection[fd].full_log["Body"] += all_connection[fd].full_buffer;
-                if(all_connection[fd].full_buffer.size() >= all_connection[fd].body_length)
+                if(all_connection[fd].full_buffer.size() >= static_cast<size_t>(all_connection[fd].body_length))
                     all_connection[fd].body_length = 0;
                 else
                     all_connection[fd].body_length -= all_connection[fd].full_buffer.size();
@@ -264,6 +264,11 @@ void        ft::Cluster::run()
                     if (!receive(_connected[i].fd, all_connection, *config_map[_connected[i].fd])) // вот тут парсер
                     {
                         std::cout << "Connection " << _connected[i].fd << " closed by host" << std::endl;
+                        all_connection[_connected[i].fd].clear();
+                        all_connection[_connected[i].fd].full_buffer.clear();
+                        all_connection[_connected[i].fd].body.str("");
+				        all_connection[_connected[i].fd].body.str().clear();
+				        all_connection[_connected[i].fd].body.clear();
                         config_map.erase(_connected[i].fd);
                         close(_connected[i].fd);
                         erase_poll(i);
