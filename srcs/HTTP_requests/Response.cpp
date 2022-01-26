@@ -356,11 +356,11 @@ bool ft::Response::general_header_check(std::string str, int fd, ft::Config& con
             this->full_log.clear();
             return false;
         }
-        if(!header[0].compare(0, 3, "GET"))
+        if(!header[0].compare(0, 3, "GET") && header[0].length() == 3)
             this->full_log["ZAPROS"] = header[0];
-        else if(!header[0].compare(0,4,"POST"))
+        else if(!header[0].compare(0,4,"POST") && header[0].length() == 4)
             this->full_log["ZAPROS"] = header[0];
-        else if(!header[0].compare(0,6,"DELETE"))
+        else if(!header[0].compare(0,6,"DELETE") && header[0].length() == 6)
             this->full_log["ZAPROS"] = header[0];
         else
             i = 405;
@@ -390,6 +390,7 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         methods += *it;
         it++;
     }
+    std::cout << "==========\n\n\n" << methods << " ==========\n\n\n" << std::endl;
     if(!this->full_log["ZAPROS"].compare(0, 3, "GET")) // если запрос GET - почти на все насрать
     {
         this->is_content_length = false;

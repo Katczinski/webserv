@@ -62,10 +62,11 @@ int check_url(ft::Response& req, ft::Config& conf)
     {   
         real_dir = req.full_log["Dirrectory"].substr(req.full_log["Dirrectory"].length() > 1 ? 1 : 0, req.full_log["Dirrectory"].length());
         check_loc = real_dir.find((*it).first);
-        if((!check_loc && (*it).second.getAutoindex()) || (!check_loc && (check_loc + req.full_log["Dirrectory"].length() == (*it).first.length())))
+        if((!check_loc && (*it).second.getAutoindex()) || (!check_loc && (check_loc + real_dir.length() == (*it).first.length())))
             check_loc = 1;
         // else if(check_loc != std::string::npos && (*it).first.length() > 1 && (real_dir.find((*it).first.substr(0, (*it).first.length() - 1))) != std::string::npos)
             // check_loc = 2;
+        
         else
             check_loc = 0;
         if((check_loc && (*it).second.getAutoindex()) || (check_loc && !req.full_log["ZAPROS"].compare(0,6,"DELETE")))

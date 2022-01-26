@@ -66,7 +66,7 @@ int        ft::Cluster::receive(int fd, std::map<size_t, ft::Response>& all_conn
         !all_connection[fd].is_multy && !all_connection[fd].is_delete) // Ответ на get
     {
         bool ans = ((all_connection[fd].full_log["Connection"].compare(0, 5, "close")) ? 0 : 1); // проверяем хэдер Connection: close
-        if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos) // CGI
+        if (all_connection[fd].full_log["Dirrectory"].find("/cgi-bin/") != std::string::npos && !all_connection[fd].current_location->getAutoindex()) // CGI
         {
             ft::CGI cgi(all_connection[fd], config);
             cgi.execute(all_connection[fd], fd, config);
