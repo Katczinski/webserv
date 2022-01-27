@@ -177,7 +177,7 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         {
             return(req.answer(400, fd, conf));
         }
-    } else if (req.full_log["Host"].find(conf.getServName()) != std::string::npos){
+    } else if (req.full_log["Host"].find(conf.getServName()) != std::string::npos && req.full_log["Host"].find(conf.getPort()) != std::string::npos){
         if (conf.getServName().size() + conf.getPort().size() + 1 != req.full_log["Host"].size()) {
             return(req.answer(400, fd, conf));
         }
