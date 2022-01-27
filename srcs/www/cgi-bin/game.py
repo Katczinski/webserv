@@ -46,7 +46,7 @@ print ("""<!DOCTYPE html>
   var rightScore = 0;
 
   function keyDownHandler(e) {
-      if(e.keyCode == 90) {
+      if(e.keyCode == 87) {
           leftUpPressed = true;
       }
       else if (e.keyCode == 83) {
@@ -61,7 +61,7 @@ print ("""<!DOCTYPE html>
   }
 
   function keyUpHandler(e) {
-      if (e.keyCode == 90) {
+      if (e.keyCode == 87) {
           leftUpPressed = false;
       }
       else if (e.keyCode == 83) {

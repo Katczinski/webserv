@@ -393,7 +393,6 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         methods += *it;
         it++;
     }
-    std::cout << "==========\n\n\n" << methods << " ==========\n\n\n" << std::endl;
     if(!this->full_log["ZAPROS"].compare(0, 3, "GET")) // если запрос GET - почти на все насрать
     {
         this->is_content_length = false;

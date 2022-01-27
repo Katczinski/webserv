@@ -67,11 +67,10 @@ int check_url(ft::Response& req, ft::Config& conf)
             check_loc = 0;
         if((check_loc && (*it).second.getAutoindex()) || (check_loc && !req.full_log["ZAPROS"].compare(0,6,"DELETE")))
             req.full_log["Auto-Index"] = req.full_log["Dirrectory"].substr((*it).first.length() + 1, req.full_log["Dirrectory"].length());
-        std::cout << "CHECK LOC " << check_loc << " REAL_DIR " << real_dir << " (*it).first " << (*it).first << std::endl;
         if(check_loc || ((*it).second.getAutoindex() && check_loc)) // если обращение пришло по Location или автоиндекс
         {
             req.current_location = &(*it).second;
-            if((req.full_log["Dirrectory"]).find("cgi") != std::string::npos && !((*it).second.getAutoindex()))
+            if(!req.current_location->getCgiExtension().empty() && !((*it).second.getAutoindex()))
                 return 404;
             return 0;
         }
@@ -80,7 +79,7 @@ int check_url(ft::Response& req, ft::Config& conf)
             real_root = (*it).second.getRoot().substr(0, (*it).second.getRoot().size() - 1);
             size_t i = 0;
             int n = req.full_log["Dirrectory"].find_last_of("/");
-            if(!req.full_log["Dirrectory"].substr(1, n).compare((*it).first))
+            if(!req.full_log["Dirrectory"].substr((n == 0) ? 0 : 1, (n == 0) ? 1 : n).compare((*it).first))
             {
                 while (i < (*it).second.getIndex().size())
                 {
@@ -181,7 +180,6 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
             return(req.answer(400, fd, conf));
         }
     } else {
-
         return(req.answer(400, fd, conf));
     }
     int i = check_url(req, conf);
@@ -190,7 +188,6 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
     i =  req.req_methods_settings((req.current_location->getMethods())); // вот здесь спец-настройка в замисимости от метода и хэдеров
     if(i)
     {
-        std::cout << "IM HERE " << i << std::endl;
         return(req.answer(i, fd, conf));
     }
     return true;
