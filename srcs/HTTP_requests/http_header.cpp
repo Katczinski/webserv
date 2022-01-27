@@ -177,8 +177,20 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }
-    if(!req.full_log["Host"].size()) // проверка был ли хост в принципе №№ ПРОВЕРКА ХОСТА СЕРВЕР_ИМЯ
+    if(!req.full_log["Host"].size()) {
         return(req.answer(400, fd, conf));
+    }
+    if (req.full_log["Host"].find(conf.getHost()) != std::string::npos && req.full_log["Host"].find(conf.getPort()) != std::string::npos) {
+        if (conf.getHost().size() + conf.getPort().size() + 1 != req.full_log["Host"].size()) {
+            return(req.answer(400, fd, conf));
+        }
+    } else if (req.full_log["Host"].find(conf.getServName()) != std::string::npos){
+        if (conf.getServName().size() != req.full_log["Host"].size()) {
+            return(req.answer(400, fd, conf));
+        }
+    } else {
+        return(req.answer(400, fd, conf));
+    }
     int i = check_url(req, conf);
     if(i) // вот тут происходит чек location
         return(req.answer(i,fd, conf));
