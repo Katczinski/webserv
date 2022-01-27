@@ -11,12 +11,12 @@ ft::Location::Location(v_iter_v_string& it, v_vec_string& content, std::string s
 																			 _max_body(), _autoindex(false) {
 	// flag = checkk duplicate autoindex
 	bool flag = false;
+	_root = server_root;
 	for (; it != content.end() && it->front() != "}"; ++it) {
 		if (it->front() == "root") {
-			if (!_root.empty()) {
+			if (_root != server_root) {
 				throw ft::ParserException(RED "Parser Error:" REST " root in location is duplicated");
 			}
-			_root = server_root;
 			setRoot(*it);
 		}
 		if (it->front() == "index") {

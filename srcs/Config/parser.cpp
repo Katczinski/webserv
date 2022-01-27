@@ -114,6 +114,12 @@ std::vector<std::string> ft::checkMultiplePort(v_iter_v_string& it, const v_vec_
 				}
 			}
 		}
+		// Check ports is not duplicated
+		std::sort(ret.begin(), ret.end());
+		v_iter_string iter = std::adjacent_find(ret.begin(), ret.end());
+		if (iter != ret.end()) {
+			throw ft::ParserException(RED "Parser Error:" REST " port in config file duplicated");
+		}
 	}
 	return ret;
 }
