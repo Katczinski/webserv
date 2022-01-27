@@ -26,12 +26,13 @@ unsigned int    toDec(const std::string& number)
     return (x);
 }
 
-ft::CGI::CGI(ft::Response& req, ft::Config& conf)
+ft::CGI::CGI(ft::Response& req)
 {
-    init_env(req, conf);
+    std::cout << "=====================CGI======================\n";
+    init_env(req);
     _argv = (char**)malloc(sizeof(char*) * 3);
     std::string cgi_path;
-    std::vector<std::string> path_vec = conf.getLocation().find("cgi-bin/")->second.getCgiPath();
+    std::vector<std::string> path_vec = req.current_location->getCgiPath();
     for (std::vector<std::string>::iterator it = path_vec.begin(); it != path_vec.end(); it++)
     {
         cgi_path = *it;
@@ -136,7 +137,7 @@ std::string            ft::CGI::getBefore(const std::string& path, char delim)
         return (path.substr(0, res));
 }
 
-void            ft::CGI::init_env(ft::Response& req, ft::Config& conf)
+void            ft::CGI::init_env(ft::Response& req)
 {
     _env["AUTH_TYPE"] = "Basic";
     _env["CONTENT_LENGTH"] = req.full_log["Content-Length"];
@@ -145,9 +146,9 @@ void            ft::CGI::init_env(ft::Response& req, ft::Config& conf)
     _env["QUERY_STRING"] = req.full_log["Query_string"];
     _env["REMOTE_ADDR"] = req.full_log["Host"];
     _env["REQUEST_METHOD"] = req.full_log["ZAPROS"];
-    _env["SCRIPT_FILENAME"] = conf.getRoot() + req.full_log["Dirrectory"].substr(1);
+    _env["SCRIPT_FILENAME"] = req.current_location->getRoot() + req.full_log["Dirrectory"].substr(req.full_log["Dirrectory"].find_last_of('/') + 1);
     _env["PATH_INFO"] = decode(req.full_log["Path_info"]);
-    _env["PATH_TRANSLATED"] = conf.getRoot() + "/" + _env["PATH_INFO"];
+    _env["PATH_TRANSLATED"] = req.current_location->getRoot() + _env["PATH_INFO"] == "." ? "/" : _env["PATH_INFO"];
     _env["HTTP_COOKIE"] = req.full_log["Cookie"];
     _env["SERVER_NAME"] = getBefore(req.full_log["Host"], ':');
     _env["SERVER_PORT"] = getAfter(req.full_log["Host"], ':');
@@ -197,7 +198,6 @@ void             ft::CGI::execute(ft::Response& req, int fd, ft::Config& conf)
         close(pipe_in[1]);
         close(pipe_out[0]);
         close(pipe_out[1]);
-        //chdir here
         status = execve(_argv[0], _argv, _cenv);
         req.answer(500, fd, conf);
         exit(status);

@@ -29,7 +29,7 @@ namespace ft
         bool is_redir; // если надо ответить 301
         bool is_delete; // Если метод DELETE
         bool is_dowland; // если POST на загрузку
-        size_t body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
+        long body_length; // если есть Content-length в запросе и ОТСУТСВУЕТ chunked (is_chunked = false). При чанкеде вручную body-length взять надо будет, this->full_log["Body"].size();
         bool is_body_left; // если сформирован body при 200 ответе
         bool is_file_large; // файл слишком большой
         std::string path_large_file; // путь до файла большого

@@ -33,10 +33,10 @@ namespace ft
             int                                 countCookies(const std::string& str);
 
         public:
-            CGI(ft::Response& req, ft::Config& conf);
+            CGI(ft::Response& req);
             ~CGI();
             void                                formHeader(std::string& header);
-            void                                init_env(ft::Response& req, ft::Config& conf);
+            void                                init_env(ft::Response& req);
             void                                CGI_read(long fd);
             void                                execute(ft::Response& req, int fd, ft::Config& conf);
 

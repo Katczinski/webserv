@@ -75,37 +75,40 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
     struct stat dir_check;
-    if(full_log["Auto-Index"].find('.') != std::string::npos)
+    if(!stat(dir_name.c_str(), &dir_check))
     {
-        this->full_log["Content-Type"] = "application/octet-stream";
-        if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
-            this->full_log["Content-Type"] = "image/png";
-        else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
-            this->full_log["Content-Type"] = "image/jpg";
-        else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
-            this->full_log["Content-Type"] = "image/jpeg";
-        else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
-            this->full_log["Content-Type"] = "image/gif";
-        else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
-            this->full_log["Content-Type"] = "video/mp4";
-        else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
-            this->full_log["Content-Type"] = "text/html";
-        input.open(dir_name.c_str(), std::ios::binary|std::ios::in);
-		if(!input.is_open())
-			return false;
-        input.seekg(0, std::ios::end);
-        file_size = input.tellg();
-        input.seekg(0, std::ios::beg);
-        if(range_begin && range_begin < file_size && range_begin > 0)
-            input.seekg(range_begin);
-        if(file_size < 100000000)
+        if(S_ISREG(dir_check.st_mode))
         {
-            body << input.rdbuf();
-            input.close();
+            this->full_log["Content-Type"] = "application/octet-stream";
+            if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
+                this->full_log["Content-Type"] = "image/png";
+            else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
+                this->full_log["Content-Type"] = "image/jpg";
+            else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
+                this->full_log["Content-Type"] = "image/jpeg";
+            else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
+                this->full_log["Content-Type"] = "image/gif";
+            else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
+                this->full_log["Content-Type"] = "video/mp4";
+            else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
+                this->full_log["Content-Type"] = "text/html";
+            input.open(dir_name.c_str(), std::ios::binary|std::ios::in);
+	    	if(!input.is_open())
+	    		return false;
+            input.seekg(0, std::ios::end);
+            file_size = input.tellg();
+            input.seekg(0, std::ios::beg);
+            if(range_begin && range_begin < file_size && range_begin > 0)
+                input.seekg(range_begin);
+            if(file_size < 100000000)
+            {
+                body << input.rdbuf();
+                input.close();
+            }
+            else
+                is_file_large = true;
+            return true;
         }
-        else
-            is_file_large = true;
-        return true;
     }
     if(!dir)
     {
@@ -227,18 +230,12 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     else if(i == 301)
     {
 		this->full_log["Location"] =  "http://"+this->full_log["Host"]+this->full_log["Dirrectory"];
-        // body.str("");
-		// body.str().clear();
-		// body.clear();
-        // body.str();
         head = "HTTP/1.1 301 " + status(301) + "\r\nDate: "+time+"Content-Type: text/html\r\nContent-Length: 190\r\nAllow: GET, POST" + "\r\nConnection: "\
         +this->full_log["Connection"]+"\r\nServer: WebServer/1.0\r\nLocation: " +this->full_log["Location"]+"\r\n\r\n<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>WebServer/1.0 (Ubuntu recomended)</center>\r\n</body>\r\n</html>\r\n";
         std::cout << head << std::endl;
         send(fd, head.c_str(), head.size(), 0);
         this->is_redir = false;
         ans = (full_log["Connection"].compare(0, 5, "close") ? true : false);
-        if(is_dowland)
-            return true;
     }
     else if(i == 204)
     {
@@ -263,6 +260,9 @@ bool ft::Response::answer(int i, int fd, ft::Config& conf)
     }
     clear();
     full_buffer.clear();
+    body.str("");
+    body.clear();
+    body.str().clear();
     return (ans);
 }
 
@@ -277,7 +277,7 @@ void* ft::Response::post_download_request()
     size_t for_split = 0;
     if(this->full_log["Body"].find("--"+this->full_log["boundary"]) != std::string::npos &&  this->full_log["Body"].find("--"+this->full_log["boundary"]+"--") != std::string::npos)
     {
-        while(for_split < this->body_length)
+        while(for_split < static_cast<size_t>(body_length))
         {
             buffer.clear();
             while(this->full_log["Body"][for_split] != '\n')
@@ -359,11 +359,11 @@ bool ft::Response::general_header_check(std::string str, int fd, ft::Config& con
             this->full_log.clear();
             return false;
         }
-        if(!header[0].compare(0, 3, "GET"))
+        if(!header[0].compare(0, 3, "GET") && header[0].length() == 3)
             this->full_log["ZAPROS"] = header[0];
-        else if(!header[0].compare(0,4,"POST"))
+        else if(!header[0].compare(0,4,"POST") && header[0].length() == 4)
             this->full_log["ZAPROS"] = header[0];
-        else if(!header[0].compare(0,6,"DELETE"))
+        else if(!header[0].compare(0,6,"DELETE") && header[0].length() == 6)
             this->full_log["ZAPROS"] = header[0];
         else
             i = 405;
@@ -393,6 +393,7 @@ int ft::Response::req_methods_settings(std::vector<std::string> str)
         methods += *it;
         it++;
     }
+    std::cout << "==========\n\n\n" << methods << " ==========\n\n\n" << std::endl;
     if(!this->full_log["ZAPROS"].compare(0, 3, "GET")) // если запрос GET - почти на все насрать
     {
         this->is_content_length = false;
@@ -451,7 +452,7 @@ std::string ft::Response::status(int code) {
     status[404] = "Not Found"; // "Не найден". Сервер не может найти запрашиваемый ресурс.
     status[405] = "Method Not Allowed"; // "Метод не разрешён". Метод не может быть использован, потому что не указан в конфиге. Методы GET и HEAD всегда разрешены
     status[408] = "Request Timeout"; // Он означает, что сервер хотел бы отключить это неиспользуемое соединение
-    status[413] = "Request Entity Too Large"; // Размер запроса превышает лимит, объявленный сервером. Сервер может закрыть соединение, вернув заголовок Retry-After
+    status[413] = "Payload Too Large "; // Размер запроса превышает лимит, объявленный сервером. Сервер может закрыть соединение, вернув заголовок Retry-After
     status[500] = "Internal Server Error"; // "Внутренняя ошибка сервера". Сервер столкнулся с ситуацией, которую он не знает как обработать.
     status[501] = "Not Implemented"; // "Не выполнено". Метод запроса не поддерживается сервером и не может быть обработан. Исключение GET и HEAD
     status[505] = "HTTP Version Not Supported"; // "HTTP-версия не поддерживается". HTTP-версия, используемая в запросе, не поддерживается сервером.
