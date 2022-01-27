@@ -75,37 +75,40 @@ bool ft::Response::AutoIndexPage(ft::Config& conf)
     DIR *dir = opendir(dir_name.c_str());
     struct dirent *ent;
     struct stat dir_check;
-    if(full_log["Auto-Index"].find('.') != std::string::npos)
+    if(!stat(dir_name.c_str(), &dir_check))
     {
-        this->full_log["Content-Type"] = "application/octet-stream";
-        if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
-            this->full_log["Content-Type"] = "image/png";
-        else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
-            this->full_log["Content-Type"] = "image/jpg";
-        else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
-            this->full_log["Content-Type"] = "image/jpeg";
-        else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
-            this->full_log["Content-Type"] = "image/gif";
-        else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
-            this->full_log["Content-Type"] = "video/mp4";
-        else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
-            this->full_log["Content-Type"] = "text/html";
-        input.open(dir_name.c_str(), std::ios::binary|std::ios::in);
-		if(!input.is_open())
-			return false;
-        input.seekg(0, std::ios::end);
-        file_size = input.tellg();
-        input.seekg(0, std::ios::beg);
-        if(range_begin && range_begin < file_size && range_begin > 0)
-            input.seekg(range_begin);
-        if(file_size < 100000000)
+        if(S_ISREG(dir_check.st_mode))
         {
-            body << input.rdbuf();
-            input.close();
+            this->full_log["Content-Type"] = "application/octet-stream";
+            if(this->full_log["Dirrectory"].find(".png") != std::string::npos)
+                this->full_log["Content-Type"] = "image/png";
+            else if(this->full_log["Dirrectory"].find(".jpg") != std::string::npos)
+                this->full_log["Content-Type"] = "image/jpg";
+            else if(this->full_log["Dirrectory"].find(".jpeg") != std::string::npos)
+                this->full_log["Content-Type"] = "image/jpeg";
+            else if(this->full_log["Dirrectory"].find(".gif") != std::string::npos)
+                this->full_log["Content-Type"] = "image/gif";
+            else if(this->full_log["Dirrectory"].find(".mp4") != std::string::npos)
+                this->full_log["Content-Type"] = "video/mp4";
+            else if(this->full_log["Dirrectory"].find(".html") != std::string::npos)
+                this->full_log["Content-Type"] = "text/html";
+            input.open(dir_name.c_str(), std::ios::binary|std::ios::in);
+	    	if(!input.is_open())
+	    		return false;
+            input.seekg(0, std::ios::end);
+            file_size = input.tellg();
+            input.seekg(0, std::ios::beg);
+            if(range_begin && range_begin < file_size && range_begin > 0)
+                input.seekg(range_begin);
+            if(file_size < 100000000)
+            {
+                body << input.rdbuf();
+                input.close();
+            }
+            else
+                is_file_large = true;
+            return true;
         }
-        else
-            is_file_large = true;
-        return true;
     }
     if(!dir)
     {
