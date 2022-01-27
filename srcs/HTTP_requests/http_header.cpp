@@ -64,21 +64,11 @@ int check_url(ft::Response& req, ft::Config& conf)
         check_loc = real_dir.find((*it).first);
         if((!check_loc && (*it).second.getAutoindex()) || (!check_loc && (check_loc + real_dir.length() == (*it).first.length())))
             check_loc = 1;
-        // else if(check_loc != std::string::npos && (*it).first.length() > 1 && (real_dir.find((*it).first.substr(0, (*it).first.length() - 1))) != std::string::npos)
-            // check_loc = 2;
-        
         else
             check_loc = 0;
         if((check_loc && (*it).second.getAutoindex()) || (check_loc && !req.full_log["ZAPROS"].compare(0,6,"DELETE")))
             req.full_log["Auto-Index"] = req.full_log["Dirrectory"].substr((*it).first.length() + 1, req.full_log["Dirrectory"].length());
-        // std::cout << "IT.first " << (*it).first <<  " CHECK LOC " << check_loc << " SIZE " << check_loc + real_dir.length() << " LOC ISZE " << (*it).first.length() << std::endl;
-        
-        // првоерка на то, если ли такая дирректория и что не пришло только  /
-        // if(req.full_log["Dirrectory"].length() > 1 && (*it).second.getAutoindex() && check_loc == 2) // если обращение идет по Location, но в конце нет /  = редирект
-        // {
-            // req.is_redir = true;
-            // req.full_log["Dirrectory"] += "/";
-        // }
+        std::cout << "CHECK LOC " << check_loc << " REAL_DIR " << real_dir << " (*it).first " << (*it).first << std::endl;
         if(check_loc || ((*it).second.getAutoindex() && check_loc)) // если обращение пришло по Location или автоиндекс
         {
             req.current_location = &(*it).second;
@@ -177,18 +167,22 @@ bool http_header(ft::Response& req, std::string buf1, int fd, ft::Config& conf)
         if(!buffer.compare(0, 1, "\r")) // кончились хедеры - тело записывается в CLuster.cpp
             break;   
     }
-    if(!req.full_log["Host"].size()) {
+    if(!req.full_log["Host"].size()) 
+    {
         return(req.answer(400, fd, conf));
     }
-    if (req.full_log["Host"].find(conf.getHost()) != std::string::npos && req.full_log["Host"].find(conf.getPort()) != std::string::npos) {
-        if (conf.getHost().size() + conf.getPort().size() + 1 != req.full_log["Host"].size()) {
+    if (req.full_log["Host"].find(conf.getHost()) != std::string::npos && req.full_log["Host"].find(conf.getPort()) != std::string::npos) 
+    {
+        if (conf.getHost().size() + conf.getPort().size() + 1 != req.full_log["Host"].size()) 
+        {
             return(req.answer(400, fd, conf));
         }
     } else if (req.full_log["Host"].find(conf.getServName()) != std::string::npos){
-        if (conf.getServName().size() != req.full_log["Host"].size()) {
+        if (conf.getServName().size() + conf.getPort().size() + 1 != req.full_log["Host"].size()) {
             return(req.answer(400, fd, conf));
         }
     } else {
+
         return(req.answer(400, fd, conf));
     }
     int i = check_url(req, conf);
