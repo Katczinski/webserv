@@ -34,6 +34,7 @@ Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhos
 Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/dow/. Файлы не относящиеся к типу **mp4 | jpg | png | jpeg | gif | html** начинают загрузку, остальные воспроизводятся в браузере с возможностью сохранения.
 
 [Как выглядит главная](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_root.png) 
+![Image alt](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_root.png)
 
 [Автоиндексированная страница](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_dow.png)
 ![Image alt](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_dow.png)
