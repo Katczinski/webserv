@@ -13,12 +13,12 @@ ____
 - DELETE стандарта RFC 2616;
 
 ### Поддерживаемые сервером хэдеры (RFC 72**):
-Accept-range: bytes;
-Connection: close/Keep-Alive;
-Location: ; для переадресации по 30* запросу перемещения
-Transfer-Encoding: chunked;
-Content-type: multipart/form-data;
-Coockie:;
+- Accept-range: bytes;
+- Connection: close/Keep-Alive;
+- Location: ; для переадресации по 30* запросу перемещения
+- Transfer-Encoding: chunked;
+- Content-type: multipart/form-data;
+- Coockie:;
 
 ## HOW TO: 
 ### Для запуска сервера:
