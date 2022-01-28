@@ -31,6 +31,6 @@ Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhos
 Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/ -> нажать кнопку загрузить в верхней части сайта. Загружается в srcs/www/downloads/, сайт http://localhost:8080/dow/ .
 
 ### Скачивание с сервера:
-Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/dow/. Файлы не относящиеся к типу mp4|jpg|png|jpeg|gif|html начинают загрузку, остальные воспроизводятся в браузере с возможностью сохранения.
+Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/dow/. Файлы ** НЕ ** относящиеся к типу mp4 | jpg | png | jpeg | gif | html начинают загрузку, остальные воспроизводятся в браузере с возможностью сохранения.
 
 ____
