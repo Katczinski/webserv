@@ -28,9 +28,11 @@ ubuntu\linux\MAC => make -> ./webserver в агрументы (argv[1])можн�
 Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/dow/ с дефолтной конфигурацией прослушивается папка src/www/downloads/.
 
 ### Загрузка на сервер:  
-Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/ -> нажать кнопку загрузить в верхней части сайта. Загружается в srcs/www/downloads/, сайт http://localhost:8080/dow/ .
+Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/ -> нажать кнопку **"Выберите файл"** в верхней части сайта. Загружается в srcs/www/downloads/, сайт http://localhost:8080/dow/ .
 
 ### Скачивание с сервера:
-Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/dow/. Файлы ** НЕ ** относящиеся к типу mp4 | jpg | png | jpeg | gif | html начинают загрузку, остальные воспроизводятся в браузере с возможностью сохранения.
+Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhost:8080/dow/. Файлы не относящиеся к типу **mp4 | jpg | png | jpeg | gif | html** начинают загрузку, остальные воспроизводятся в браузере с возможностью сохранения.
 
+[Как выглядит главная](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_root.png)
+[Автоиндексированная страница](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_dow.png)
 ____
