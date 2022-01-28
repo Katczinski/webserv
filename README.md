@@ -36,4 +36,5 @@ Google Chrome/Microsoft Edge/Mozila 4.0 и старше/Opera -> http://localhos
 [Как выглядит главная](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_root.png) 
 
 [Автоиндексированная страница](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_dow.png)
+![Image alt](https://github.com/Katczinski/webserv/blob/master/srcs/www/downloads/auto/location_dow.png)
 ____
