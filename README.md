@@ -18,7 +18,7 @@ ____
 - Location: ; для переадресации по 30* запросу перемещения
 - Transfer-Encoding: chunked;
 - Content-type: multipart/form-data;
-- Coockie:;
+- Cookie:;
 
 ## HOW TO: 
 ### Для запуска сервера:
